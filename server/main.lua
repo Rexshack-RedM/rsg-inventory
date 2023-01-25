@@ -168,6 +168,20 @@ local function AddItem(source, item, amount, slot, info)
 	if itemInfo['type'] == 'weapon' then
 		info.serie = info.serie or tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
 		info.quality = info.quality or 100
+        local result = MySQL.Sync.fetchAll('SELECT * FROM player_weapons WHERE serial = @serial and citizenid = @citizenid',
+        {
+            serial = info.serie,
+            citizenid = Player.PlayerData.citizenid
+        })
+        if result[1] == nil then
+            local params =
+            {
+                serial = info.serie,
+                citizenid = Player.PlayerData.citizenid
+            }
+
+            MySQL.Sync.execute("INSERT INTO player_weapons (serial, citizenid) values (@serial, @citizenid)", params)
+        end
 	end
 	if (totalWeight + (itemInfo['weight'] * amount)) <= Config.MaxInventoryWeight then
 		if (slot and Player.PlayerData.items[slot]) and (Player.PlayerData.items[slot].name:lower() == item:lower()) and (itemInfo['type'] == 'item' and not itemInfo['unique']) then
@@ -1382,6 +1396,21 @@ RegisterServerEvent("inventory:server:GiveItem", function(target, name, amount, 
 		end
 		if RemoveItem(src, item.name, amount, item.slot) then
 			if AddItem(target, item.name, amount, false, item.info) then
+                if item.type == "weapon" then
+                    local result = MySQL.Sync.fetchAll('SELECT * FROM player_weapons WHERE serial = @serial and citizenid = @citizenid',
+                    {
+                        serial = item.info.serie,
+                        citizenid = Player.PlayerData.citizenid
+                    })
+                    if result[1] ~= nil then
+                        local Parameters =
+                        {
+                            ['serial'] = item.info.serie,
+                            ['citizenid'] = OtherPlayer.PlayerData.citizenid
+                        }
+                        MySQL.query.await("UPDATE player_weapons SET citizenid = @citizenid WHERE serial = @serial", Parameters)
+                    end
+                end
 				TriggerClientEvent('inventory:client:ItemBox',target, RSGCore.Shared.Items[item.name], "add")
 				RSGCore.Functions.Notify(target, Lang:t("notify.gitemrec")..amount..' '..item.label..Lang:t("notify.gitemfrom")..Player.PlayerData.charinfo.firstname.." "..Player.PlayerData.charinfo.lastname)
 				TriggerClientEvent("inventory:client:UpdatePlayerInventory", target, true)
