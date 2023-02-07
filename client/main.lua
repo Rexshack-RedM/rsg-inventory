@@ -24,6 +24,7 @@ local function HasItem(items, amount)
     local totalItems = #items
     local count = 0
     local kvIndex = 2
+    local quantity = tonumber(amount)
 	if isTable and not isArray then
         totalItems = 0
         for _ in pairs(items) do totalItems += 1 end
@@ -33,7 +34,7 @@ local function HasItem(items, amount)
         if isTable then
             for k, v in pairs(items) do
                 local itemKV = {k, v}
-                if itemData and itemData.name == itemKV[kvIndex] and ((amount and itemData.amount >= amount) or (not isArray and itemData.amount >= v) or (not amount and isArray)) then
+                if itemData and itemData.name == itemKV[kvIndex] and ((quantity and itemData.amount >= quantity) or (not isArray and itemData.amount >= v) or (not quantity and isArray)) then
                     count += 1
                 end
             end
@@ -41,7 +42,7 @@ local function HasItem(items, amount)
                 return true
             end
         else -- Single item as string
-            if itemData and itemData.name == items and (not amount or (itemData and amount and itemData.amount >= amount)) then
+            if itemData and itemData.name == items and (not quantity or (itemData and quantity and itemData.amount >= quantity)) then
                 return true
             end
         end
