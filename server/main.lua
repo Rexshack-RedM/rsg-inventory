@@ -167,7 +167,6 @@ local function AddItem(source, item, amount, slot, info)
 
 	if itemInfo['type'] == 'weapon' then
 		info.serie = info.serie or tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
-		info.quality = info.quality or 100
         local result = MySQL.Sync.fetchAll('SELECT * FROM player_weapons WHERE serial = @serial and citizenid = @citizenid',
         {
             serial = info.serie,
@@ -183,6 +182,9 @@ local function AddItem(source, item, amount, slot, info)
             MySQL.Sync.execute("INSERT INTO player_weapons (serial, citizenid) values (@serial, @citizenid)", params)
         end
 	end
+
+    info.quality = info.quality or 100
+
 	if (totalWeight + (itemInfo['weight'] * amount)) <= Config.MaxInventoryWeight then
 		if (slot and Player.PlayerData.items[slot]) and (Player.PlayerData.items[slot].name:lower() == item:lower()) and (itemInfo['type'] == 'item' and not itemInfo['unique']) then
 			Player.PlayerData.items[slot].amount = Player.PlayerData.items[slot].amount + amount
@@ -1261,7 +1263,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 				price = tonumber(itemData.price)
 				if Player.Functions.RemoveMoney("cash", price, "dealer-item-bought") then
 					itemData.info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
-					itemData.info.quality = 100
+					itemData.info.quality = itemData.info.quality or 100
 					AddItem(src, itemData.name, 1, toSlot, itemData.info)
 					TriggerClientEvent('rsg-drugs:client:updateDealerItems', src, itemData, 1)
 					RSGCore.Functions.Notify(src, itemInfo["label"] .. " bought!", "success")
@@ -1271,6 +1273,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 				end
 			else
 				if Player.Functions.RemoveMoney("cash", price, "dealer-item-bought") then
+                    itemData.info.quality = itemData.info.quality or 100
 					AddItem(src, itemData.name, fromAmount, toSlot, itemData.info)
 					TriggerClientEvent('rsg-drugs:client:updateDealerItems', src, itemData, fromAmount)
 					RSGCore.Functions.Notify(src, itemInfo["label"] .. " bought!", "success")
@@ -1283,8 +1286,8 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 			if Player.Functions.RemoveMoney("cash", price, "itemshop-bought-item") then
                 if RSGCore.Shared.SplitStr(itemData.name, "_")[1] == "weapon" then
                     itemData.info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
-					itemData.info.quality = 100
                 end
+                itemData.info.quality = itemData.info.quality or 100
 				AddItem(src, itemData.name, fromAmount, toSlot, itemData.info)
 				TriggerClientEvent('rsg-shops:client:UpdateShop', src, RSGCore.Shared.SplitStr(shopType, "_")[2], itemData, fromAmount)
 				RSGCore.Functions.Notify(src, itemInfo["label"] .. " bought!", "success")
@@ -1293,8 +1296,8 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 				Player.Functions.RemoveMoney("bank", price, "itemshop-bought-item")
                 if RSGCore.Shared.SplitStr(itemData.name, "_")[1] == "weapon" then
                     itemData.info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
-					itemData.info.quality = 100
                 end
+                itemData.info.quality = itemData.info.quality or 100
 				AddItem(src, itemData.name, fromAmount, toSlot, itemData.info)
 				TriggerClientEvent('rsg-shops:client:UpdateShop', src, RSGCore.Shared.SplitStr(shopType, "_")[2], itemData, fromAmount)
 				RSGCore.Functions.Notify(src, itemInfo["label"] .. " bought!", "success")
@@ -1304,11 +1307,13 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 			end
 		else
 			if Player.Functions.RemoveMoney("cash", price, "unkown-itemshop-bought-item") then
+                itemData.info.quality = itemData.info.quality or 100
 				AddItem(src, itemData.name, fromAmount, toSlot, itemData.info)
 				RSGCore.Functions.Notify(src, itemInfo["label"] .. " bought!", "success")
 				TriggerEvent("rsg-log:server:CreateLog", "shops", "Shop item bought", "green", "**"..GetPlayerName(src) .. "** bought a " .. itemInfo["label"] .. " for $"..price)
 			elseif bankBalance >= price then
 				Player.Functions.RemoveMoney("bank", price, "unkown-itemshop-bought-item")
+                itemData.info.quality = itemData.info.quality or 100
 				AddItem(src, itemData.name, fromAmount, toSlot, itemData.info)
 				RSGCore.Functions.Notify(src, itemInfo["label"] .. " bought!", "success")
 				TriggerEvent("rsg-log:server:CreateLog", "shops", "Shop item bought", "green", "**"..GetPlayerName(src) .. "** bought a " .. itemInfo["label"] .. " for $"..price)
@@ -1539,7 +1544,6 @@ RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help=
 				elseif itemData["type"] == "weapon" then
 					amount = 1
 					info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
-					info.quality = 100
 				elseif itemData["name"] == "harness" then
 					info.uses = 20
 				elseif itemData["name"] == "markedbills" then
@@ -1549,6 +1553,8 @@ RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help=
 				elseif itemData["name"] == "printerdocument" then
 					info.url = "https://cdn.discordapp.com/attachments/870094209783308299/870104331142189126/Logo_-_Display_Picture_-_Stylized_-_Red.png"
 				end
+
+                info.quality = info.quality or 100
 
 				if AddItem(id, itemData["name"], amount, false, info) then
 					RSGCore.Functions.Notify(source, Lang:t("notify.yhg") ..GetPlayerName(id).." "..amount.." "..itemData["name"].. "", "success")
