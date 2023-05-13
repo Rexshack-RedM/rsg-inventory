@@ -1208,6 +1208,21 @@ function swap($fromSlot, $toSlot, $fromInv, $toInv, $toAmount) {
             newData.unique = toData.unique;
             newData.slot = parseInt($toSlot);
 
+            if (newData.name == fromData.name) {
+                if (newData.info.quality !== fromData.info.quality  ) {
+                    InventoryError($fromInv, $fromSlot);
+                    $.post(
+                        "https://rsg-inventory/Notify",
+                        JSON.stringify({
+                            message: "You can not stack items which are not the same quality!",
+                            type: "error",
+                        })
+                    );
+
+                    return;
+                }
+            }
+
             if (fromData.amount == $toAmount) {
                 $toInv.find("[data-slot=" + $toSlot + "]").data("item", newData);
 

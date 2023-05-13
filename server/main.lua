@@ -1,13 +1,47 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
+
 --#region Variables
 
-local RSGCore = exports['rsg-core']:GetCoreObject()
+local str = tostring
+local ceil = math.ceil
 local Drops = {}
 local Stashes = {}
 local ShopItems = {}
 
+-- Decay System
+local TimeAllowed = 60 * 60 * 24 * 1 -- Maths for 1 day dont touch its very important and could break everything
+
 --#endregion Variables
 
 --#region Functions
+
+-- Decay System
+local ConvertQuality = function(item)
+    local StartDate = item.created
+    local DecayRate = RSGCore.Shared.Items[item.name:lower()]["decay"] ~= nil and RSGCore.Shared.Items[item.name:lower()]["decay"] or 0.0
+
+    if not DecayRate then
+        DecayRate = 0
+    end
+
+    if not StartDate then
+        StartDate =  os.time()
+    end
+
+    local TimeExtra = ceil((TimeAllowed * DecayRate))
+    local decay = 100 - ceil((((os.time() - StartDate) / TimeExtra) * 100))
+    local percentDone = decay
+
+    if DecayRate == 0 then
+        percentDone = 100
+    end
+
+    if percentDone < 0 then
+        percentDone = 0
+    end
+
+    return percentDone
+end
 
 ---Loads the inventory for the player with the citizenid that is provided
 ---@param source number Source of the player
@@ -40,7 +74,8 @@ local function LoadInventory(source, citizenid)
 					image = itemInfo['image'],
 					shouldClose = itemInfo['shouldClose'],
 					slot = item.slot,
-					combinable = itemInfo['combinable']
+					combinable = itemInfo['combinable'],
+					created = item.created,
 				}
 			else
 				missingItems[#missingItems + 1] = item.name:lower()
@@ -84,6 +119,7 @@ local function SaveInventory(source, offline)
                     info = item.info,
                     type = item.type,
                     slot = slot,
+					created = item.created
                 }
             end
         end
@@ -149,13 +185,21 @@ exports("GetFirstSlotByItem", GetFirstSlotByItem)
 ---@param slot? number The slot to add the item to
 ---@param info? table Extra info to add onto the item to use whenever you get the item
 ---@return boolean success Returns true if the item was added, false it the item couldn't be added
-local function AddItem(source, item, amount, slot, info)
+local function AddItem(source, item, amount, slot, info, created)
 	local Player = RSGCore.Functions.GetPlayer(source)
 
 	if not Player then return false end
 
 	local totalWeight = GetTotalWeight(Player.PlayerData.items)
 	local itemInfo = RSGCore.Shared.Items[item:lower()]
+    local time = os.time()
+
+    if not created then
+        itemInfo['created'] = time
+    else
+        itemInfo['created'] = created
+    end
+
 	if not itemInfo and not Player.Offline then
 		RSGCore.Functions.Notify(source, "Item does not exist", 'error')
 		return false
@@ -164,6 +208,7 @@ local function AddItem(source, item, amount, slot, info)
 	amount = tonumber(amount) or 1
 	slot = tonumber(slot) or GetFirstSlotByItem(Player.PlayerData.items, item)
 	info = info or {}
+	itemInfo['created'] = created or time
 
 	if itemInfo['type'] == 'weapon' then
 		info.serie = info.serie or tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
@@ -187,16 +232,25 @@ local function AddItem(source, item, amount, slot, info)
 
 	if (totalWeight + (itemInfo['weight'] * amount)) <= Config.MaxInventoryWeight then
 		if (slot and Player.PlayerData.items[slot]) and (Player.PlayerData.items[slot].name:lower() == item:lower()) and (itemInfo['type'] == 'item' and not itemInfo['unique']) then
-			Player.PlayerData.items[slot].amount = Player.PlayerData.items[slot].amount + amount
-			Player.Functions.SetPlayerData("items", Player.PlayerData.items)
-
-			if Player.Offline then return true end
-
-			TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'AddItem', 'green', '**' .. GetPlayerName(source) .. ' (citizenid: ' .. Player.PlayerData.citizenid .. ' | id: ' .. source .. ')** got item: [slot:' .. slot .. '], itemname: ' .. Player.PlayerData.items[slot].name .. ', added amount: ' .. amount .. ', new total amount: ' .. Player.PlayerData.items[slot].amount)
-
-			return true
+			if Player.PlayerData.items[slot].info.quality == info.quality then
+				Player.PlayerData.items[slot].amount = Player.PlayerData.items[slot].amount + amount
+				Player.Functions.SetPlayerData("items", Player.PlayerData.items)
+				if Player.Offline then return true end
+				TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'AddItem', 'green', '**' .. GetPlayerName(source) .. ' (citizenid: ' .. Player.PlayerData.citizenid .. ' | id: ' .. source .. ')** got item: [slot:' .. slot .. '], itemname: ' .. Player.PlayerData.items[slot].name .. ', added amount: ' .. amount .. ', new total amount: ' .. Player.PlayerData.items[slot].amount)
+				return true
+			else
+				for i = 1, Config.MaxInventorySlots, 1 do
+					if Player.PlayerData.items[i] == nil then
+						Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'], created = itemInfo['created'] }
+						Player.Functions.SetPlayerData("items", Player.PlayerData.items)
+						if Player.Offline then return true end
+						TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'AddItem', 'green', '**' .. GetPlayerName(source) .. ' (citizenid: ' .. Player.PlayerData.citizenid .. ' | id: ' .. source .. ')** got item: [slot:' .. i .. '], itemname: ' .. Player.PlayerData.items[i].name .. ', added amount: ' .. amount .. ', new total amount: ' .. Player.PlayerData.items[i].amount)
+						return true
+					end
+				end
+			end
 		elseif not itemInfo['unique'] and slot or slot and Player.PlayerData.items[slot] == nil then
-			Player.PlayerData.items[slot] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = slot, combinable = itemInfo['combinable'] }
+			Player.PlayerData.items[slot] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = slot, combinable = itemInfo['combinable'], created = itemInfo['created'] }
 			Player.Functions.SetPlayerData("items", Player.PlayerData.items)
 
 			if Player.Offline then return true end
@@ -207,7 +261,7 @@ local function AddItem(source, item, amount, slot, info)
 		elseif itemInfo['unique'] or (not slot or slot == nil) or itemInfo['type'] == 'weapon' then
 			for i = 1, Config.MaxInventorySlots, 1 do
 				if Player.PlayerData.items[i] == nil then
-					Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'] }
+					Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'], created = itemInfo['created'] }
 					Player.Functions.SetPlayerData("items", Player.PlayerData.items)
 
 					if Player.Offline then return true end
@@ -552,6 +606,7 @@ local function GetStashItems(stashId)
 				unique = itemInfo["unique"],
 				useable = itemInfo["useable"],
 				image = itemInfo["image"],
+				created = itemInfo["created"],
 				slot = item.slot,
 			}
 		end
@@ -584,7 +639,7 @@ end
 ---@param itemName string The name of the item
 ---@param amount? number The amount of the item
 ---@param info? table The info of the item
-local function AddToStash(stashId, slot, otherslot, itemName, amount, info)
+local function AddToStash(stashId, slot, otherslot, itemName, amount, info, created)
 	amount = tonumber(amount) or 1
 	local ItemData = RSGCore.Shared.Items[itemName]
 	if not ItemData.unique then
@@ -603,6 +658,7 @@ local function AddToStash(stashId, slot, otherslot, itemName, amount, info)
 				unique = itemInfo["unique"],
 				useable = itemInfo["useable"],
 				image = itemInfo["image"],
+				created = created,
 				slot = slot,
 			}
 		end
@@ -620,6 +676,7 @@ local function AddToStash(stashId, slot, otherslot, itemName, amount, info)
 				unique = itemInfo["unique"],
 				useable = itemInfo["useable"],
 				image = itemInfo["image"],
+				created = created,
 				slot = otherslot,
 			}
 		else
@@ -635,6 +692,7 @@ local function AddToStash(stashId, slot, otherslot, itemName, amount, info)
 				unique = itemInfo["unique"],
 				useable = itemInfo["useable"],
 				image = itemInfo["image"],
+				created = created,
 				slot = slot,
 			}
 		end
@@ -668,7 +726,7 @@ end
 ---@param itemName string Name of the item to add
 ---@param amount? number The amount of the item to add
 ---@param info? table Extra info to add to the item
-local function AddToDrop(dropId, slot, itemName, amount, info)
+local function AddToDrop(dropId, slot, itemName, amount, info, created)
 	amount = tonumber(amount) or 1
 	Drops[dropId].createdTime = os.time()
 	if Drops[dropId].items[slot] and Drops[dropId].items[slot].name == itemName then
@@ -686,6 +744,7 @@ local function AddToDrop(dropId, slot, itemName, amount, info)
 			unique = itemInfo["unique"],
 			useable = itemInfo["useable"],
 			image = itemInfo["image"],
+			created = created,
 			slot = slot,
 			id = dropId,
 		}
@@ -737,7 +796,7 @@ end
 ---@param fromSlot number The slot that the item comes from
 ---@param toSlot number The slot that the item goes to
 ---@param itemAmount? number The amount of the item drop to create
-local function CreateNewDrop(source, fromSlot, toSlot, itemAmount)
+local function CreateNewDrop(source, fromSlot, toSlot, itemAmount, created)
 	itemAmount = tonumber(itemAmount) or 1
 	local Player = RSGCore.Functions.GetPlayer(source)
 	local itemData = GetItemBySlot(source, fromSlot)
@@ -766,6 +825,7 @@ local function CreateNewDrop(source, fromSlot, toSlot, itemAmount)
 			unique = itemInfo["unique"],
 			useable = itemInfo["useable"],
 			image = itemInfo["image"],
+			created = created,
 			slot = toSlot,
 			id = dropId,
 		}
@@ -1043,8 +1103,18 @@ RegisterNetEvent('inventory:server:UseItemSlot', function(slot)
 		TriggerClientEvent("rsg-weapons:client:UseWeapon", src, itemData, itemData.info.quality and itemData.info.quality > 0)
 		TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
 	elseif itemData.useable then
-		UseItem(itemData.name, src, itemData)
-		TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
+        if itemData.info.quality > 0 then
+            UseItem(itemData.name, src, itemData)
+            TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
+        else
+            if itemInfo['delete'] and RemoveItem(src, itemData.name, 1, slot) then
+                TriggerClientEvent('inventory:client:ItemBox',src, itemInfo, "remove")
+
+                RSGCore.Functions.Notify(src, RSGCore.Shared.Items[itemData.name].label..' has decayed and you can\'t use it anymore!', 'error')
+            else
+                RSGCore.Functions.Notify(src, 'You can\'t use this item!', 'error')
+            end
+        end
 	end
 end)
 
@@ -1058,8 +1128,18 @@ RegisterNetEvent('inventory:server:UseItem', function(inventory, item)
 		TriggerClientEvent("rsg-weapons:client:UseWeapon", src, itemData, itemData.info.quality and itemData.info.quality > 0)
 		TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
 	else
-		UseItem(itemData.name, src, itemData)
-		TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
+        if itemData.info.quality > 0 then
+            UseItem(itemData.name, src, itemData)
+            TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
+        else
+            if itemInfo['delete'] and RemoveItem(src, itemData.name, 1, slot) then
+                TriggerClientEvent('inventory:client:ItemBox',src, itemInfo, "remove")
+
+                RSGCore.Functions.Notify(src, RSGCore.Shared.Items[itemData.name].label..' has decayed and you can\'t use it anymore!', 'error')
+            else
+                RSGCore.Functions.Notify(src, 'You can\'t use this item!', 'error')
+            end
+        end
 	end
 end)
 
@@ -1090,7 +1170,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 						AddItem(src, toItemData.name, toAmount, fromSlot, toItemData.info)
 					end
 				end
-				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info)
+				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info, fromItemData["created"])
 			elseif RSGCore.Shared.SplitStr(toInventory, "-")[1] == "otherplayer" then
 				local playerId = tonumber(RSGCore.Shared.SplitStr(toInventory, "-")[2])
 				local OtherPlayer = RSGCore.Functions.GetPlayer(playerId)
@@ -1112,7 +1192,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					TriggerEvent("rsg-log:server:CreateLog", "robbing", "Dropped Item", "red", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | *"..src.."*) dropped new item; name: **"..itemInfo["name"].."**, amount: **" .. fromAmount .. "** to player: **".. GetPlayerName(OtherPlayer.PlayerData.source) .. "** (citizenid: *"..OtherPlayer.PlayerData.citizenid.."* | id: *"..OtherPlayer.PlayerData.source.."*)")
 				end
 				local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-				AddItem(playerId, itemInfo["name"], fromAmount, toSlot, fromItemData.info)
+				AddItem(playerId, itemInfo["name"], fromAmount, toSlot, fromItemData.info, itemInfo["created"])
 			elseif RSGCore.Shared.SplitStr(toInventory, "-")[1] == "stash" then
 				local stashId = RSGCore.Shared.SplitStr(toInventory, "-")[2]
 				local toItemData = Stashes[stashId].items[toSlot]
@@ -1134,7 +1214,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					TriggerEvent("rsg-log:server:CreateLog", "stash", "Dropped Item", "red", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) dropped new item; name: **"..itemInfo["name"].."**, amount: **" .. fromAmount .. "** - stash: *" .. stashId .. "*")
 				end
 				local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-				AddToStash(stashId, toSlot, fromSlot, itemInfo["name"], fromAmount, fromItemData.info)
+				AddToStash(stashId, toSlot, fromSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
 			else
 				-- drop
 				toInventory = tonumber(toInventory)
@@ -1157,7 +1237,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 						TriggerEvent("rsg-log:server:CreateLog", "drop", "Dropped Item", "red", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) dropped new item; name: **"..itemInfo["name"].."**, amount: **" .. fromAmount .. "** - dropid: *" .. toInventory .. "*")
 					end
 					local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-					AddToDrop(toInventory, toSlot, itemInfo["name"], fromAmount, fromItemData.info)
+					AddToDrop(toInventory, toSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
 					if itemInfo["name"] == "radio" then
 						TriggerClientEvent('Radio.Set', src, false)
 					end
@@ -1188,7 +1268,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 				else
 					TriggerEvent("rsg-log:server:CreateLog", "robbing", "Retrieved Item", "green", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) took item; name: **"..fromItemData.name.."**, amount: **" .. fromAmount .. "** from player: **".. GetPlayerName(OtherPlayer.PlayerData.source) .. "** (citizenid: *"..OtherPlayer.PlayerData.citizenid.."* | *"..OtherPlayer.PlayerData.source.."*)")
 				end
-				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info)
+				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info, itemInfo["created"])
 			else
 				local toItemData = OtherPlayer.PlayerData.items[toSlot]
 				RemoveItem(playerId, itemInfo["name"], fromAmount, fromSlot)
@@ -1222,7 +1302,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					toAmount = tonumber(toAmount) or toItemData.amount
 					if toItemData.name ~= fromItemData.name then
 						RemoveItem(src, toItemData.name, toAmount, toSlot)
-						AddToStash(stashId, fromSlot, toSlot, itemInfo["name"], toAmount, toItemData.info)
+						AddToStash(stashId, fromSlot, toSlot, itemInfo["name"], toAmount, toItemData.info, itemInfo["created"])
 						TriggerEvent("rsg-log:server:CreateLog", "stash", "Swapped Item", "orange", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) swapped item; name: **"..toItemData.name.."**, amount: **" .. toAmount .. "** with item; name: **"..fromItemData.name.."**, amount: **" .. fromAmount .. "** stash: *" .. stashId .. "*")
 					else
 						TriggerEvent("rsg-log:server:CreateLog", "stash", "Stacked Item", "orange", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) stacked item; name: **"..toItemData.name.."**, amount: **" .. toAmount .. "** from stash: *" .. stashId .. "*")
@@ -1231,7 +1311,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					TriggerEvent("rsg-log:server:CreateLog", "stash", "Received Item", "green", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) received item; name: **"..fromItemData.name.."**, amount: **" .. fromAmount.. "** stash: *" .. stashId .. "*")
 				end
 				SaveStashItems(stashId, Stashes[stashId].items)
-				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info)
+				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info, itemInfo["created"])
 			else
 				local toItemData = Stashes[stashId].items[toSlot]
 				RemoveFromStash(stashId, fromSlot, itemInfo["name"], fromAmount)
@@ -1242,11 +1322,11 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					if toItemData.name ~= fromItemData.name then
 						itemInfo = RSGCore.Shared.Items[toItemData.name:lower()]
 						RemoveFromStash(stashId, toSlot, itemInfo["name"], toAmount)
-						AddToStash(stashId, fromSlot, toSlot, itemInfo["name"], toAmount, toItemData.info)
+						AddToStash(stashId, fromSlot, toSlot, itemInfo["name"], toAmount, toItemData.info, itemInfo["created"])
 					end
 				end
 				itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-				AddToStash(stashId, toSlot, fromSlot, itemInfo["name"], fromAmount, fromItemData.info)
+				AddToStash(stashId, toSlot, fromSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
 			end
 		else
 			RSGCore.Functions.Notify(src, Lang:t("notify.itemexist"), "error")
@@ -1336,7 +1416,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					if toItemData.name ~= fromItemData.name then
 						itemInfo = RSGCore.Shared.Items[toItemData.name:lower()]
 						RemoveItem(src, toItemData.name, toAmount, toSlot)
-						AddToDrop(fromInventory, toSlot, itemInfo["name"], toAmount, toItemData.info)
+						AddToDrop(fromInventory, toSlot, itemInfo["name"], toAmount, toItemData.info, itemInfo["created"])
 						if itemInfo["name"] == "radio" then
 							TriggerClientEvent('Radio.Set', src, false)
 						end
@@ -1347,7 +1427,7 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 				else
 					TriggerEvent("rsg-log:server:CreateLog", "drop", "Received Item", "green", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) received item; name: **"..fromItemData.name.."**, amount: **" .. fromAmount.. "** -  dropid: *" .. fromInventory .. "*")
 				end
-				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info)
+				AddItem(src, fromItemData.name, fromAmount, toSlot, fromItemData.info, fromItemData["created"])
 			else
 				toInventory = tonumber(toInventory)
 				local toItemData = Drops[toInventory].items[toSlot]
@@ -1359,14 +1439,14 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
 					if toItemData.name ~= fromItemData.name then
 						itemInfo = RSGCore.Shared.Items[toItemData.name:lower()]
 						RemoveFromDrop(toInventory, toSlot, itemInfo["name"], toAmount)
-						AddToDrop(fromInventory, fromSlot, itemInfo["name"], toAmount, toItemData.info)
+						AddToDrop(fromInventory, fromSlot, itemInfo["name"], toAmount, toItemData.info, itemInfo["created"])
 						if itemInfo["name"] == "radio" then
 							TriggerClientEvent('Radio.Set', src, false)
 						end
 					end
 				end
 				itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-				AddToDrop(toInventory, toSlot, itemInfo["name"], fromAmount, fromItemData.info)
+				AddToDrop(toInventory, toSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
 				if itemInfo["name"] == "radio" then
 					TriggerClientEvent('Radio.Set', src, false)
 				end
@@ -1401,7 +1481,7 @@ RegisterServerEvent("inventory:server:GiveItem", function(target, name, amount, 
 			amount = item.amount
 		end
 		if RemoveItem(src, item.name, amount, item.slot) then
-			if AddItem(target, item.name, amount, false, item.info) then
+			if AddItem(target, item.name, amount, false, item.info, item.created) then
                 if item.type == "weapon" then
                     local result = MySQL.Sync.fetchAll('SELECT * FROM player_weapons WHERE serial = @serial and citizenid = @citizenid',
                     {
@@ -1426,7 +1506,7 @@ RegisterServerEvent("inventory:server:GiveItem", function(target, name, amount, 
 				TriggerClientEvent('rsg-inventory:client:giveAnim', src)
 				TriggerClientEvent('rsg-inventory:client:giveAnim', target)
 			else
-				AddItem(src, item.name, amount, item.slot, item.info)
+				AddItem(src, item.name, amount, item.slot, item.info, item.created)
 				RSGCore.Functions.Notify(src, Lang:t("notify.gitinvfull"), "error")
 				RSGCore.Functions.Notify(target, Lang:t("notify.giymif"), "error")
 				TriggerClientEvent("inventory:client:UpdatePlayerInventory", src, false)
@@ -1487,6 +1567,122 @@ RSGCore.Functions.CreateCallback('RSGCore:HasItem', function(source, cb, items, 
     cb(retval)
 end)
 
+-- Decay System
+RSGCore.Functions.CreateCallback('inventory:server:ConvertQuality', function(source, cb, inventory, other)
+    local src = source
+    local data = {}
+    local Player = RSGCore.Functions.GetPlayer(src)
+
+    if not Player then return end
+
+    local fullname = Player.PlayerData.charinfo.firstname..' '..Player.PlayerData.charinfo.lastname
+
+    for _, item in pairs(inventory) do
+        if item.created then
+            if RSGCore.Shared.Items[item.name:lower()]["decay"] ~= nil or RSGCore.Shared.Items[item.name:lower()]["decay"] ~= 0 then
+                if item.info then
+                    if type(item.info) == "string" then
+                        item.info = {}
+                    end
+
+                    if item.info.quality == nil then
+                        item.info.quality = 100
+                    end
+                else
+                    item.info = {quality = 100}
+                end
+
+                local quality = ConvertQuality(item)
+
+                if Config.Debug then
+                    print('')
+                    print('Character    : '..str(fullname))
+                    print('Item         : '..str(item.name))
+                    print('Quality      : '..str(quality))
+                    print('')
+                end
+
+                if item.info.quality then
+                    if quality < item.info.quality then
+                        item.info.quality = quality
+                    end
+                else
+                    item.info = {quality = quality}
+                end
+            else
+                if item.info then
+                    item.info.quality = 100
+                else
+                    item.info = {quality = 100}
+                end
+            end
+        end
+    end
+
+    if other then
+        local inventoryType = RSGCore.Shared.SplitStr(other.name, "-")[1]
+        local uniqueId = RSGCore.Shared.SplitStr(other.name, "-")[2]
+
+        if inventoryType == "stash" then
+            for _, item in pairs(other.inventory) do
+                if item.created then
+                    if RSGCore.Shared.Items[item.name:lower()]["decay"] ~= nil or RSGCore.Shared.Items[item.name:lower()]["decay"] ~= 0 then
+                        if item.info then
+                            if type(item.info) == "string" then
+                                item.info = {}
+                            end
+
+                            if item.info.quality == nil then
+                                item.info.quality = 100
+                            end
+                        else
+                            item.info = {quality = 100}
+                        end
+
+                        local quality = ConvertQuality(item)
+
+                        if Config.Debug then
+                            print('')
+                            print('Character    : '..str(fullname))
+                            print('Item         : '..str(item.name))
+                            print('Quality      : '..str(quality))
+                            print('')
+                        end
+
+                        if item.info.quality then
+                            if quality < item.info.quality then
+                                item.info.quality = quality
+                            end
+                        else
+                            item.info = {quality = quality}
+                        end
+                    else
+                        if item.info then
+                            item.info.quality = 100
+                        else
+                            local info = {quality = 100}
+                            item.info = info
+                        end
+                    end
+                end
+            end
+
+            Stashes[uniqueId].items = other.inventory
+
+            TriggerClientEvent("inventory:client:UpdateOtherInventory", Player.PlayerData.source, other.inventory, false)
+        end
+    end
+
+    Player.Functions.SetInventory(inventory)
+
+    TriggerClientEvent("inventory:client:UpdatePlayerInventory", Player.PlayerData.source, false)
+
+    data.inventory = inventory
+    data.other = other
+
+    cb(data)
+end)
+
 --#endregion Callbacks
 
 --#region Commands
@@ -1544,6 +1740,7 @@ RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help=
 				elseif itemData["type"] == "weapon" then
 					amount = 1
 					info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
+                    info.quality = 100
 				elseif itemData["name"] == "harness" then
 					info.uses = 20
 				elseif itemData["name"] == "markedbills" then
@@ -1552,9 +1749,9 @@ RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help=
 					info.lab = exports["rsg-methlab"]:GenerateRandomLab()
 				elseif itemData["name"] == "printerdocument" then
 					info.url = "https://cdn.discordapp.com/attachments/870094209783308299/870104331142189126/Logo_-_Display_Picture_-_Stylized_-_Red.png"
+                elseif RSGCore.Shared.Items[itemData["name"]]["decay"] and RSGCore.Shared.Items[itemData["name"]]["decay"] > 0 then
+					info.quality = 100
 				end
-
-                info.quality = info.quality or 100
 
 				if AddItem(id, itemData["name"], amount, false, info) then
 					RSGCore.Functions.Notify(source, Lang:t("notify.yhg") ..GetPlayerName(id).." "..amount.." "..itemData["name"].. "", "success")

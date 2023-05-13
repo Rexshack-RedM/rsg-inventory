@@ -271,23 +271,36 @@ RegisterNetEvent('inventory:server:RobPlayer', function(TargetId)
 end)
 
 RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventory, other)
-    if not IsEntityDead(PlayerPedId()) then
-        ToggleHotbar(false)
-        SetNuiFocus(true, true)
-        if other then
-            currentOtherInventory = other.name
-        end
-        SendNUIMessage({
+    local ped = PlayerPedId()
+    local dead = IsEntityDead(ped)
+
+    if dead then return end
+
+    ToggleHotbar(false)
+
+    SetNuiFocus(true, true)
+
+    if other then
+        currentOtherInventory = other.name
+    end
+
+    RSGCore.Functions.TriggerCallback('inventory:server:ConvertQuality', function(data)
+        inventory = data.inventory
+        other = data.other
+
+        SendNUIMessage(
+        {
             action = "open",
             inventory = inventory,
             slots = Config.MaxInventorySlots,
             other = other,
             maxweight = Config.MaxInventoryWeight,
             Ammo = PlayerAmmo,
-            maxammo = Config.MaximumAmmoValues,
+            maxammo = Config.MaximumAmmoValues
         })
-        inInventory = true
-    end
+    end, inventory, other)
+
+    inInventory = true
 end)
 
 RegisterNetEvent('inventory:client:UpdatePlayerInventory', function(isError)

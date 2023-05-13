@@ -1,5 +1,6 @@
 Config = {}
 
+Config.Debug = false
 Config.UseTarget = GetConvar('UseTarget', 'false') == 'true' -- Use qb-target interactions (don't change this, go to your server.cfg and add `setr UseTarget true` to use this and just that from true to false or the other way around)
 
 Config.MaxInventoryWeight = 120000 -- Max weight a player can carry (default 120kg, written in grams)
