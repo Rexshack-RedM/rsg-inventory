@@ -1713,7 +1713,7 @@ RSGCore.Commands.Add("resetinv", "Reset Inventory (Admin Only)", {{name="type", 
 end, "admin")
 
 RSGCore.Commands.Add("rob", "Rob Player", {}, false, function(source, _)
-	TriggerClientEvent("police:client:RobPlayer", source)
+	TriggerClientEvent("rsg-looting:client:RobPlayer", source)
 end)
 
 RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help="Player ID"},{name="item", help="Name of the item (not a label)"}, {name="amount", help="Amount of items"}}, false, function(source, args)
