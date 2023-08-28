@@ -27,7 +27,7 @@ p { margin: 0 !important; }
 :root {
     --color-primary: #23242e;
     --color-secondary: #383942;
-    --color-accent: rgb(65, 199, 165);
+    --color-accent: rgb(117, 17, 41);
 }
 
 .fas.fa-lock {
