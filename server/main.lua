@@ -1754,7 +1754,7 @@ RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help=
 				end
 
 				if AddItem(id, itemData["name"], amount, false, info) then
-					RSGCore.Functions.Notify(source, Lang:t("notify.yhg") ..GetPlayerName(id).." "..amount.." "..itemData["name"].. "", "success")
+					RSGCore.Functions.Notify(source, Lang:t("notify.yhg") ..GetPlayerName(id).." "..amount.." "..itemData["label"].. "", "success")
 				else
 					RSGCore.Functions.Notify(source,  Lang:t("notify.cgitem"), "error")
 				end
