@@ -25,7 +25,7 @@ local function HasItem(items, amount)
     local count = 0
     local kvIndex = 2
     local quantity = tonumber(amount)
-	if isTable and not isArray then
+    if isTable and not isArray then
         totalItems = 0
         for _ in pairs(items) do totalItems += 1 end
         kvIndex = 1
@@ -172,20 +172,20 @@ local function CreateItemDrop(index)
     DropsNear[index].isDropShowing = true
     PlaceObjectOnGroundProperly(dropItem)
     FreezeEntityPosition(dropItem, true)
-	if Config.UseTarget then
-		exports['rsg-target']:AddTargetEntity(dropItem, {
-			options = {
-				{
-					icon = 'fas fa-backpack',
-					label = Lang:t("menu.o_bag"),
-					action = function()
-						TriggerServerEvent("inventory:server:OpenInventory", "drop", index)
-					end,
-				}
-			},
-			distance = 2.5,
-		})
-	end
+    if Config.UseTarget then
+        exports['rsg-target']:AddTargetEntity(dropItem, {
+            options = {
+                {
+                    icon = 'fas fa-backpack',
+                    label = Lang:t("menu.o_bag"),
+                    action = function()
+                        TriggerServerEvent("inventory:server:OpenInventory", "drop", index)
+                    end,
+                }
+            },
+            distance = 2.5,
+        })
+    end
 end
 
 --#endregion Functions
@@ -196,7 +196,7 @@ RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     LocalPlayer.state:set("inv_busy", false, true)
     PlayerData = RSGCore.Functions.GetPlayerData()
     RSGCore.Functions.TriggerCallback("inventory:server:GetCurrentDrops", function(theDrops)
-		Drops = theDrops
+        Drops = theDrops
     end)
 end)
 
@@ -357,10 +357,10 @@ end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
     if IsPedInAnyVehicle(PlayerPedId(), false) then
-	return
+    return
     else
-	LoadAnimDict('mp_common')
-	TaskPlayAnim(PlayerPedId(), 'mp_common', 'givetake1_b', 8.0, 1.0, -1, 16, 0, 0, 0, 0)
+    LoadAnimDict('mp_common')
+    TaskPlayAnim(PlayerPedId(), 'mp_common', 'givetake1_b', 8.0, 1.0, -1, 16, 0, 0, 0, 0)
     end
 end)
 
@@ -376,8 +376,8 @@ RegisterCommand('inventory', function()
     if not inInventory then
         if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
             local ped = PlayerPedId()
-			openAnim()
-			TriggerServerEvent("inventory:server:OpenInventory")
+            openAnim()
+            TriggerServerEvent("inventory:server:OpenInventory")
         end
     end
 end, false)
@@ -520,9 +520,9 @@ CreateThread(function()
     while true do
         local sleep = 100
         if DropsNear ~= nil then
-			local ped = PlayerPedId()
-			local closestDrop = nil
-			local closestDistance = nil
+            local ped = PlayerPedId()
+            local closestDrop = nil
+            local closestDistance = nil
             for k, v in pairs(DropsNear) do
 
                 if DropsNear[k] ~= nil then
@@ -535,19 +535,19 @@ CreateThread(function()
                         Citizen.InvokeNative(0x2A32FAA57B937173, 0x07DCE236, v.coords.x, v.coords.y, v.coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.15, 255, 215, 0, 155, false, false, false, 1, false, false, false)
                     end
 
-					local coords = (v.object ~= nil and GetEntityCoords(v.object)) or vector3(v.coords.x, v.coords.y, v.coords.z)
-					local distance = #(GetEntityCoords(ped) - coords)
-					if distance < 2 and (not closestDistance or distance < closestDistance) then
-						closestDrop = k
-						closestDistance = distance
-					end
+                    local coords = (v.object ~= nil and GetEntityCoords(v.object)) or vector3(v.coords.x, v.coords.y, v.coords.z)
+                    local distance = #(GetEntityCoords(ped) - coords)
+                    if distance < 2 and (not closestDistance or distance < closestDistance) then
+                        closestDrop = k
+                        closestDistance = distance
+                    end
                 end
             end
-			if not closestDrop then
-				CurrentDrop = 0
-			else
-				CurrentDrop = closestDrop
-			end
+            if not closestDrop then
+                CurrentDrop = 0
+            else
+                CurrentDrop = closestDrop
+            end
         end
         Wait(sleep)
     end
@@ -585,14 +585,14 @@ CreateThread(function()
     while true do
         Wait(0)
         if IsControlJustReleased(0, RSGCore.Shared.Keybinds['I']) then -- key open inventory I
-			if not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
-				local ped = PlayerPedId()
-				if CurrentDrop ~= 0 then
-					TriggerServerEvent("inventory:server:OpenInventory", "drop", CurrentDrop)
-				else
-					TriggerServerEvent("inventory:server:OpenInventory")
-				end
-			end
+            if not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
+                local ped = PlayerPedId()
+                if CurrentDrop ~= 0 then
+                    TriggerServerEvent("inventory:server:OpenInventory", "drop", CurrentDrop)
+                else
+                    TriggerServerEvent("inventory:server:OpenInventory")
+                end
+            end
         end
     end
 end)
@@ -608,33 +608,33 @@ CreateThread(function()
         DisableControlAction(0, RSGCore.Shared.Keybinds['5'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['Z'])
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['1']) and IsInputDisabled(0) then  -- 1  slot
-			if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-				TriggerServerEvent("inventory:server:UseItemSlot", 1)
-			end
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                TriggerServerEvent("inventory:server:UseItemSlot", 1)
+            end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['2']) and IsInputDisabled(0) then  -- 2 slot
-			if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-				TriggerServerEvent("inventory:server:UseItemSlot", 2)
-			end
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                TriggerServerEvent("inventory:server:UseItemSlot", 2)
+            end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['3']) and IsInputDisabled(0) then -- 3 slot
-			if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-				TriggerServerEvent("inventory:server:UseItemSlot", 3)
-			end
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                TriggerServerEvent("inventory:server:UseItemSlot", 3)
+            end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['4']) and IsInputDisabled(0) then  -- 4 slot
-			if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-				TriggerServerEvent("inventory:server:UseItemSlot", 4)
-			end
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                TriggerServerEvent("inventory:server:UseItemSlot", 4)
+            end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['5']) and IsInputDisabled(0) then -- 5 slot
-			if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-				TriggerServerEvent("inventory:server:UseItemSlot", 5)
-			end
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                TriggerServerEvent("inventory:server:UseItemSlot", 5)
+            end
         end
 
         if IsDisabledControlJustPressed(0, RSGCore.Shared.Keybinds['Z']) and IsInputDisabled(0) then -- z  Hotbar
