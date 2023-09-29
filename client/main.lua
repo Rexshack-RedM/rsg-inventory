@@ -382,7 +382,7 @@ RegisterCommand('inventory', function()
     end
 end, false)
 
-RegisterKeyMapping('inventory', Lang:t("inf_mapping.opn_inv"), 'keyboard', 'TAB')
+-- RegisterKeyMapping('inventory', Lang:t("inf_mapping.opn_inv"), 'keyboard', 'TAB')
 
 RegisterCommand('hotbar', function()
     isHotbar = not isHotbar
@@ -391,8 +391,9 @@ RegisterCommand('hotbar', function()
     end
 end, false)
 
-RegisterKeyMapping('hotbar', Lang:t("inf_mapping.tog_slots"), 'keyboard', 'z')
+-- RegisterKeyMapping('hotbar', Lang:t("inf_mapping.tog_slots"), 'keyboard', 'z')
 
+--[[
 for i = 1, 6 do
     RegisterCommand('slot' .. i,function()
         if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
@@ -404,6 +405,7 @@ for i = 1, 6 do
     end, false)
     RegisterKeyMapping('slot' .. i, Lang:t("inf_mapping.use_item") .. i, 'keyboard', i)
 end
+--]]
 
 --#endregion Commands
 
