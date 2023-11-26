@@ -146,7 +146,7 @@ end
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     LocalPlayer.state:set("inv_busy", false, true)
     PlayerData = RSGCore.Functions.GetPlayerData()
-    RSGCore.Functions.TriggerCallback("inventory:server:GetCurrentDrops", function(theDrops)
+    lib.callback("inventory:server:GetCurrentDrops", false, function(theDrops)
         Drops = theDrops
     end)
 end)
@@ -231,7 +231,7 @@ RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventor
         currentOtherInventory = other.name
     end
 
-    RSGCore.Functions.TriggerCallback('inventory:server:ConvertQuality', function(data)
+    lib.callback('inventory:server:ConvertQuality', false, function(data)
         inventory = data.inventory
         other = data.other
 

@@ -1561,15 +1561,15 @@ end)
 
 --#region Callbacks
 
-RSGCore.Functions.CreateCallback('rsg-inventory:server:GetStashItems', function(_, cb, stashId)
+lib.callback.register('rsg-inventory:server:GetStashItems', function(_, cb, stashId)
     cb(GetStashItems(stashId))
 end)
 
-RSGCore.Functions.CreateCallback('inventory:server:GetCurrentDrops', function(_, cb)
+lib.callback.register('inventory:server:GetCurrentDrops', function(_, cb)
     cb(Drops)
 end)
 
-RSGCore.Functions.CreateCallback('RSGCore:HasItem', function(source, cb, items, amount)
+lib.callback.register('RSGCore:HasItem', function(source, cb, items, amount)
     print("^3RSGCore:HasItem is deprecated, please use RSGCore.Functions.HasItem, it can be used on both server- and client-side and uses the same arguments.^0")
     local retval = false
     local Player = RSGCore.Functions.GetPlayer(source)
@@ -1605,7 +1605,7 @@ RSGCore.Functions.CreateCallback('RSGCore:HasItem', function(source, cb, items, 
 end)
 
 -- Decay System
-RSGCore.Functions.CreateCallback('inventory:server:ConvertQuality', function(source, cb, inventory, other)
+lib.callback.register('inventory:server:ConvertQuality', function(source, cb, inventory, other)
     local src = source
     local data = {}
     local Player = RSGCore.Functions.GetPlayer(src)
