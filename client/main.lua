@@ -383,22 +383,22 @@ RegisterNUICallback('combineWithAnim', function(data, cb)
     local aLib = combineData.anim.lib
     local animText = combineData.anim.text
     local animTimeout = combineData.anim.timeOut
-    RSGCore.Functions.Progressbar("combine_anim", animText, animTimeout, false, true, {
-        disableMovement = false,
-        disableCarMovement = true,
-        disableMouse = false,
-        disableCombat = true,
-    }, {
-        animDict = aDict,
-        anim = aLib,
-        flags = 16,
-    }, {}, {}, function() -- Done
-        StopAnimTask(cache.ped, aDict, aLib, 1.0)
-        TriggerServerEvent('inventory:server:combineItem', combineData.reward, data.requiredItem, data.usedItem)
-    end, function() -- Cancel
-        StopAnimTask(cache.ped, aDict, aLib, 1.0)
-        RSGCore.Functions.Notify(Lang:t("notify.failed"), "error")
-    end)
+    if lib.progressBar({
+        duration = 2000,
+        label = Lang:t("notify.combine_anim"),
+        useWhileDead = false,
+        canCancel = true,
+        anim = {
+            dict = aDict,
+            clip = aLib
+        },
+    }) then
+            StopAnimTask(cache.ped, aDict, aLib, 1.0)
+            TriggerServerEvent('inventory:server:combineItem', combineData.reward, data.requiredItem, data.usedItem)
+        else
+            StopAnimTask(cache.ped, aDict, aLib, 1.0)
+            RSGCore.Functions.Notify(Lang:t("notify.failed"), "error")
+    end
     cb('ok')
 end)
 
