@@ -6,6 +6,7 @@ description 'rsg-inventory'
 version '1.0.3'
 
 shared_scripts {
+    '@ox_lib/init.lua',
     '@rsg-core/shared/locale.lua',
     'locales/en.lua',
     'locales/*.lua',
