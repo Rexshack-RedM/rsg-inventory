@@ -20,7 +20,7 @@ local function CheckVersion()
 
         --versionCheckPrint('success', ('Current Version: %s'):format(currentVersion))
         --versionCheckPrint('success', ('Latest Version: %s'):format(text))
-
+        
         if text == currentVersion then
             versionCheckPrint('success', 'You are running the latest version.')
         else
@@ -72,6 +72,21 @@ local ConvertQuality = function(item)
     end
 
     return percentDone
+end
+
+---Returns the dropId for the closestDrop
+---@return integer
+local function GetClosestDrop(coords)
+    local closestDrop = nil
+    local closestDistance = math.huge
+    for k, v in pairs(Drops) do
+        local distance = #(coords - v.coords)
+        if distance <= 2.0 and distance < closestDistance then
+            closestDrop = k
+            closestDistance = distance
+        end
+    end
+    return closestDrop
 end
 
 ---Loads the inventory for the player with the citizenid that is provided
@@ -883,6 +898,9 @@ local function CreateNewDrop(source, fromSlot, toSlot, itemAmount, created)
         TriggerEvent("rsg-log:server:CreateLog", "drop", "New Item Drop", "red", "**".. GetPlayerName(source) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..source.."*) dropped new item; name: **"..itemData.name.."**, amount: **" .. itemAmount .. "**")
         TriggerClientEvent("inventory:client:DropItemAnim", source)
         TriggerClientEvent("inventory:client:AddDropItem", -1, dropId, source, coords)
+        if itemData.name:lower() == "radio" then
+            TriggerClientEvent('Radio.Set', source, false)
+        end
     else
         RSGCore.Functions.Notify(source, Lang:t("notify.missitem"), "error")
     end
@@ -1056,6 +1074,12 @@ RegisterNetEvent('inventory:server:OpenInventory', function(name, id, other)
                 ShopItems[id] = {}
                 ShopItems[id].items = other.items
                 secondInv.slots = #other.items
+            elseif name == "traphouse" then
+                secondInv.name = "traphouse-"..id
+                secondInv.label = other.label
+                secondInv.maxweight = 900000
+                secondInv.inventory = other.items
+                secondInv.slots = other.slots
             elseif name == "crafting" then
                 secondInv.name = "crafting"
                 secondInv.label = other.label
@@ -1277,6 +1301,11 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
                     else
                         local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
                         TriggerEvent("rsg-log:server:CreateLog", "drop", "Dropped Item", "red", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) dropped new item; name: **"..itemInfo["name"].."**, amount: **" .. fromAmount .. "** - dropid: *" .. toInventory .. "*")
+                    end
+                    local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
+                    AddToDrop(toInventory, toSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
+                    if itemInfo["name"] == "radio" then
+                        TriggerClientEvent('Radio.Set', src, false)
                     end
                 end
             end
@@ -1561,15 +1590,15 @@ end)
 
 --#region Callbacks
 
-lib.callback.register('rsg-inventory:server:GetStashItems', function(_, cb, stashId)
+RSGCore.Functions.CreateCallback('rsg-inventory:server:GetStashItems', function(_, cb, stashId)
     cb(GetStashItems(stashId))
 end)
 
-lib.callback.register('inventory:server:GetCurrentDrops', function(_, cb)
+RSGCore.Functions.CreateCallback('inventory:server:GetCurrentDrops', function(_, cb)
     cb(Drops)
 end)
 
-lib.callback.register('RSGCore:HasItem', function(source, cb, items, amount)
+RSGCore.Functions.CreateCallback('RSGCore:HasItem', function(source, cb, items, amount)
     print("^3RSGCore:HasItem is deprecated, please use RSGCore.Functions.HasItem, it can be used on both server- and client-side and uses the same arguments.^0")
     local retval = false
     local Player = RSGCore.Functions.GetPlayer(source)
@@ -1605,7 +1634,7 @@ lib.callback.register('RSGCore:HasItem', function(source, cb, items, amount)
 end)
 
 -- Decay System
-lib.callback.register('inventory:server:ConvertQuality', function(source, cb, inventory, other)
+RSGCore.Functions.CreateCallback('inventory:server:ConvertQuality', function(source, cb, inventory, other)
     local src = source
     local data = {}
     local Player = RSGCore.Functions.GetPlayer(src)
@@ -1782,6 +1811,10 @@ RSGCore.Commands.Add("giveitem", "Give An Item (Admin Only)", {{name="id", help=
                     info.uses = 20
                 elseif itemData["name"] == "markedbills" then
                     info.worth = math.random(5000, 10000)
+                elseif itemData["name"] == "labkey" then
+                    info.lab = exports["rsg-methlab"]:GenerateRandomLab()
+                elseif itemData["name"] == "printerdocument" then
+                    info.url = "https://cdn.discordapp.com/attachments/870094209783308299/870104331142189126/Logo_-_Display_Picture_-_Stylized_-_Red.png"
                 elseif RSGCore.Shared.Items[itemData["name"]]["decay"] and RSGCore.Shared.Items[itemData["name"]]["decay"] > 0 then
                     info.quality = 100
                 end

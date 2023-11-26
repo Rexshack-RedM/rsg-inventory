@@ -36,7 +36,6 @@ local Translations = {
         ["cgitem"] = "Can\'t give item!",
         ["idne"] = "Item Does Not Exist",
         ["pdne"] = "Player Is Not Online",
-        ["combine_anim"] = "Item combined",
     },
     inf_mapping = {
         ["opn_inv"] = "Open Inventory",

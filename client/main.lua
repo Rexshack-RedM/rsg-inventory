@@ -52,6 +52,54 @@ end
 
 exports("HasItem", HasItem)
 
+---Gets the closest vending machine object to the client
+---@return integer closestVendingMachine
+local function GetClosestVending()
+    local ped = PlayerPedId()
+    local pos = GetEntityCoords(ped)
+    local object = nil
+    for _, machine in pairs(Config.VendingObjects) do
+        local ClosestObject = GetClosestObjectOfType(pos.x, pos.y, pos.z, 0.75, joaat(machine), false, false, false)
+        if ClosestObject ~= 0 then
+            if object == nil then
+                object = ClosestObject
+            end
+        end
+    end
+    return object
+end
+
+---Draws 3d text in the world on the given position
+---@param x number The x coord of the text to draw
+---@param y number The y coord of the text to draw
+---@param z number The z coord of the text to draw
+---@param text string The text to display
+local function DrawText3Ds(x, y, z, text)
+    SetTextScale(0.35, 0.35)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 215)
+    SetTextEntry("STRING")
+    SetTextCentre(true)
+    AddTextComponentString(text)
+    SetDrawOrigin(x,y,z, 0)
+    DrawText(0.0, 0.0)
+    local factor = string.len(text) / 370
+    DrawRect(0.0, 0.0125, 0.017 + factor, 0.03, 0, 0, 0, 75)
+    ClearDrawOrigin()
+end
+
+---Load an animation dictionary before playing an animation from it
+---@param dict string Animation dictionary to load
+local function LoadAnimDict(dict)
+    if HasAnimDictLoaded(dict) then return end
+
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do
+        Wait(10)
+    end
+end
+
 ---Closes the inventory NUI
 local function closeInventory()
     SendNUIMessage({
@@ -84,10 +132,11 @@ local function ToggleHotbar(toggle)
         })
     end
 end
+
 ---Plays the opening animation of the inventory
 local function openAnim()
-    lib.requestAnimDict('script_camp@cash_box')
-    TaskPlayAnim(cache.ped,'script_camp@cash_box', 'open_satchel', 5.0, 1.5, 1.0, 48, 0.0, 0, 0, 0)
+    LoadAnimDict('pickup_object')
+    TaskPlayAnim(PlayerPedId(),'pickup_object', 'putdown_low', 5.0, 1.5, 1.0, 48, 0.0, 0, 0, 0)
 end
 
 ---Removes drops in the area of the client
@@ -146,7 +195,7 @@ end
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     LocalPlayer.state:set("inv_busy", false, true)
     PlayerData = RSGCore.Functions.GetPlayerData()
-    lib.callback("inventory:server:GetCurrentDrops", false, function(theDrops)
+    RSGCore.Functions.TriggerCallback("inventory:server:GetCurrentDrops", function(theDrops)
         Drops = theDrops
     end)
 end)
@@ -222,16 +271,20 @@ RegisterNetEvent('inventory:server:RobPlayer', function(TargetId)
 end)
 
 RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventory, other)
-    local dead = IsEntityDead(cache.ped)
+    local ped = PlayerPedId()
+    local dead = IsEntityDead(ped)
+
     if dead then return end
+
     ToggleHotbar(false)
+
     SetNuiFocus(true, true)
 
     if other then
         currentOtherInventory = other.name
     end
 
-    lib.callback('inventory:server:ConvertQuality', false, function(data)
+    RSGCore.Functions.TriggerCallback('inventory:server:ConvertQuality', function(data)
         inventory = data.inventory
         other = data.other
 
@@ -284,12 +337,17 @@ RegisterNetEvent('inventory:client:RemoveDropItem', function(dropId)
 end)
 
 RegisterNetEvent('inventory:client:DropItemAnim', function()
-    local ped = cache.ped
+    local ped = PlayerPedId()
+    SendNUIMessage({
+        action = "close",
+    })
     local dict = "amb_camp@world_camp_jack_throw_rocks_casual@male_a@idle_a"
-    SendNUIMessage({ action = "close" })
-    lib.requestAnimDict(dict)
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do
+        Wait(10)
+    end
     TaskPlayAnim(ped, dict, "idle_a", 1.0, 8.0, -1, 1, 0, false, false, false)
-    Wait(1500)
+    Wait(1200)
     ClearPedTasks(ped)
 end)
 
@@ -298,9 +356,12 @@ RegisterNetEvent('inventory:client:SetCurrentStash', function(stash)
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
-    if IsPedInAnyVehicle(cache.ped, false) then return end
-    lib.requestAnimDict('mp_common')
-	TaskPlayAnim(cache.ped, 'mp_common', 'givetake1_b', 8.0, 1.0, -1, 16, 0, 0, 0, 0)
+    if IsPedInAnyVehicle(PlayerPedId(), false) then
+    return
+    else
+    LoadAnimDict('mp_common')
+    TaskPlayAnim(PlayerPedId(), 'mp_common', 'givetake1_b', 8.0, 1.0, -1, 16, 0, 0, 0, 0)
+    end
 end)
 
 --#endregion Events
@@ -314,11 +375,14 @@ end, false)
 RegisterCommand('inventory', function()
     if not inInventory then
         if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
+            local ped = PlayerPedId()
             openAnim()
             TriggerServerEvent("inventory:server:OpenInventory")
         end
     end
 end, false)
+
+-- RegisterKeyMapping('inventory', Lang:t("inf_mapping.opn_inv"), 'keyboard', 'TAB')
 
 RegisterCommand('hotbar', function()
     isHotbar = not isHotbar
@@ -326,6 +390,22 @@ RegisterCommand('hotbar', function()
         ToggleHotbar(isHotbar)
     end
 end, false)
+
+-- RegisterKeyMapping('hotbar', Lang:t("inf_mapping.tog_slots"), 'keyboard', 'z')
+
+--[[
+for i = 1, 6 do
+    RegisterCommand('slot' .. i,function()
+        if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
+            if i == 6 then
+                i = Config.MaxInventorySlots
+            end
+            TriggerServerEvent("inventory:server:UseItemSlot", i)
+        end
+    end, false)
+    RegisterKeyMapping('slot' .. i, Lang:t("inf_mapping.use_item") .. i, 'keyboard', i)
+end
+--]]
 
 --#endregion Commands
 
@@ -378,27 +458,28 @@ RegisterNUICallback("combineItem", function(data, cb)
 end)
 
 RegisterNUICallback('combineWithAnim', function(data, cb)
+    local ped = PlayerPedId()
     local combineData = data.combineData
     local aDict = combineData.anim.dict
     local aLib = combineData.anim.lib
     local animText = combineData.anim.text
     local animTimeout = combineData.anim.timeOut
-    if lib.progressBar({
-        duration = 2000,
-        label = Lang:t("notify.combine_anim"),
-        useWhileDead = false,
-        canCancel = true,
-        anim = {
-            dict = aDict,
-            clip = aLib
-        },
-    }) then
-            StopAnimTask(cache.ped, aDict, aLib, 1.0)
-            TriggerServerEvent('inventory:server:combineItem', combineData.reward, data.requiredItem, data.usedItem)
-        else
-            StopAnimTask(cache.ped, aDict, aLib, 1.0)
-            RSGCore.Functions.Notify(Lang:t("notify.failed"), "error")
-    end
+    RSGCore.Functions.Progressbar("combine_anim", animText, animTimeout, false, true, {
+        disableMovement = false,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {
+        animDict = aDict,
+        anim = aLib,
+        flags = 16,
+    }, {}, {}, function() -- Done
+        StopAnimTask(ped, aDict, aLib, 1.0)
+        TriggerServerEvent('inventory:server:combineItem', combineData.reward, data.requiredItem, data.usedItem)
+    end, function() -- Cancel
+        StopAnimTask(ped, aDict, aLib, 1.0)
+        RSGCore.Functions.Notify(Lang:t("notify.failed"), "error")
+    end)
     cb('ok')
 end)
 
@@ -418,11 +499,11 @@ RegisterNUICallback("PlayDropFail", function(_, cb)
 end)
 
 RegisterNUICallback("GiveItem", function(data, cb)
-    local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(cache.ped))
+    local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
     if player ~= -1 and distance < 3 then
         if data.inventory == 'player' then
             local playerId = GetPlayerServerId(player)
-            SetCurrentPedWeapon(cache.ped,'WEAPON_UNARMED',true)
+            SetCurrentPedWeapon(PlayerPedId(),'WEAPON_UNARMED',true)
             TriggerServerEvent("inventory:server:GiveItem", playerId, data.item.name, data.amount, data.item.slot)
         else
             RSGCore.Functions.Notify(Lang:t("notify.notowned"), "error")
@@ -441,6 +522,7 @@ CreateThread(function()
     while true do
         local sleep = 100
         if DropsNear ~= nil then
+            local ped = PlayerPedId()
             local closestDrop = nil
             local closestDistance = nil
             for k, v in pairs(DropsNear) do
@@ -456,7 +538,7 @@ CreateThread(function()
                     end
 
                     local coords = (v.object ~= nil and GetEntityCoords(v.object)) or vector3(v.coords.x, v.coords.y, v.coords.z)
-                    local distance = #(GetEntityCoords(cache.ped) - coords)
+                    local distance = #(GetEntityCoords(ped) - coords)
                     if distance < 2 and (not closestDistance or distance < closestDistance) then
                         closestDrop = k
                         closestDistance = distance
@@ -476,7 +558,7 @@ end)
 CreateThread(function()
     while true do
         if Drops ~= nil and next(Drops) ~= nil then
-            local pos = GetEntityCoords(cache.ped, true)
+            local pos = GetEntityCoords(PlayerPedId(), true)
             for k, v in pairs(Drops) do
                 if Drops[k] ~= nil then
                     local dist = #(pos - vector3(v.coords.x, v.coords.y, v.coords.z))
@@ -506,6 +588,7 @@ CreateThread(function()
         Wait(0)
         if IsControlJustReleased(0, RSGCore.Shared.Keybinds['I']) then -- key open inventory I
             if not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
+                local ped = PlayerPedId()
                 if CurrentDrop ~= 0 then
                     TriggerServerEvent("inventory:server:OpenInventory", "drop", CurrentDrop)
                 else
