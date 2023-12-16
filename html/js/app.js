@@ -540,8 +540,6 @@ function FormatItemInfo(itemData, dom) {
                 $(".item-info-description").html(
                     "<p><strong>Serial: </strong><span>" +
                     itemData.info.serie +
-                    "</span></p><p><strong>Ammo: </strong><span>" +
-                    itemData.info.ammo +
                     "</span></p><p><strong>Attachments: </strong><span>" +
                     attachmentString +
                     "</span></p>"
@@ -550,8 +548,6 @@ function FormatItemInfo(itemData, dom) {
                 $(".item-info-description").html(
                     "<p><strong>Serial: </strong><span>" +
                     itemData.info.serie +
-                    "</span></p><p><strong>Ammo: </strong><span>" +
-                    itemData.info.ammo +
                     "</span></p><p>" +
                     itemData.description +
                     "</p>"
