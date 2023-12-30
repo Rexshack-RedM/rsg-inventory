@@ -1159,9 +1159,10 @@ RegisterNetEvent('inventory:server:SaveInventory', function(type, id)
     end
 end)
 
--- use item
+-- use item slot
 RegisterNetEvent('inventory:server:UseItemSlot', function(slot)
     local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
     local itemData = GetItemBySlot(src, slot)
     if not itemData then return end
     local itemInfo = RSGCore.Shared.Items[itemData.name]
@@ -1174,9 +1175,9 @@ RegisterNetEvent('inventory:server:UseItemSlot', function(slot)
             TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
         else
             if itemInfo['delete'] and RemoveItem(src, itemData.name, 1, slot) then
+                Player.Functions.RemoveItem(itemData.name, 1)
                 TriggerClientEvent('inventory:client:ItemBox',src, itemInfo, "remove")
-
-                RSGCore.Functions.Notify(src, RSGCore.Shared.Items[itemData.name].label..' has decayed and you can\'t use it anymore!', 'error')
+                RSGCore.Functions.Notify(src, RSGCore.Shared.Items[itemData.name].label..' has decayed and has been removed!', 'error')
             else
                 RSGCore.Functions.Notify(src, 'You can\'t use this item!', 'error')
             end
@@ -1184,8 +1185,10 @@ RegisterNetEvent('inventory:server:UseItemSlot', function(slot)
     end
 end)
 
+-- use item
 RegisterNetEvent('inventory:server:UseItem', function(inventory, item)
     local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
     if inventory ~= "player" and inventory ~= "hotbar" then return end
     local itemData = GetItemBySlot(src, item.slot)
     if not itemData then return end
@@ -1199,9 +1202,9 @@ RegisterNetEvent('inventory:server:UseItem', function(inventory, item)
             TriggerClientEvent('inventory:client:ItemBox', src, itemInfo, "use")
         else
             if itemInfo['delete'] and RemoveItem(src, itemData.name, 1, slot) then
+                Player.Functions.RemoveItem(itemData.name, 1)
                 TriggerClientEvent('inventory:client:ItemBox',src, itemInfo, "remove")
-
-                RSGCore.Functions.Notify(src, RSGCore.Shared.Items[itemData.name].label..' has decayed and you can\'t use it anymore!', 'error')
+                RSGCore.Functions.Notify(src, RSGCore.Shared.Items[itemData.name].label..' has decayed and has been removed!', 'error')
             else
                 RSGCore.Functions.Notify(src, 'You can\'t use this item!', 'error')
             end
