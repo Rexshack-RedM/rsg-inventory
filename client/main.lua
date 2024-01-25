@@ -288,8 +288,6 @@ RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventor
     RSGCore.Functions.TriggerCallback('inventory:server:ConvertQuality', function(data)
         inventory = data.inventory
         other = data.other
-        pname = GetPlayerName(player)
-        pid = GetPlayerServerId(player)
 
         SendNUIMessage(
         {
@@ -300,7 +298,7 @@ RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventor
             maxweight = Config.MaxInventoryWeight,
             Ammo = PlayerAmmo,
             maxammo = Config.MaximumAmmoValues,
-            pid = pid,
+            pid = GetPlayerServerId(PlayerId()),
             pname = PlayerData.charinfo.firstname..' '..PlayerData.charinfo.lastname
         })
     end, inventory, other)
