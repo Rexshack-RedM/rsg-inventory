@@ -6,7 +6,7 @@ const app = Vue.createApp({
     return {
         options: ref(false),
         help: ref(false),
-        showblur: ref(true),
+        showBlur: ref(true),
     }
   },
   methods: {
