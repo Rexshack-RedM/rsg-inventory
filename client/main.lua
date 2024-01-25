@@ -301,7 +301,7 @@ RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventor
             Ammo = PlayerAmmo,
             maxammo = Config.MaximumAmmoValues,
             pid = pid,
-            pname = PlayerData.charinfo.firstname .. ' ' .. 
+            pname = PlayerData.charinfo.firstname..' '..PlayerData.charinfo.lastname
         })
     end, inventory, other)
 
