@@ -112,7 +112,7 @@ local function LoadInventory(source, citizenid)
                     amount = item.amount,
                     info = item.info or '',
                     label = itemInfo['label'],
-                    description = itemInfo['description'] or '',
+                    description = (item.info and item.info.description) or item.description or itemInfo['description'] or '',
                     weight = itemInfo['weight'],
                     type = itemInfo['type'],
                     unique = itemInfo['unique'],
@@ -287,7 +287,7 @@ local function AddItem(source, item, amount, slot, info, created)
             else
                 for i = 1, Config.MaxInventorySlots, 1 do
                     if Player.PlayerData.items[i] == nil then
-                        Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'], created = itemInfo['created'] }
+                        Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = (info and info.description) or itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'], created = itemInfo['created'] }
                         Player.Functions.SetPlayerData("items", Player.PlayerData.items)
                         if Player.Offline then return true end
                         TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'AddItem', 'green', '**' .. GetPlayerName(source) .. ' (citizenid: ' .. Player.PlayerData.citizenid .. ' | id: ' .. source .. ')** got item: [slot:' .. i .. '], itemname: ' .. Player.PlayerData.items[i].name .. ', added amount: ' .. amount .. ', new total amount: ' .. Player.PlayerData.items[i].amount)
@@ -296,7 +296,7 @@ local function AddItem(source, item, amount, slot, info, created)
                 end
             end
         elseif not itemInfo['unique'] and slot or slot and Player.PlayerData.items[slot] == nil then
-            Player.PlayerData.items[slot] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = slot, combinable = itemInfo['combinable'], created = itemInfo['created'] }
+            Player.PlayerData.items[slot] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = (info and info.description) or itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = slot, combinable = itemInfo['combinable'], created = itemInfo['created'] }
             Player.Functions.SetPlayerData("items", Player.PlayerData.items)
 
             if Player.Offline then return true end
@@ -307,7 +307,7 @@ local function AddItem(source, item, amount, slot, info, created)
         elseif itemInfo['unique'] or (not slot or slot == nil) or itemInfo['type'] == 'weapon' then
                     for i = 1, Config.MaxInventorySlots, 1 do
                         if Player.PlayerData.items[i] == nil then
-                            Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'] }
+                            Player.PlayerData.items[i] = { name = itemInfo['name'], amount = amount, info = info or '', label = itemInfo['label'], description = (info and info.description) or itemInfo['description'] or '', weight = itemInfo['weight'], type = itemInfo['type'], unique = itemInfo['unique'], useable = itemInfo['useable'], image = itemInfo['image'], shouldClose = itemInfo['shouldClose'], slot = i, combinable = itemInfo['combinable'] }
                             Player.Functions.SetPlayerData("items", Player.PlayerData.items)
 
                             if Player.Offline then return true end
@@ -617,7 +617,7 @@ local function SetupShopItems(shopItems)
                     amount = tonumber(item.amount),
                     info = item.info or "",
                     label = itemInfo["label"],
-                    description = itemInfo["description"] or "",
+                    description = (item.info and item.info.description) or itemInfo["description"] or "",
                     weight = itemInfo["weight"],
                     type = itemInfo["type"],
                     unique = itemInfo["unique"],
@@ -651,7 +651,7 @@ local function GetStashItems(stashId)
                 amount = tonumber(item.amount),
                 info = item.info or "",
                 label = itemInfo["label"],
-                description = itemInfo["description"] or "",
+                description = (item.info and item.info.description) or itemInfo["description"] or "",
                 weight = itemInfo["weight"],
                 type = itemInfo["type"],
                 unique = itemInfo["unique"],
@@ -703,7 +703,7 @@ local function AddToStash(stashId, slot, otherslot, itemName, amount, info, crea
                 amount = amount,
                 info = info or "",
                 label = itemInfo["label"],
-                description = itemInfo["description"] or "",
+                description = (info and info.description) or itemInfo["description"] or "",
                 weight = itemInfo["weight"],
                 type = itemInfo["type"],
                 unique = itemInfo["unique"],
@@ -721,7 +721,7 @@ local function AddToStash(stashId, slot, otherslot, itemName, amount, info, crea
                 amount = amount,
                 info = info or "",
                 label = itemInfo["label"],
-                description = itemInfo["description"] or "",
+                description = (info and info.description) or itemInfo["description"] or "",
                 weight = itemInfo["weight"],
                 type = itemInfo["type"],
                 unique = itemInfo["unique"],
@@ -737,7 +737,7 @@ local function AddToStash(stashId, slot, otherslot, itemName, amount, info, crea
                 amount = amount,
                 info = info or "",
                 label = itemInfo["label"],
-                description = itemInfo["description"] or "",
+                description = (info and info.description) or itemInfo["description"] or "",
                 weight = itemInfo["weight"],
                 type = itemInfo["type"],
                 unique = itemInfo["unique"],
@@ -789,7 +789,7 @@ local function AddToDrop(dropId, slot, itemName, amount, info, created)
             amount = amount,
             info = info or "",
             label = itemInfo["label"],
-            description = itemInfo["description"] or "",
+            description = (info and info.description) or itemInfo["description"] or "",
             weight = itemInfo["weight"],
             type = itemInfo["type"],
             unique = itemInfo["unique"],
@@ -885,7 +885,7 @@ local function CreateNewDrop(source, fromSlot, toSlot, itemAmount, created)
             amount = itemAmount,
             info = itemData.info or "",
             label = itemInfo["label"],
-            description = itemInfo["description"] or "",
+            description = (itemData.info and itemData.info.description) or itemInfo["description"] or "",
             weight = itemInfo["weight"],
             type = itemInfo["type"],
             unique = itemInfo["unique"],
@@ -1971,7 +1971,7 @@ RegisterNetEvent('inventory:server:dropOnGround', function(thissource, itemInfos
             amount = itemAmount,
             info = info,
             label = itemInfo["label"],
-            description = itemInfo["description"] or "",
+            description = (info and info.description) or itemInfo["description"] or "",
             weight = itemInfo["weight"],
             type = itemInfo["type"],
             unique = itemInfo["unique"],
