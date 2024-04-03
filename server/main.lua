@@ -240,15 +240,15 @@ local function AddItem(source, item, amount, slot, info, created)
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     local time = os.time()
 
+    if not itemInfo and not Player.Offline then
+        RSGCore.Functions.Notify(source, "Item does not exist", 'error')
+        return false
+    end
+
     if not created then
         itemInfo['created'] = time
     else
         itemInfo['created'] = created
-    end
-
-    if not itemInfo and not Player.Offline then
-        RSGCore.Functions.Notify(source, "Item does not exist", 'error')
-        return false
     end
 
     amount = tonumber(amount) or 1
