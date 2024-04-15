@@ -591,7 +591,6 @@ CreateThread(function()
         Wait(0)
         if IsControlJustReleased(0, RSGCore.Shared.Keybinds['I']) then -- key open inventory I
             if not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
-                local ped = PlayerPedId()
                 if CurrentDrop ~= 0 then
                     TriggerServerEvent("inventory:server:OpenInventory", "drop", CurrentDrop)
                 else
