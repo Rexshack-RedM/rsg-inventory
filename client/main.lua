@@ -537,7 +537,7 @@ CreateThread(function()
                         end
                     else
                         sleep = 0
-                        Citizen.InvokeNative(0x2A32FAA57B937173, 0x07DCE236, v.coords.x, v.coords.y, v.coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.15, 255, 215, 0, 155, false, false, false, 1, false, false, false)
+                        DrawMarker(0x07DCE236, v.coords.x, v.coords.y, v.coords.z - 0.7, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.15, 255, 215, 0, 155, false, false, false, 1, false, false, false)
                     end
 
                     local coords = (v.object ~= nil and GetEntityCoords(v.object)) or vector3(v.coords.x, v.coords.y, v.coords.z)
