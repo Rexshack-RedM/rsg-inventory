@@ -38,7 +38,7 @@ p { margin: 0 !important; }
 }
 
 .brand-logo {
-    position: relative; 
+    position: relative;
     left: 50%;
     transform: translateX(-50%);
     padding-top: 3px;
@@ -178,7 +178,7 @@ body {
     position: absolute;
     margin-top: -0.6rem;
     margin-left: -19%;
-    width: 19%; 
+    width: 19%;
     height: 78.2%;
     background-color: var(--color-primary);
     padding: 10px;
@@ -224,28 +224,28 @@ body {
 }
 
 .player-inventory > .item-slot > .item-slot-key > p {
-    position: absolute; 
-    font-weight: 400; 
-    color: #20202062; 
-    padding-top: 4vh; 
-    padding-bottom: 0px; 
-    padding-left: 2.35vh; 
-    text-align: center; 
-    font-size: 7vh; 
-    line-height: 1.8vh; 
+    position: absolute;
+    font-weight: 400;
+    color: #20202062;
+    padding-top: 4vh;
+    padding-bottom: 0px;
+    padding-left: 2.35vh;
+    text-align: center;
+    font-size: 7vh;
+    line-height: 1.8vh;
     font-family: 'Roboto', sans-serif !important;
 }
 
 .player-inventory-first > .item-slot > .item-slot-key > p {
-    position: absolute; 
-    font-weight: 400; 
-    color: #20202062; 
-    padding-top: 4vh; 
-    padding-bottom: 0px; 
-    padding-left: 2.35vh; 
-    text-align: center; 
-    font-size: 7vh; 
-    line-height: 1.8vh; 
+    position: absolute;
+    font-weight: 400;
+    color: #20202062;
+    padding-top: 4vh;
+    padding-bottom: 0px;
+    padding-left: 2.35vh;
+    text-align: center;
+    font-size: 7vh;
+    line-height: 1.8vh;
     font-family: 'Roboto', sans-serif !important;
 }
 
@@ -263,7 +263,7 @@ body {
 .inv-help-options {
     background: var(--color-primary);
     height: 2.8rem;
-    width: 2.8rem; 
+    width: 2.8rem;
     display: flex;
     justify-content: center;
     flex-direction: column;
@@ -291,7 +291,7 @@ body {
 .btn {
     box-shadow: none;
   }
-  
+
 
 .combine-option-container {
     display: none;
@@ -860,15 +860,15 @@ body {
 }
 
 .z-hotbar-inventory > .z-hotbar-item-slot > .z-hotbar-item-slot-key > p {
-    position: absolute; 
-    font-weight: 400; 
-    color: #20202062; 
-    padding-top: 42%; 
-    padding-bottom: 0px; 
-    padding-left: 29%; 
-    text-align: center; 
-    font-size: 4rem; 
-    line-height: 1.8vh; 
+    position: absolute;
+    font-weight: 400;
+    color: #20202062;
+    padding-top: 42%;
+    padding-bottom: 0px;
+    padding-left: 29%;
+    text-align: center;
+    font-size: 4rem;
+    line-height: 1.8vh;
     font-family: 'Roboto', sans-serif !important;
     z-index: -1;
 }
@@ -1310,7 +1310,7 @@ body {
         border-radius: 15px;
         background-color: var(--color-secondary);
     }
-    
+
     #progressbar-other {
         width: 57.2%;
         margin-left: -6.2%;
@@ -1318,7 +1318,7 @@ body {
         border-radius: 15px;
         background-color: var(--color-secondary);
     }
-    
+
     .inv-options {
         position: absolute;
         margin: 8.7% auto;
@@ -1355,7 +1355,7 @@ body {
         text-transform: normal;
         cursor: none;
     }
-    
+
     #other-inv-label {
         position: relative;
         color: white;

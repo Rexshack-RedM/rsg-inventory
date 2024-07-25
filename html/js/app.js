@@ -248,26 +248,6 @@ $(document).on("click", ".weapon-attachments-back", function(e) {
     AttachmentScreenActive = false;
 });
 
-// function changeInventoryColor(color) {
-//     $( ".player-inventory-bg" ).css( "background-color", color);
-//     $( ".other-inventory-bg" ).css( "background-color", color);
-//     $( ".inv-options" ).css( "background-color", color);
-//     localStorage.setItem('rsg-inventory-color', color);
-// }
-
-// const savedColor = localStorage.getItem('rsg-inventory-color');
-
-// if (savedColor) {
-//     changeInventoryColor(savedColor)
-// }
-
-// $('#favcolor').change(function(){
-//     let color = $(this).val();
-//     let hexOpacity = "CC";
-//     let finalColor = color+hexOpacity;
-//     changeInventoryColor(finalColor);
-// });
-
 function FormatAttachmentInfo(data) {
     $.post(
         "https://rsg-inventory/GetWeaponData",
@@ -702,7 +682,7 @@ function handleDragDrop() {
                         .html(
                             itemData.amount +
                             " " +
-                            
+
                             " "
                         );
                     $(".ui-draggable-dragging").find(".item-slot-key").remove();
@@ -724,7 +704,7 @@ function handleDragDrop() {
                         .html(
                             itemData.amount +
                             " " +
-                            
+
                             " "
                         );
                     if ($(this).parent().attr("data-inventory") == "hotbar") {
@@ -762,7 +742,7 @@ function handleDragDrop() {
                         .html(
                             dragAmount +
                             " " +
-                            
+
                             " "
                         );
                     $(".ui-draggable-dragging").find(".item-slot-key").remove();
@@ -780,7 +760,7 @@ function handleDragDrop() {
                     .html(
                         itemData.amount +
                         " " +
-                        
+
                         " "
                     );
                 InventoryError($(this).parent(), $(this).attr("data-slot"));
@@ -2484,12 +2464,12 @@ var requiredItemOpen = false;
         $(".player-inventory").find(".item-slot").remove();
         $(".ply-hotbar-inventory").find(".item-slot").remove();
         $(".ply-iteminfo-container").css("opacity", "0.0");
-    
+
         if (requiredItemOpen) {
             $(".requiredItem-container").hide();
             requiredItemOpen = false;
         }
-    
+
         $("#qbcore-inventory").fadeIn(300);
         if (data.other != null && data.other != "") {
             $(".other-inventory").attr("data-inventory", data.other.name);
@@ -2508,7 +2488,7 @@ var requiredItemOpen = false;
             );
         }
         $(".player-inventory").append(firstSlots);
-    
+
         var remainingSlots = $(".player-inventory");
         for (i = 6; i < data.slots + 1; i++) {
             if (i == 43) {
@@ -2526,7 +2506,7 @@ var requiredItemOpen = false;
             }
         }
         $(".player-inventory").append(remainingSlots);
-        
+
         if (data.other != null && data.other != "") {
             for (i = 1; i < data.other.slots + 1; i++) {
                 $(".other-inventory").append(
@@ -2815,7 +2795,7 @@ var requiredItemOpen = false;
             );
         }
         $(".player-inventory").append(firstSlots);
-    
+
         var remainingSlots = $(".player-inventory");
         for (i = 6; i < data.slots + 1; i++) {
             if (i == 43) {

@@ -13,14 +13,14 @@ local function CheckVersion()
     PerformHttpRequest('https://raw.githubusercontent.com/Rexshack-RedM/rsg-inventory/main/version.txt', function(err, text, headers)
         local currentVersion = GetResourceMetadata(GetCurrentResourceName(), 'version')
 
-        if not text then 
+        if not text then
             versionCheckPrint('error', 'Currently unable to run a version check.')
-            return 
+            return
         end
 
         --versionCheckPrint('success', ('Current Version: %s'):format(currentVersion))
         --versionCheckPrint('success', ('Latest Version: %s'):format(text))
-        
+
         if text == currentVersion then
             versionCheckPrint('success', 'You are running the latest version.')
         else
@@ -840,21 +840,6 @@ local function CreateDropId()
         local dropid = id
         return dropid
     end
-end
-
----Returns the dropId for the closestDrop
----@return integer
-local function GetClosestDrop(coords)
-    local closestDrop = nil
-    local closestDistance = math.huge
-    for k, v in pairs(Drops) do
-        local distance = #(coords - v.coords)
-        if distance <= 2.0 and distance < closestDistance then
-            closestDrop = k
-            closestDistance = distance
-        end
-    end
-    return closestDrop
 end
 
 ---Creates a new drop
@@ -1945,7 +1930,7 @@ RegisterNetEvent('inventory:server:dropOnGround', function(thissource, itemInfos
     local Player = RSGCore.Functions.GetPlayer(src)
     local itemData = itemInfos
     local info = info or ""
-    local coords = GetEntityCoords(GetPlayerPed(src))    
+    local coords = GetEntityCoords(GetPlayerPed(src))
     local itemInfo = RSGCore.Shared.Items[itemData.name:lower()]
     local dropId = CreateDropId()
     local closestDrop = GetClosestDrop(coords)
@@ -1965,7 +1950,7 @@ RegisterNetEvent('inventory:server:dropOnGround', function(thissource, itemInfos
         Drops[dropId].items = {}
         Drops[dropId].coords = coords
         Drops[dropId].createdTime = os.time()
-        
+
         Drops[dropId].items[1] = {
             name = itemInfo["name"],
             amount = itemAmount,
