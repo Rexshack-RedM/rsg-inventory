@@ -52,43 +52,6 @@ end
 
 exports("HasItem", HasItem)
 
----Gets the closest vending machine object to the client
----@return integer closestVendingMachine
-local function GetClosestVending()
-    local ped = PlayerPedId()
-    local pos = GetEntityCoords(ped)
-    local object = nil
-    for _, machine in pairs(Config.VendingObjects) do
-        local ClosestObject = GetClosestObjectOfType(pos.x, pos.y, pos.z, 0.75, joaat(machine), false, false, false)
-        if ClosestObject ~= 0 then
-            if object == nil then
-                object = ClosestObject
-            end
-        end
-    end
-    return object
-end
-
----Draws 3d text in the world on the given position
----@param x number The x coord of the text to draw
----@param y number The y coord of the text to draw
----@param z number The z coord of the text to draw
----@param text string The text to display
-local function DrawText3Ds(x, y, z, text)
-    SetTextScale(0.35, 0.35)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(255, 255, 255, 215)
-    SetTextEntry("STRING")
-    SetTextCentre(true)
-    AddTextComponentString(text)
-    SetDrawOrigin(x,y,z, 0)
-    DrawText(0.0, 0.0)
-    local factor = string.len(text) / 370
-    DrawRect(0.0, 0.0125, 0.017 + factor, 0.03, 0, 0, 0, 75)
-    ClearDrawOrigin()
-end
-
 ---Load an animation dictionary before playing an animation from it
 ---@param dict string Animation dictionary to load
 local function LoadAnimDict(dict)
@@ -385,16 +348,12 @@ RegisterCommand('inventory', function()
     end
 end, false)
 
--- RegisterKeyMapping('inventory', Lang:t("inf_mapping.opn_inv"), 'keyboard', 'TAB')
-
 RegisterCommand('hotbar', function()
     isHotbar = not isHotbar
     if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
         ToggleHotbar(isHotbar)
     end
 end, false)
-
--- RegisterKeyMapping('hotbar', Lang:t("inf_mapping.tog_slots"), 'keyboard', 'z')
 
 --[[
 for i = 1, 6 do

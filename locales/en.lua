@@ -5,7 +5,6 @@ Translation done by wanderrer (Martin Riggs#0807 on Discord)
 local Translations = {
     progress = {
         ["crafting"] = "Crafting...",
-        ["snowballs"] = "Collecting snowballs..",
     },
     notify = {
         ["failed"] = "Failed",
