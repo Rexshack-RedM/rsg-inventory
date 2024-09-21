@@ -3,7 +3,7 @@ game 'rdr3'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 
 description 'rsg-inventory'
-version '1.1.2'
+version '1.1.3'
 
 shared_scripts {
     '@rsg-core/shared/locale.lua',
@@ -14,7 +14,8 @@ shared_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/main.lua'
+    'server/main.lua',
+    'server/versionchecker.lua'
 }
 client_script 'client/main.lua'
 
