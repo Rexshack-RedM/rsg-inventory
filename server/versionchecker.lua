@@ -10,7 +10,7 @@ local function versionCheckPrint(_type, log)
 end
 
 local function CheckVersion()
-    PerformHttpRequest('https://raw.githubusercontent.com/RexShack/rsg-versioncheckers/main/rsg-inventory/version.txt', function(err, text, headers)
+    PerformHttpRequest('https://raw.githubusercontent.com/RexShack/rsg-versioncheckers/main/'..GetCurrentResourceName()..'/version.txt', function(err, text, headers)
         local currentVersion = GetResourceMetadata(GetCurrentResourceName(), 'version')
 
         if not text then
@@ -18,8 +18,8 @@ local function CheckVersion()
             return
         end
 
-        --versionCheckPrint('success', ('Current Version: %s'):format(currentVersion))
-        --versionCheckPrint('success', ('Latest Version: %s'):format(text))
+        versionCheckPrint('success', ('Current Version: %s'):format(currentVersion))
+        versionCheckPrint('success', ('Latest Version: %s'):format(text))
 
         if text == currentVersion then
             versionCheckPrint('success', 'You are running the latest version.')
