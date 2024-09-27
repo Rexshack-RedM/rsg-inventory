@@ -1219,25 +1219,30 @@ RegisterNetEvent('inventory:server:SetInventoryData', function(fromInventory, to
             elseif RSGCore.Shared.SplitStr(toInventory, "-")[1] == "stash" then
                 local stashId = RSGCore.Shared.SplitStr(toInventory, "-")[2]
                 local toItemData = Stashes[stashId].items[toSlot]
-                RemoveItem(src, fromItemData.name, fromAmount, fromSlot)
-                TriggerClientEvent("inventory:client:CheckWeapon", src, fromItemData.name)
-                --Player.PlayerData.items[toSlot] = fromItemData
-                if toItemData then
-                    --Player.PlayerData.items[fromSlot] = toItemData
-                    local itemInfo = RSGCore.Shared.Items[toItemData.name:lower()]
-                    toAmount = tonumber(toAmount) or toItemData.amount
-                    if toItemData.name ~= fromItemData.name then
-                        --RemoveFromStash(stashId, fromSlot, itemInfo["name"], toAmount)
-                        RemoveFromStash(stashId, toSlot, itemInfo["name"], toAmount)
-                        AddItem(src, toItemData.name, toAmount, fromSlot, toItemData.info)
-                        TriggerEvent("rsg-log:server:CreateLog", "stash", "Swapped Item", "orange", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) swapped item; name: **"..itemInfo["name"].."**, amount: **" .. toAmount .. "** with name: **" .. fromItemData.name .. "**, amount: **" .. fromAmount .. "** - stash: *" .. stashId .. "*")
+                if fromItemData.type ~= 'weapon' then
+                    RemoveItem(src, fromItemData.name, fromAmount, fromSlot)
+                    TriggerClientEvent("inventory:client:CheckWeapon", src, fromItemData.name)
+                    --Player.PlayerData.items[toSlot] = fromItemData
+                    if toItemData then
+                        --Player.PlayerData.items[fromSlot] = toItemData
+                        local itemInfo = RSGCore.Shared.Items[toItemData.name:lower()]
+                        toAmount = tonumber(toAmount) or toItemData.amount
+                        if toItemData.name ~= fromItemData.name then
+                            --RemoveFromStash(stashId, fromSlot, itemInfo["name"], toAmount)
+                            RemoveFromStash(stashId, toSlot, itemInfo["name"], toAmount)
+                            AddItem(src, toItemData.name, toAmount, fromSlot, toItemData.info)
+                            TriggerEvent("rsg-log:server:CreateLog", "stash", "Swapped Item", "orange", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) swapped item; name: **"..itemInfo["name"].."**, amount: **" .. toAmount .. "** with name: **" .. fromItemData.name .. "**, amount: **" .. fromAmount .. "** - stash: *" .. stashId .. "*")
+                        end
+                    else
+                        local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
+                        TriggerEvent("rsg-log:server:CreateLog", "stash", "Dropped Item", "red", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) dropped new item; name: **"..itemInfo["name"].."**, amount: **" .. fromAmount .. "** - stash: *" .. stashId .. "*")
                     end
-                else
                     local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-                    TriggerEvent("rsg-log:server:CreateLog", "stash", "Dropped Item", "red", "**".. GetPlayerName(src) .. "** (citizenid: *"..Player.PlayerData.citizenid.."* | id: *"..src.."*) dropped new item; name: **"..itemInfo["name"].."**, amount: **" .. fromAmount .. "** - stash: *" .. stashId .. "*")
+                    AddToStash(stashId, toSlot, fromSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
+                else
+                    TriggerClientEvent('rsg-inventory:client:closeinv', src)
+                    TriggerClientEvent('ox_lib:notify', source, {title = 'Not allowed', description = 'you are not able to store weapons here', type = 'inform', duration = 5000 })
                 end
-                local itemInfo = RSGCore.Shared.Items[fromItemData.name:lower()]
-                AddToStash(stashId, toSlot, fromSlot, itemInfo["name"], fromAmount, fromItemData.info, itemInfo["created"])
             else
                 -- drop
                 toInventory = tonumber(toInventory)
