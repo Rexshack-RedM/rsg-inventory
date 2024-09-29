@@ -561,6 +561,14 @@ CreateThread(function()
 end)
 
 -- toggle hotbar
+local function isItemWeapon(slot)
+    local fromItemData = PlayerData.items[slot]
+    if fromItemData and fromItemData.type == 'weapon' then
+        return true
+    end
+    return false
+end
+
 CreateThread(function()
     while true do
         Wait(0)
@@ -570,37 +578,58 @@ CreateThread(function()
         DisableControlAction(0, RSGCore.Shared.Keybinds['4'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['5'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['Z'])
-        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['1']) and IsInputDisabled(0) then  -- 1  slot
+
+        local function canUseItem(slot)
+            if Config.DisableWeaponsHotbar then
+                if isItemWeapon(slot) then
+                    RSGCore.Functions.Notify("you can't use weapon on hotbar", "error")
+                    return false
+                end
+            end
+            return true
+        end
+
+        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['1']) and IsInputDisabled(0) then
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 1)
+                if canUseItem(1) then
+                    TriggerServerEvent("inventory:server:UseItemSlot", 1)
+                end
             end
         end
 
-        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['2']) and IsInputDisabled(0) then  -- 2 slot
+        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['2']) and IsInputDisabled(0) then
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 2)
+                if canUseItem(2) then
+                    TriggerServerEvent("inventory:server:UseItemSlot", 2)
+                end
             end
         end
 
-        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['3']) and IsInputDisabled(0) then -- 3 slot
+        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['3']) and IsInputDisabled(0) then
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 3)
+                if canUseItem(3) then
+                    TriggerServerEvent("inventory:server:UseItemSlot", 3)
+                end
             end
         end
 
-        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['4']) and IsInputDisabled(0) then  -- 4 slot
+        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['4']) and IsInputDisabled(0) then
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 4)
+                if canUseItem(4) then
+                    TriggerServerEvent("inventory:server:UseItemSlot", 4)
+                end
             end
         end
 
-        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['5']) and IsInputDisabled(0) then -- 5 slot
+        if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['5']) and IsInputDisabled(0) then
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 5)
+                if canUseItem(5) then
+                    TriggerServerEvent("inventory:server:UseItemSlot", 5)
+                end
             end
         end
 
-        if IsDisabledControlJustPressed(0, RSGCore.Shared.Keybinds['Z']) and IsInputDisabled(0) then -- z  Hotbar
+        if IsDisabledControlJustPressed(0, RSGCore.Shared.Keybinds['Z']) and IsInputDisabled(0) then
             isHotbar = not isHotbar
             ToggleHotbar(isHotbar)
         end
