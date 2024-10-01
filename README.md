@@ -1,5 +1,5 @@
-# Rexshack Gaming Version
- 
-# credits
-- original resouce created by : https://github.com/qbcore-redm-framework
-- convert and rework by : https://github.com/QRCore-RedM-Re
+# WARNING!
+- DEVELOPER VERSION ONLY DO NOT USE ON A PRODUCTION SERVER!
+
+# rsg-inventory
+- converted from the original resource qb-inventory

@@ -1,172 +1,18 @@
---#region Variables
+RSGCore = exports['rsg-core']:GetCoreObject()
+PlayerData = nil
+local hotbarShown = false
 
-local RSGCore = exports['rsg-core']:GetCoreObject()
-local PlayerData = RSGCore.Functions.GetPlayerData()
-local inInventory = false
-local currentOtherInventory = nil
-local Drops = {}
-local CurrentDrop = nil
-local DropsNear = {}
-local CurrentStash = nil
-local isHotbar = false
-
---#endregion Variables
-
---#region Functions
-
----Checks if you have an item or not
----@param items string | string[] | table<string, number> The items to check, either a string, array of strings or a key-value table of a string and number with the string representing the name of the item and the number representing the amount
----@param amount? number The amount of the item to check for, this will only have effect when items is a string or an array of strings
----@return boolean success Returns true if the player has the item
-local function HasItem(items, amount)
-    local isTable = type(items) == 'table'
-    local isArray = isTable and table.type(items) == 'array' or false
-    local totalItems = #items
-    local count = 0
-    local kvIndex = 2
-    local quantity = tonumber(amount)
-    if isTable and not isArray then
-        totalItems = 0
-        for _ in pairs(items) do totalItems += 1 end
-        kvIndex = 1
-    end
-    for _, itemData in pairs(PlayerData.items) do
-        if isTable then
-            for k, v in pairs(items) do
-                local itemKV = {k, v}
-                if itemData and itemData.name == itemKV[kvIndex] and ((quantity and itemData.amount >= quantity) or (not isArray and itemData.amount >= v) or (not quantity and isArray)) then
-                    count += 1
-                end
-            end
-            if count == totalItems then
-                return true
-            end
-        else -- Single item as string
-            if itemData and itemData.name == items and (not quantity or (itemData and quantity and itemData.amount >= quantity)) then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-exports("HasItem", HasItem)
-
----Load an animation dictionary before playing an animation from it
----@param dict string Animation dictionary to load
-local function LoadAnimDict(dict)
-    if HasAnimDictLoaded(dict) then return end
-
-    RequestAnimDict(dict)
-    while not HasAnimDictLoaded(dict) do
-        Wait(10)
-    end
-end
-
----Closes the inventory NUI
-local function closeInventory()
-    SendNUIMessage({
-        action = "close",
-    })
-end
-
----Toggles the hotbar of the inventory
----@param toggle boolean If this is true, the hotbar will open
-local function ToggleHotbar(toggle)
-    local HotbarItems = {
-        [1] = PlayerData.items[1],
-        [2] = PlayerData.items[2],
-        [3] = PlayerData.items[3],
-        [4] = PlayerData.items[4],
-        [5] = PlayerData.items[5],
-        [41] = PlayerData.items[41],
-    }
-
-    if toggle then
-        SendNUIMessage({
-            action = "toggleHotbar",
-            open = true,
-            items = HotbarItems
-        })
-    else
-        SendNUIMessage({
-            action = "toggleHotbar",
-            open = false,
-        })
-    end
-end
-
----Plays the opening animation of the inventory
-local function openAnim()
-    LoadAnimDict('pickup_object')
-    TaskPlayAnim(PlayerPedId(),'pickup_object', 'putdown_low', 5.0, 1.5, 1.0, 48, 0.0, 0, 0, 0)
-end
-
----Removes drops in the area of the client
----@param index integer The drop id to remove
-local function RemoveNearbyDrop(index)
-    if not DropsNear[index] then return end
-
-    local dropItem = DropsNear[index].object
-    if DoesEntityExist(dropItem) then
-        DeleteEntity(dropItem)
-    end
-
-    DropsNear[index] = nil
-
-    if not Drops[index] then return end
-
-    Drops[index].object = nil
-    Drops[index].isDropShowing = nil
-end
-
----Removes all drops in the area of the client
-local function RemoveAllNearbyDrops()
-    for k in pairs(DropsNear) do
-        RemoveNearbyDrop(k)
-    end
-end
-
----Creates a new item drop object on the ground
----@param index integer The drop id to save the object in
-local function CreateItemDrop(index)
-    local dropItem = CreateObject(Config.ItemDropObject, DropsNear[index].coords.x, DropsNear[index].coords.y, DropsNear[index].coords.z, false, false, false)
-    DropsNear[index].object = dropItem
-    DropsNear[index].isDropShowing = true
-    PlaceObjectOnGroundProperly(dropItem)
-    FreezeEntityPosition(dropItem, true)
-    if Config.UseTarget then
-        exports['rsg-target']:AddTargetEntity(dropItem, {
-            options = {
-                {
-                    icon = 'fas fa-backpack',
-                    label = Lang:t("menu.o_bag"),
-                    action = function()
-                        TriggerServerEvent("inventory:server:OpenInventory", "drop", index)
-                    end,
-                }
-            },
-            distance = 2.5,
-        })
-    end
-end
-
---#endregion Functions
-
---#region Events
+-- Handlers
 
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
-    LocalPlayer.state:set("inv_busy", false, true)
+    LocalPlayer.state:set('inv_busy', false, true)
     PlayerData = RSGCore.Functions.GetPlayerData()
-    RSGCore.Functions.TriggerCallback("inventory:server:GetCurrentDrops", function(theDrops)
-        Drops = theDrops
-    end)
+    GetDrops()
 end)
 
 RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
-    LocalPlayer.state:set("inv_busy", true, true)
+    LocalPlayer.state:set('inv_busy', true, true)
     PlayerData = {}
-    RemoveAllNearbyDrops()
 end)
 
 RegisterNetEvent('RSGCore:Client:UpdateObject', function()
@@ -177,432 +23,367 @@ RegisterNetEvent('RSGCore:Player:SetPlayerData', function(val)
     PlayerData = val
 end)
 
-AddEventHandler('onResourceStop', function(name)
-    if name ~= GetCurrentResourceName() then return end
-    if Config.UseItemDrop then RemoveAllNearbyDrops() end
-end)
-
-RegisterNetEvent("rsg-inventory:client:closeinv", function()
-    closeInventory()
-end)
-
-RegisterNetEvent('inventory:client:CheckOpenState', function(type, id, label)
-    local name = RSGCore.Shared.SplitStr(label, "-")[2]
-    if type == "stash" then
-        if name ~= CurrentStash or CurrentStash == nil then
-            TriggerServerEvent('inventory:server:SetIsOpenState', false, type, id)
-        end
-    elseif type == "drop" then
-        if name ~= CurrentDrop or CurrentDrop == nil then
-            TriggerServerEvent('inventory:server:SetIsOpenState', false, type, id)
-        end
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        PlayerData = RSGCore.Functions.GetPlayerData()
     end
 end)
 
-RegisterNetEvent('inventory:client:ItemBox', function(itemData, type, amount)
-    SendNUIMessage({
-        action = "itemBox",
-        item = itemData,
-        type = type,
-        amount = amount or 1
-    })
-end)
+-- Functions
 
-RegisterNetEvent('inventory:client:requiredItems', function(items, bool)
+function LoadAnimDict(dict)
+    if HasAnimDictLoaded(dict) then return end
+
+    RequestAnimDict(dict)
+    while not HasAnimDictLoaded(dict) do
+        Wait(10)
+    end
+end
+
+local function FormatWeaponAttachments(itemdata)
+    if not itemdata.info or not itemdata.info.attachments or #itemdata.info.attachments == 0 then
+        return {}
+    end
+    local attachments = {}
+    local weaponName = itemdata.name
+    local WeaponAttachments = exports['rsg-weapons']:getConfigWeaponAttachments()
+    if not WeaponAttachments then return {} end
+    for attachmentType, weapons in pairs(WeaponAttachments) do
+        local componentHash = weapons[weaponName]
+        if componentHash then
+            for _, attachmentData in pairs(itemdata.info.attachments) do
+                if attachmentData.component == componentHash then
+                    local label = RSGCore.Shared.Items[attachmentType] and RSGCore.Shared.Items[attachmentType].label or 'Unknown'
+                    attachments[#attachments + 1] = {
+                        attachment = attachmentType,
+                        label = label
+                    }
+                end
+            end
+        end
+    end
+    return attachments
+end
+
+--- Checks if the player has a certain item or items in their inventory with a specified amount.
+--- @param items string|table - The item(s) to check for. Can be a table of items or a single item as a string.
+--- @param amount number [optional] - The minimum amount required for each item. If not provided, any amount greater than 0 will be considered.
+--- @return boolean - Returns true if the player has the item(s) with the specified amount, false otherwise.
+function HasItem(items, amount)
+    local isTable = type(items) == 'table'
+    local isArray = isTable and table.type(items) == 'array' or false
+    local totalItems = isArray and #items or 0
+    local count = 0
+
+    if isTable and not isArray then
+        for _ in pairs(items) do totalItems = totalItems + 1 end
+    end
+
+    for _, itemData in pairs(PlayerData.items) do
+        if isTable then
+            for k, v in pairs(items) do
+                if itemData and itemData.name == (isArray and v or k) and ((amount and itemData.amount >= amount) or (not isArray and itemData.amount >= v) or (not amount and isArray)) then
+                    count = count + 1
+                    if count == totalItems then
+                        return true
+                    end
+                end
+            end
+        else -- Single item as string
+            if itemData and itemData.name == items and (not amount or (itemData and amount and itemData.amount >= amount)) then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+exports('HasItem', HasItem)
+
+-- Events
+
+RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
     local itemTable = {}
     if bool then
         for k in pairs(items) do
-            itemTable[#itemTable+1] = {
+            itemTable[#itemTable + 1] = {
                 item = items[k].name,
-                label = RSGCore.Shared.Items[items[k].name]["label"],
+                label = RSGCore.Shared.Items[items[k].name]['label'],
                 image = items[k].image,
             }
         end
     end
 
     SendNUIMessage({
-        action = "requiredItem",
+        action = 'requiredItem',
         items = itemTable,
         toggle = bool
     })
 end)
 
-RegisterNetEvent('inventory:server:RobPlayer', function(TargetId)
+RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
+    hotbarShown = not hotbarShown
     SendNUIMessage({
-        action = "RobMoney",
+        action = 'toggleHotbar',
+        open = hotbarShown,
+        items = items
+    })
+end)
+
+RegisterNetEvent('rsg-inventory:client:closeInv', function()
+    SendNUIMessage({
+        action = 'close',
+    })
+end)
+
+RegisterNetEvent('rsg-inventory:client:updateInventory', function()
+    SendNUIMessage({
+        action = 'update',
+        inventory = PlayerData.items
+    })
+end)
+
+RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount)
+    SendNUIMessage({
+        action = 'itemBox',
+        item = itemData,
+        type = type,
+        amount = amount
+    })
+end)
+
+RegisterNetEvent('rsg-inventory:server:RobPlayer', function(TargetId)
+    SendNUIMessage({
+        action = 'RobMoney',
         TargetId = TargetId,
     })
 end)
 
-RegisterNetEvent('inventory:client:OpenInventory', function(PlayerAmmo, inventory, other)
-    local ped = PlayerPedId()
-    local dead = IsEntityDead(ped)
-
-    if dead then return end
-
-    ToggleHotbar(false)
-
+RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     SetNuiFocus(true, true)
-
-    if other then
-        currentOtherInventory = other.name
-    end
-
-    RSGCore.Functions.TriggerCallback('inventory:server:ConvertQuality', function(data)
-        inventory = data.inventory
-        other = data.other
-
-        SendNUIMessage(
-        {
-            action = "open",
-            inventory = inventory,
-            slots = Config.MaxInventorySlots,
-            other = other,
-            maxweight = Config.MaxInventoryWeight,
-            Ammo = PlayerAmmo,
-            maxammo = Config.MaximumAmmoValues,
-            pid = GetPlayerServerId(PlayerId()),
-            pname = PlayerData.charinfo.firstname..' '..PlayerData.charinfo.lastname
-        })
-    end, inventory, other)
-
-    inInventory = true
-end)
-
-RegisterNetEvent('inventory:client:UpdatePlayerInventory', function(isError)
     SendNUIMessage({
-        action = "update",
-        inventory = PlayerData.items,
-        maxweight = Config.MaxInventoryWeight,
-        slots = Config.MaxInventorySlots,
-        error = isError,
+        action = 'open',
+        inventory = items,
+        slots = Config.MaxSlots,
+        maxweight = Config.MaxWeight,
+        other = other
     })
-end)
-
--- This needs to be changed to do a raycast so items arent placed in walls
-RegisterNetEvent('inventory:client:AddDropItem', function(dropId, player, coords)
-    local forward = GetEntityForwardVector(GetPlayerPed(GetPlayerFromServerId(player)))
-    local x, y, z = table.unpack(coords + forward * 0.5)
-    Drops[dropId] = {
-        id = dropId,
-        coords = {
-            x = x,
-            y = y,
-            z = z - 0.3,
-        },
-    }
-end)
-
-RegisterNetEvent('inventory:client:RemoveDropItem', function(dropId)
-    Drops[dropId] = nil
-    if Config.UseItemDrop then
-        RemoveNearbyDrop(dropId)
-    else
-        DropsNear[dropId] = nil
-    end
-end)
-
-RegisterNetEvent('inventory:client:DropItemAnim', function()
-    local ped = PlayerPedId()
-    SendNUIMessage({
-        action = "close",
-    })
-    local dict = "amb_camp@world_camp_jack_throw_rocks_casual@male_a@idle_a"
-    RequestAnimDict(dict)
-    while not HasAnimDictLoaded(dict) do
-        Wait(10)
-    end
-    TaskPlayAnim(ped, dict, "idle_a", 1.0, 8.0, -1, 1, 0, false, false, false)
-    Wait(1200)
-    ClearPedTasks(ped)
-end)
-
-RegisterNetEvent('inventory:client:SetCurrentStash', function(stash)
-    CurrentStash = stash
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
-    if IsPedInAnyVehicle(PlayerPedId(), false) then
-    return
-    else
+    if IsPedInAnyVehicle(PlayerPedId(), false) then return end
     LoadAnimDict('mp_common')
-    TaskPlayAnim(PlayerPedId(), 'mp_common', 'givetake1_b', 8.0, 1.0, -1, 16, 0, 0, 0, 0)
-    end
+    TaskPlayAnim(PlayerPedId(), 'mp_common', 'givetake1_b', 8.0, 1.0, -1, 16, 0, false, false, false)
 end)
 
---#endregion Events
+-- NUI Callbacks
 
---#region Commands
-
-RegisterCommand('closeinv', function()
-    closeInventory()
-end, false)
-
-RegisterCommand('inventory', function()
-    if not inInventory then
-        if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
-            local ped = PlayerPedId()
-            openAnim()
-            TriggerServerEvent("inventory:server:OpenInventory")
-        end
-    end
-end, false)
-
-RegisterCommand('hotbar', function()
-    isHotbar = not isHotbar
-    if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
-        ToggleHotbar(isHotbar)
-    end
-end, false)
-
---[[
-for i = 1, 6 do
-    RegisterCommand('slot' .. i,function()
-        if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
-            if i == 6 then
-                i = Config.MaxInventorySlots
-            end
-            TriggerServerEvent("inventory:server:UseItemSlot", i)
-        end
-    end, false)
-    RegisterKeyMapping('slot' .. i, Lang:t("inf_mapping.use_item") .. i, 'keyboard', i)
-end
---]]
-
---#endregion Commands
-
---#region NUI
-
-RegisterNUICallback('RobMoney', function(data, cb)
-    TriggerServerEvent("police:server:RobPlayer", data.TargetId)
+RegisterNUICallback('PlayDropFail', function(_, cb)
+    PlaySound(-1, 'Place_Prop_Fail', 'DLC_Dmod_Prop_Editor_Sounds', 0, 0, 1)
     cb('ok')
 end)
 
-RegisterNUICallback('Notify', function(data, cb)
-    RSGCore.Functions.Notify(data.message, data.type)
-    cb('ok')
+RegisterNUICallback('AttemptPurchase', function(data, cb)
+    RSGCore.Functions.TriggerCallback('rsg-inventory:server:attemptPurchase', function(canPurchase)
+        cb(canPurchase)
+    end, data)
 end)
 
-RegisterNUICallback('getCombineItem', function(data, cb)
-    cb(RSGCore.Shared.Items[data.item])
-end)
-
-RegisterNUICallback("CloseInventory", function(_, cb)
-    if currentOtherInventory == "none-inv" then
-        CurrentDrop = nil
-        CurrentStash = nil
-        SetNuiFocus(false, false)
-        inInventory = false
-        ClearPedTasks(PlayerPedId())
-        return
-    end
-    if CurrentStash ~= nil then
-        TriggerServerEvent("inventory:server:SaveInventory", "stash", CurrentStash)
-        CurrentStash = nil
-    else
-        TriggerServerEvent("inventory:server:SaveInventory", "drop", CurrentDrop)
-        CurrentDrop = nil
-    end
+RegisterNUICallback('CloseInventory', function(data, cb)
     SetNuiFocus(false, false)
-    inInventory = false
+    if data.name then
+        if data.name:find('trunk-') then
+            CloseTrunk()
+        end
+        TriggerServerEvent('rsg-inventory:server:closeInventory', data.name)
+    elseif CurrentDrop then
+        TriggerServerEvent('rsg-inventory:server:closeInventory', CurrentDrop)
+        CurrentDrop = nil
+    end
     cb('ok')
 end)
 
-RegisterNUICallback("UseItem", function(data, cb)
-    TriggerServerEvent("inventory:server:UseItem", data.inventory, data.item)
+RegisterNUICallback('UseItem', function(data, cb)
+    TriggerServerEvent('rsg-inventory:server:useItem', data.item)
     cb('ok')
 end)
 
-RegisterNUICallback("combineItem", function(data, cb)
-    Wait(150)
-    TriggerServerEvent('inventory:server:combineItem', data.reward, data.fromItem, data.toItem)
+RegisterNUICallback('SetInventoryData', function(data, cb)
+    TriggerServerEvent('rsg-inventory:server:SetInventoryData', data.fromInventory, data.toInventory, data.fromSlot, data.toSlot, data.fromAmount, data.toAmount)
     cb('ok')
 end)
 
-RegisterNUICallback('combineWithAnim', function(data, cb)
-    local ped = PlayerPedId()
-    local combineData = data.combineData
-    local aDict = combineData.anim.dict
-    local aLib = combineData.anim.lib
-    local animText = combineData.anim.text
-    local animTimeout = combineData.anim.timeOut
-    RSGCore.Functions.Progressbar("combine_anim", animText, animTimeout, false, true, {
-        disableMovement = false,
-        disableCarMovement = true,
-        disableMouse = false,
-        disableCombat = true,
-    }, {
-        animDict = aDict,
-        anim = aLib,
-        flags = 16,
-    }, {}, {}, function() -- Done
-        StopAnimTask(ped, aDict, aLib, 1.0)
-        TriggerServerEvent('inventory:server:combineItem', combineData.reward, data.requiredItem, data.usedItem)
-    end, function() -- Cancel
-        StopAnimTask(ped, aDict, aLib, 1.0)
-        RSGCore.Functions.Notify(Lang:t("notify.failed"), "error")
-    end)
-    cb('ok')
-end)
-
-RegisterNUICallback("SetInventoryData", function(data, cb)
-    TriggerServerEvent("inventory:server:SetInventoryData", data.fromInventory, data.toInventory, data.fromSlot, data.toSlot, data.fromAmount, data.toAmount)
-    cb('ok')
-end)
-
-RegisterNUICallback("PlayDropSound", function(_, cb)
-    PlaySound(-1, "CLICK_BACK", "WEB_NAVIGATION_SOUNDS_PHONE", 0, 0, 1)
-    cb('ok')
-end)
-
-RegisterNUICallback("PlayDropFail", function(_, cb)
-    PlaySound(-1, "Place_Prop_Fail", "DLC_Dmod_Prop_Editor_Sounds", 0, 0, 1)
-    cb('ok')
-end)
-
-RegisterNUICallback("GiveItem", function(data, cb)
+RegisterNUICallback('GiveItem', function(data, cb)
     local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
     if player ~= -1 and distance < 3 then
-        if data.inventory == 'player' then
-            local playerId = GetPlayerServerId(player)
-            SetCurrentPedWeapon(PlayerPedId(),'WEAPON_UNARMED',true)
-            TriggerServerEvent("inventory:server:GiveItem", playerId, data.item.name, data.amount, data.item.slot)
-        else
-            RSGCore.Functions.Notify(Lang:t("notify.notowned"), "error")
-        end
+        local playerId = GetPlayerServerId(player)
+        RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
+            cb(success)
+        end, playerId, data.item.name, data.amount, data.slot, data.info)
     else
-        RSGCore.Functions.Notify(Lang:t("notify.nonb"), "error")
-    end
-    cb('ok')
-end)
-
---#endregion NUI
-
---#region Threads
-
-CreateThread(function()
-    while true do
-        local sleep = 100
-        if DropsNear ~= nil then
-            local ped = PlayerPedId()
-            local closestDrop = nil
-            local closestDistance = nil
-            for k, v in pairs(DropsNear) do
-
-                if DropsNear[k] ~= nil then
-                    if Config.UseItemDrop then
-                        if not v.isDropShowing then
-                            CreateItemDrop(k)
-                        end
-                    else
-                        sleep = 0
-                        DrawMarker(0x07DCE236, v.coords.x, v.coords.y, v.coords.z - 0.7, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.15, 255, 215, 0, 155, false, false, false, 1, false, false, false)
-                    end
-
-                    local coords = (v.object ~= nil and GetEntityCoords(v.object)) or vector3(v.coords.x, v.coords.y, v.coords.z)
-                    local distance = #(GetEntityCoords(ped) - coords)
-                    if distance < 2 and (not closestDistance or distance < closestDistance) then
-                        closestDrop = k
-                        closestDistance = distance
-                    end
-                end
-            end
-            if not closestDrop then
-                CurrentDrop = 0
-            else
-                CurrentDrop = closestDrop
-            end
-        end
-        Wait(sleep)
+        RSGCore.Functions.Notify(Lang:t('notify.nonb'), 'error')
+        cb(false)
     end
 end)
 
-CreateThread(function()
-    while true do
-        if Drops ~= nil and next(Drops) ~= nil then
-            local pos = GetEntityCoords(PlayerPedId(), true)
-            for k, v in pairs(Drops) do
-                if Drops[k] ~= nil then
-                    local dist = #(pos - vector3(v.coords.x, v.coords.y, v.coords.z))
-                    if dist < Config.MaxDropViewDistance then
-                        DropsNear[k] = v
-                    else
-                        if Config.UseItemDrop and DropsNear[k] then
-                            RemoveNearbyDrop(k)
-                        else
-                            DropsNear[k] = nil
-                        end
+RegisterNUICallback('GetWeaponData', function(cData, cb)
+    local data = {
+        WeaponData = RSGCore.Shared.Items[cData.weapon],
+        AttachmentData = FormatWeaponAttachments(cData.ItemData)
+    }
+    cb(data)
+end)
+
+RegisterNUICallback('RemoveAttachment', function(data, cb)
+    local ped = PlayerPedId()
+    local WeaponData = data.WeaponData
+    local allAttachments = exports['rsg-weapons']:getConfigWeaponAttachments()
+    local Attachment = allAttachments[data.AttachmentData.attachment][WeaponData.name]
+    local itemInfo = RSGCore.Shared.Items[data.AttachmentData.attachment]
+    RSGCore.Functions.TriggerCallback('rsg-weapons:server:RemoveAttachment', function(NewAttachments)
+        if NewAttachments ~= false then
+            local Attachies = {}
+            RemoveWeaponComponentFromPed(ped, joaat(WeaponData.name), joaat(Attachment))
+            for _, v in pairs(NewAttachments) do
+                for attachmentType, weapons in pairs(allAttachments) do
+                    local componentHash = weapons[WeaponData.name]
+                    if componentHash and v.component == componentHash then
+                        local label = itemInfo and itemInfo.label or 'Unknown'
+                        Attachies[#Attachies + 1] = {
+                            attachment = attachmentType,
+                            label = label,
+                        }
                     end
                 end
             end
+            local DJATA = {
+                Attachments = Attachies,
+                WeaponData = WeaponData,
+                itemInfo = itemInfo,
+            }
+            cb(DJATA)
         else
-            DropsNear = {}
+            RemoveWeaponComponentFromPed(ped, joaat(WeaponData.name), joaat(Attachment))
+            cb({})
         end
-        Wait(500)
-    end
+    end, data.AttachmentData, WeaponData)
 end)
 
---#endregion Threads
+-- Vending
 
--- toggle inventory
+CreateThread(function()
+    exports['rsg-target']:AddTargetModel(Config.VendingObjects, {
+        options = {
+            {
+
+                action = function()
+                    TriggerServerEvent('rsg-inventory:server:openVending')
+                end,
+                icon = 'fa-solid fa-cash-register',
+                label = Lang:t('menu.vending'),
+            },
+        },
+        distance = 2.5
+    })
+end)
+
+-- Commands
+
+RegisterCommand('openInv', function()
+    local PlayerData = RSGCore.Functions.GetPlayerData()
+    if IsNuiFocused() or IsPauseMenuActive() then return end
+    if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+        ExecuteCommand('inventory')
+    end
+end, false)
+
+RegisterCommand('toggleHotbar', function()
+    local PlayerData = RSGCore.Functions.GetPlayerData()
+    if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+        ExecuteCommand('hotbar')
+    end
+end, false)
+
 CreateThread(function()
     while true do
         Wait(0)
-        if IsControlJustReleased(0, RSGCore.Shared.Keybinds['I']) then -- key open inventory I
-            if not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
-                if CurrentDrop ~= 0 then
-                    TriggerServerEvent("inventory:server:OpenInventory", "drop", CurrentDrop)
-                else
-                    TriggerServerEvent("inventory:server:OpenInventory")
-                end
+        local PlayerData = RSGCore.Functions.GetPlayerData()
+
+        if IsControlJustReleased(0, Config.Keybinds.Open) then
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                ExecuteCommand('inventory')
             end
         end
     end
 end)
 
--- toggle hotbar
 CreateThread(function()
     while true do
         Wait(0)
+        local PlayerData = RSGCore.Functions.GetPlayerData()
+        if IsControlJustReleased(0, Config.Keybinds.Hotbar) then
+            if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
+                ExecuteCommand('hotbar')
+            end
+        end
+    end
+end)
+
+-- hotbar slot commands
+CreateThread(function()
+    while true do
+        Wait(0)
+
         DisableControlAction(0, RSGCore.Shared.Keybinds['1'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['2'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['3'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['4'])
         DisableControlAction(0, RSGCore.Shared.Keybinds['5'])
-        DisableControlAction(0, RSGCore.Shared.Keybinds['Z'])
+
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['1']) and IsInputDisabled(0) then  -- 1  slot
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 1)
+                ExecuteCommand('slot_1')
             end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['2']) and IsInputDisabled(0) then  -- 2 slot
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 2)
+                ExecuteCommand('slot_2')
             end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['3']) and IsInputDisabled(0) then -- 3 slot
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 3)
+                ExecuteCommand('slot_3')
             end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['4']) and IsInputDisabled(0) then  -- 4 slot
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 4)
+                ExecuteCommand('slot_4')
             end
         end
 
         if IsDisabledControlPressed(0, RSGCore.Shared.Keybinds['5']) and IsInputDisabled(0) then -- 5 slot
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
-                TriggerServerEvent("inventory:server:UseItemSlot", 5)
+                ExecuteCommand('slot_5')
             end
         end
 
-        if IsDisabledControlJustPressed(0, RSGCore.Shared.Keybinds['Z']) and IsInputDisabled(0) then -- z  Hotbar
-            isHotbar = not isHotbar
-            ToggleHotbar(isHotbar)
-        end
     end
 end)
+
+-- execute slot commands
+for i = 1, 5 do
+    RegisterCommand('slot_' .. i, function()
+        local itemData = PlayerData.items[i]
+        if not itemData then return end
+        if itemData.type == "weapon" then
+            if holdingDrop then
+                return RSGCore.Functions.Notify("Your already holding a bag, Go Drop it!", "error", 5500)
+            end
+        end
+        TriggerServerEvent('rsg-inventory:server:useItem', itemData)
+    end, false)
+end
