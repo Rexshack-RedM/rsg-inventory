@@ -7,8 +7,9 @@ body {
 }
 
 div {
-    font-family: "Chinese Rocks Rg", sans-serif;
-    letter-spacing: 1px;
+    /*font-family: "Chinese Rocks Rg", sans-serif;*/
+    /*letter-spacing: 1px;*/
+    font-family: "Open Sans", sans-serif;
 }
 
 ::-webkit-scrollbar {
