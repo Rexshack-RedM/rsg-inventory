@@ -254,6 +254,13 @@ const InventoryContainer = Vue.createApp({
                 return;
             }
 
+            if (this.playerInventory != targetInventory) {
+				if (this.findNextAvailableSlot(targetInventory) > this.otherInventorySlots) {
+					this.inventoryError(item.slot);
+					return;
+				}
+            }
+
             if (item.unique) {
                 targetSlot = this.findNextAvailableSlot(targetInventory);
                 if (targetSlot === null) {
