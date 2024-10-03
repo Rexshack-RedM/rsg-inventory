@@ -255,10 +255,10 @@ const InventoryContainer = Vue.createApp({
             }
 
             if (this.playerInventory != targetInventory) {
-				if (this.findNextAvailableSlot(targetInventory) > this.otherInventorySlots) {
-					this.inventoryError(item.slot);
-					return;
-				}
+                if (this.findNextAvailableSlot(targetInventory) > this.otherInventorySlots) {
+                    this.inventoryError(item.slot);
+                    return;
+                }
             }
 
             if (item.unique) {
