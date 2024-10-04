@@ -482,3 +482,18 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         end
     end
 end)
+
+-- Added for Backwards Compatibility
+RegisterServerEvent("inventory:server:OpenInventory", function(_type, inventoryName, exploitableItemsList)
+    print('Event is deprecated, use rsg-inventory:OpenInventory instead')
+    if _type == "shop" then
+        exports['rsg-inventory']:CreateShop({
+            name = inventoryName,
+            label = exploitableItemsList.label,
+            slots = #exploitableItemsList.items,
+            items = exploitableItemsList.items
+        })
+        return exports['rsg-inventory']:OpenShop(source, inventoryName)
+    end
+    exports['rsg-inventory']:OpenInventory(source, inventoryName)
+end)
