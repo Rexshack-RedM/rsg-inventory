@@ -222,11 +222,11 @@ const InventoryContainer = Vue.createApp({
                 if (event.shiftKey && itemInSlot) {
                     this.splitAndPlaceItem(itemInSlot, inventory);
                 } else {
-					if (this.otherInventoryName.startsWith("shop-") && inventory === "player") {
-						return;
-					} else {
-						this.startDrag(event, slot, inventory);
-					}
+                    if (this.otherInventoryName.startsWith("shop-") && inventory === "player") {
+                        return;
+                    } else {
+                        this.startDrag(event, slot, inventory);
+                    }
                 }
             } else if (event.button === 2 && itemInSlot) {
                 if (this.otherInventoryName.startsWith("shop-")) {
@@ -516,7 +516,7 @@ const InventoryContainer = Vue.createApp({
                     item: sourceItem,
                     amount: transferAmount || sourceItem.amount,
                     shop: this.otherInventoryName,
-					sourceinvtype: sourceInventoryType,
+                    sourceinvtype: sourceInventoryType,
                 });
                 if (response.data) {
                     const sourceInventory = this.getInventoryByType("other");
@@ -601,11 +601,11 @@ const InventoryContainer = Vue.createApp({
                         });
 
                         if (response.data) {
-							if (this.playerInventory[playerItemKey].amount === 1) {
-								delete this.playerInventory[playerItemKey];
-							} else {
-								this.playerInventory[playerItemKey].amount = this.playerInventory[playerItemKey].amount - amountToGive;
-							}
+                            if (this.playerInventory[playerItemKey].amount === 1) {
+                                delete this.playerInventory[playerItemKey];
+                            } else {
+                                this.playerInventory[playerItemKey].amount = this.playerInventory[playerItemKey].amount - amountToGive;
+                            }
                             this.otherInventory[1] = newItem;
                             this.otherInventoryName = response.data;
                             this.otherInventoryLabel = response.data;

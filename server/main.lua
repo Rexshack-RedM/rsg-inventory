@@ -283,12 +283,12 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     local itemInfo = data.item
     local amount = data.amount
     local shop = string.gsub(data.shop, 'shop%-', '')
-	local price = itemInfo.price
-	local sinvtype = data.sourceinvtype
+    local price = itemInfo.price
+    local sinvtype = data.sourceinvtype
 
-	if price then
-		price = itemInfo.price * amount
-	end
+    if price then
+        price = itemInfo.price * amount
+    end
     local Player = RSGCore.Functions.GetPlayer(source)
 
     if not Player then
@@ -313,31 +313,31 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     end
 
     if not CanAddItem(source, itemInfo.name, amount) then
-		TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot hold item', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot hold item', type = 'error', duration = 5000 })
         cb(false)
         return
     end
 
     if price then
-		if Player.PlayerData.money.cash >= price then
-		
-			if sinvtype == 'player' then
-				TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
-				cb(false)
-			else
-				Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-				AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
-				TriggerEvent('rsg-shops:server:UpdateShopItems', shop, itemInfo, amount)
-				cb(true)
-			end
-		else
-			TriggerClientEvent('ox_lib:notify', source, {title = 'You do not have enough money', type = 'error', duration = 5000 })
-			cb(false)
-		end
-	else
-		TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
-		cb(false)
-	end
+        if Player.PlayerData.money.cash >= price then
+
+            if sinvtype == 'player' then
+                TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
+                cb(false)
+            else
+                Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
+                AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
+                TriggerEvent('rsg-shops:server:UpdateShopItems', shop, itemInfo, amount)
+                cb(true)
+            end
+        else
+            TriggerClientEvent('ox_lib:notify', source, {title = 'You do not have enough money', type = 'error', duration = 5000 })
+            cb(false)
+        end
+    else
+        TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
+        cb(false)
+    end
 end)
 
 RSGCore.Functions.CreateCallback('rsg-inventory:server:giveItem', function(source, cb, target, item, amount, slot, info)
