@@ -222,11 +222,15 @@ const InventoryContainer = Vue.createApp({
                 if (event.shiftKey && itemInSlot) {
                     this.splitAndPlaceItem(itemInSlot, inventory);
                 } else {
-                    this.startDrag(event, slot, inventory);
+					if (this.otherInventoryName.startsWith("shop-") && inventory === "player") {
+						return;
+					} else {
+						this.startDrag(event, slot, inventory);
+					}
                 }
             } else if (event.button === 2 && itemInSlot) {
                 if (this.otherInventoryName.startsWith("shop-")) {
-                    this.handlePurchase(slot, itemInSlot.slot, itemInSlot, 1);
+                    this.handlePurchase(slot, itemInSlot.slot, itemInSlot, 1, inventory);
                     return;
                 }
                 if (!this.isOtherInventoryEmpty) {
@@ -506,12 +510,13 @@ const InventoryContainer = Vue.createApp({
                 this.clearDragData();
             }
         },
-        async handlePurchase(targetSlot, sourceSlot, sourceItem, transferAmount) {
+        async handlePurchase(targetSlot, sourceSlot, sourceItem, transferAmount, sourceInventoryType) {
             try {
                 const response = await axios.post("https://rsg-inventory/AttemptPurchase", {
                     item: sourceItem,
                     amount: transferAmount || sourceItem.amount,
                     shop: this.otherInventoryName,
+					sourceinvtype: sourceInventoryType,
                 });
                 if (response.data) {
                     const sourceInventory = this.getInventoryByType("other");
@@ -596,7 +601,11 @@ const InventoryContainer = Vue.createApp({
                         });
 
                         if (response.data) {
-                            delete this.playerInventory[playerItemKey];
+							if (this.playerInventory[playerItemKey].amount === 1) {
+								delete this.playerInventory[playerItemKey];
+							} else {
+								this.playerInventory[playerItemKey].amount = this.playerInventory[playerItemKey].amount - amountToGive;
+							}
                             this.otherInventory[1] = newItem;
                             this.otherInventoryName = response.data;
                             this.otherInventoryLabel = response.data;
