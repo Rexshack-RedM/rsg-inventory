@@ -308,7 +308,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     end
 
     if not CanAddItem(source, itemInfo.name, amount) then
-        TriggerClientEvent('RSGCore:Notify', source, 'Cannot hold item', 'error')
+        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot hold item', type = 'error', duration = 5000 })
         cb(false)
         return
     end
@@ -319,7 +319,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
         TriggerEvent('rsg-shops:server:UpdateShopItems', shop, itemInfo, amount)
         cb(true)
     else
-        TriggerClientEvent('RSGCore:Notify', source, 'You do not have enough money', 'error')
+        TriggerClientEvent('ox_lib:notify', source, {title = 'You do not have enough money', type = 'error', duration = 5000 })
         cb(false)
     end
 end)

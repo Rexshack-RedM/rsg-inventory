@@ -554,7 +554,7 @@ function OpenInventory(source, identifier, data)
     local inventory = Inventories[identifier]
 
     if inventory and inventory.isOpen then
-        TriggerClientEvent('RSGCore:Notify', source, 'This inventory is currently in use', 'error')
+        TriggerClientEvent('ox_lib:notify', source, {title = 'This inventory is currently in use', type = 'error', duration = 5000 })
         return
     end
 
