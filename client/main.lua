@@ -222,7 +222,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
             cb(success)
         end, playerId, data.item.name, data.amount, data.slot, data.info)
     else
-        RSGCore.Functions.Notify(Lang:t('notify.nonb'), 'error')
+        lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
         cb(false)
     end
 end)
@@ -381,7 +381,7 @@ for i = 1, 5 do
         if not itemData then return end
         if itemData.type == "weapon" then
             if holdingDrop then
-                return RSGCore.Functions.Notify("Your already holding a bag, Go Drop it!", "error", 5500)
+                return lib.notify({ title = 'Error', description = 'Your already holding a bag, Go Drop it!', type = 'error', duration = 7000 })
             end
         end
         TriggerServerEvent('rsg-inventory:server:useItem', itemData)
