@@ -23,17 +23,17 @@ RSGCore.Commands.Add('giveitem', 'Give An Item (Admin Only)', { { name = 'id', h
             end
 
             if AddItem(id, itemData['name'], amount, false, info, 'give item command') then
-                RSGCore.Functions.Notify(source, Lang:t('notify.yhg') .. GetPlayerName(id) .. ' ' .. amount .. ' ' .. itemData['name'] .. '', 'success')
+                TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.yhg') .. GetPlayerName(id) .. ' ' .. amount .. ' ' .. itemData['name'] .. '', type = 'success', duration = 5000 })
                 TriggerClientEvent('rsg-inventory:client:ItemBox', id, itemData, 'add', amount)
                 if Player(id).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', id) end
             else
-                RSGCore.Functions.Notify(source, Lang:t('notify.cgitem'), 'error')
+                TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.cgitem'), type = 'error', duration = 5000 })
             end
         else
-            RSGCore.Functions.Notify(source, Lang:t('notify.idne'), 'error')
+            TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.idne'), type = 'error', duration = 5000 })
         end
     else
-        RSGCore.Functions.Notify(source, Lang:t('notify.pdne'), 'error')
+        TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.pdne'), type = 'error', duration = 5000 })
     end
 end, 'admin')
 
