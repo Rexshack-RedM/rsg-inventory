@@ -58,12 +58,14 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 label = 'Pick up bag',
                 action = function()
                     local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
+
                     if weapon ~= `WEAPON_UNARMED` then
-                        return RSGCore.Functions.Notify("You can not be holding a Gun and a Bag!", "error", 5500)
+                        return lib.notify({ title = 'Error!', description = 'You can not be holding a Gun and a Bag!', type = 'error', duration = 5500 })
                     end
                     if holdingDrop then
-                        return RSGCore.Functions.Notify("Your already holding a bag, Go Drop it!", "error", 5500)
+                        return lib.notify({ title = 'Error!', description = 'Your already holding a bag, Go Drop it!', type = 'error', duration = 5500 })
                     end
+
                     Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
                     Wait(1000)
                     local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), Config.ItemDropObjectBone)
