@@ -23,7 +23,7 @@ RSGCore.Commands.Add('giveitem', 'Give An Item (Admin Only)', { { name = 'id', h
             end
 
             if AddItem(id, itemData['name'], amount, false, info, 'give item command') then
-                TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.yhg') .. GetPlayerName(id) .. ' ' .. amount .. ' ' .. itemData['name'] .. '', type = 'success', duration = 5000 })
+                TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.yhg') .. GetPlayerName(id) .. ' ' .. amount .. ' ' .. itemData['label'] .. '', type = 'success', duration = 5000 })
                 TriggerClientEvent('rsg-inventory:client:ItemBox', id, itemData, 'add', amount)
                 if Player(id).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', id) end
             else
