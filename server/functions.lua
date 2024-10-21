@@ -348,7 +348,10 @@ exports('CanAddItem', CanAddItem)
 --- @param source number The player's server ID.
 --- @return number - Returns the free weight of the players inventory. Error will return 0
 function GetFreeWeight(source)
-    if not source then warn("Source was not passed into GetFreeWeight") return 0 end
+    if not source then
+        warn('Source was not passed into GetFreeWeight')
+        return 0
+    end
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return 0 end
 
@@ -559,9 +562,9 @@ function OpenInventory(source, identifier, data)
     end
 
     if not inventory then inventory = InitializeInventory(identifier, data) end
-    inventory.maxweight = (inventory and inventory.maxweight) or (data and data.maxweight) or Config.StashSize.maxweight
-    inventory.slots = (inventory and inventory.slots) or (data and data.slots) or Config.StashSize.slots
-    inventory.label = (inventory and inventory.label) or (data and data.label) or identifier
+    inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or Config.StashSize.maxweight
+    inventory.slots = (data and data.slots) or (inventory and inventory.slots) or Config.StashSize.slots
+    inventory.label = (data and data.label) or (inventory and inventory.label)  or identifier
     inventory.isOpen = source
 
     local formattedInventory = {
