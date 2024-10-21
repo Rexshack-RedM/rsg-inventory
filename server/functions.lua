@@ -557,14 +557,14 @@ function OpenInventory(source, identifier, data)
     local inventory = Inventories[identifier]
 
     if inventory and inventory.isOpen then
-        TriggerClientEvent('ox_lib:notify', source, {title = 'This inventory is currently in use', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = 'This inventory is currently in use', type = 'error', duration = 5000 })
         return
     end
 
     if not inventory then inventory = InitializeInventory(identifier, data) end
     inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or Config.StashSize.maxweight
     inventory.slots = (data and data.slots) or (inventory and inventory.slots) or Config.StashSize.slots
-    inventory.label = (data and data.label) or (inventory and inventory.label)  or identifier
+    inventory.label = (data and data.label) or (inventory and inventory.label) or identifier
     inventory.isOpen = source
 
     local formattedInventory = {
@@ -767,3 +767,12 @@ function GetInventory(identifier)
 end
 
 exports('GetInventory', GetInventory)
+
+-- Initialize inventory if it doesn't exist
+--- @param identifier string - The identifier of the inventory.
+--- @param data table - The data of the inventory
+function CreateInventory(identifier, data)
+    if Inventories[identifier] then return end
+    Inventories[identifier] = InitializeInventory(identifier, data)
+end
+exports('CreateInventory', CreateInventory)
