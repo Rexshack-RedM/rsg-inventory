@@ -386,14 +386,14 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:giveItem', function(sourc
         return
     end
 
-    local removeItem = RemoveItem(source, item, giveAmount, slot, 'Item given to ID #' .. target)
-    if not removeItem then
+    local giveItem = AddItem(target, item, giveAmount, false, info, 'Item given from ID #' .. source)
+    if not giveItem then
         cb(false)
         return
     end
 
-    local giveItem = AddItem(target, item, giveAmount, false, info, 'Item given from ID #' .. source)
-    if not giveItem then
+    local removeItem = RemoveItem(source, item, giveAmount, slot, 'Item given to ID #' .. target)
+    if not removeItem then
         cb(false)
         return
     end
