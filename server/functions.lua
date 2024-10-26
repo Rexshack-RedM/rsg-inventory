@@ -702,6 +702,7 @@ function RemoveItem(identifier, item, amount, slot, reason)
         print('RemoveItem: Invalid item')
         return false
     end
+
     local inventory
     local player = RSGCore.Functions.GetPlayer(identifier)
 
@@ -725,7 +726,17 @@ function RemoveItem(identifier, item, amount, slot, reason)
         return false
     end
 
-    local inventoryItem = inventory[slot]
+    local inventoryItem = nil
+    local itemKey = nil
+
+    for key, invItem in pairs(inventory) do
+        if invItem.slot == slot then
+            inventoryItem = invItem
+            itemKey = key
+            break
+        end
+    end
+
     if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
         print('RemoveItem: Item not found in slot')
         return false
@@ -739,13 +750,17 @@ function RemoveItem(identifier, item, amount, slot, reason)
 
     inventoryItem.amount = inventoryItem.amount - amount
     if inventoryItem.amount <= 0 then
-        inventory[slot] = nil
+        inventory[itemKey] = nil
+    else
+        inventory[itemKey] = inventoryItem
     end
 
     if player then player.Functions.SetPlayerData('items', inventory) end
+
     local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
     local removeReason = reason or 'No reason specified'
     local resourceName = GetInvokingResource() or 'rsg-inventory'
+
     TriggerEvent(
         'rsg-log:server:CreateLog',
         'playerinventory',
@@ -775,4 +790,5 @@ function CreateInventory(identifier, data)
     if Inventories[identifier] then return end
     Inventories[identifier] = InitializeInventory(identifier, data)
 end
+
 exports('CreateInventory', CreateInventory)
