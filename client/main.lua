@@ -307,12 +307,13 @@ end, false)
 
 CreateThread(function()
     while true do
-        Wait(0)
-        local PlayerData = RSGCore.Functions.GetPlayerData()
-
+        local sleep = 0
+        Wait(sleep)   
         if IsControlJustReleased(0, Config.Keybinds.Open) then
+            local PlayerData = RSGCore.Functions.GetPlayerData()
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
                 ExecuteCommand('inventory')
+                sleep = 1000
             end
         end
     end
@@ -320,11 +321,13 @@ end)
 
 CreateThread(function()
     while true do
-        Wait(0)
-        local PlayerData = RSGCore.Functions.GetPlayerData()
+        local sleep = 0
+        Wait(sleep)
         if IsControlJustReleased(0, Config.Keybinds.Hotbar) then
+            local PlayerData = RSGCore.Functions.GetPlayerData()
             if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
                 ExecuteCommand('hotbar')
+                sleep = 1000
             end
         end
     end
