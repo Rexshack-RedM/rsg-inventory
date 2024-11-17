@@ -151,6 +151,16 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
         type = type,
         amount = amount
     })
+    if type == 'remove' then
+        TriggerServerEvent('rsg-inventory:server:updateHotbar')
+    end
+end)
+
+RegisterNetEvent('rsg-inventory:client:updateHotbar', function(items)
+    SendNUIMessage({
+        action = 'updateHotbar',
+        items = items
+    })
 end)
 
 RegisterNetEvent('rsg-inventory:server:RobPlayer', function(TargetId)
