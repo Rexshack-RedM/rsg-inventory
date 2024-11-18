@@ -951,6 +951,9 @@ const InventoryContainer = Vue.createApp({
                 case "requiredItem":
                     this.showRequiredItem(event.data);
                     break;
+                case "updateHotbar":
+                    this.hotbarItems = event.data.items;
+                    break;
                 default:
                     console.warn(`Unexpected action: ${event.data.action}`);
             }

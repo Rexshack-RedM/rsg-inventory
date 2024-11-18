@@ -494,3 +494,17 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         end
     end
 end)
+
+RegisterNetEvent('rsg-inventory:server:updateHotbar', function()
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player then return end
+    
+    local items = {}
+    for slot = 1, 5 do
+        local item = Player.Functions.GetItemBySlot(slot)
+        items[slot] = item
+    end
+    
+    TriggerClientEvent('rsg-inventory:client:updateHotbar', src, items)
+end)
