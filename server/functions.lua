@@ -742,6 +742,10 @@ function RemoveItem(identifier, item, amount, slot, reason)
         return false
     end
 
+    if RSGCore.Shared.Items[item:lower()]['type'] == 'weapon' and player then
+        TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
+    end
+
     amount = tonumber(amount)
     if inventoryItem.amount < amount then
         print('RemoveItem: Not enough items in slot')
