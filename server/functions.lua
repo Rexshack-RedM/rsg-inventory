@@ -697,7 +697,7 @@ exports('AddItem', AddItem)
 --- @param slot number - The slot number of the item in the inventory. If not provided, it will find the first slot with the item.
 --- @param reason string - The reason for removing the item. Defaults to 'No reason specified' if not provided.
 --- @return boolean - Returns true if the item was successfully removed, false otherwise.
-function RemoveItem(identifier, item, amount, slot, reason)
+function RemoveItem(identifier, item, amount, slot, reason, isMove)
     if not RSGCore.Shared.Items[item:lower()] then
         print('RemoveItem: Invalid item')
         return false
@@ -740,6 +740,10 @@ function RemoveItem(identifier, item, amount, slot, reason)
     if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
         print('RemoveItem: Item not found in slot')
         return false
+    end
+
+    if RSGCore.Shared.Items[item:lower()]['type'] == 'weapon' and player and isMove then
+        TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
     end
 
     amount = tonumber(amount)
