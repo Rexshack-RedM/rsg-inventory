@@ -315,14 +315,14 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
             return
         end
     end
-	
+
     if shopInfo.items[itemInfo.slot].name ~= itemInfo.name then -- Check if item name passed is the same as the item in that slot
         cb(false)
         return
     end
 
     if amount > shopInfo.items[itemInfo.slot].amount then
-		TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot purchase larger quantity than currently in stock', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot purchase larger quantity than currently in stock', type = 'error', duration = 5000 })
         cb(false)
         return
     end
