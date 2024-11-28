@@ -491,6 +491,8 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         local fromId = getIdentifier(fromInventory, src)
         local toId = getIdentifier(toInventory, src)
 
+        if fromId ~= toId then isMove = true end
+
         if toItem and fromItem.name == toItem.name then
             if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
                 AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item')
