@@ -560,7 +560,10 @@ const InventoryContainer = Vue.createApp({
         },
         async dropItem(item, quantity) {
             if (item && item.name) {
-                const playerItemKey = Object.keys(this.playerInventory).find((key) => this.playerInventory[key] && this.playerInventory[key].slot === item.slot);
+                const playerItemKey = Object.keys(this.playerInventory).find((key) => 
+                    this.playerInventory[key] && this.playerInventory[key].slot === item.slot
+                );
+                
                 if (playerItemKey) {
                     let amountToGive;
 
@@ -601,11 +604,13 @@ const InventoryContainer = Vue.createApp({
                         });
 
                         if (response.data) {
-                            if (this.playerInventory[playerItemKey].amount === 1) {
+                            const remainingAmount = this.playerInventory[playerItemKey].amount - amountToGive;
+                            if (remainingAmount <= 0) {
                                 delete this.playerInventory[playerItemKey];
                             } else {
-                                this.playerInventory[playerItemKey].amount = this.playerInventory[playerItemKey].amount - amountToGive;
+                                this.playerInventory[playerItemKey].amount = remainingAmount;
                             }
+                            
                             this.otherInventory[1] = newItem;
                             this.otherInventoryName = response.data;
                             this.otherInventoryLabel = response.data;
