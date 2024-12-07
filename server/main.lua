@@ -237,14 +237,18 @@ end)
 RSGCore.Functions.CreateCallback('rsg-inventory:server:createDrop', function(source, cb, item)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
+    local isMove = false
     if not Player then
         cb(false)
         return
     end
     local playerPed = GetPlayerPed(src)
     local playerCoords = GetEntityCoords(playerPed)
-    if RemoveItem(src, item.name, item.amount, item.fromSlot, 'dropped item') then
-        if item.type == 'weapon' then checkWeapon(src, item) end
+        if item.type == 'weapon' then
+            isMove = true
+            checkWeapon(src, item) 
+        end
+    if RemoveItem(src, item.name, item.amount, item.fromSlot, 'dropped item', isMove) then
         TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
         local bag = CreateObjectNoOffset(Config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
         while not DoesEntityExist(bag) do Wait(0) end
@@ -312,6 +316,17 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
         end
     end
 
+    if shopInfo.items[itemInfo.slot].name ~= itemInfo.name then -- Check if item name passed is the same as the item in that slot
+        cb(false)
+        return
+    end
+
+    if amount > shopInfo.items[itemInfo.slot].amount then
+        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot purchase larger quantity than currently in stock', type = 'error', duration = 5000 })
+        cb(false)
+        return
+    end
+
     if not CanAddItem(source, itemInfo.name, amount) then
         TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot hold item', type = 'error', duration = 5000 })
         cb(false)
@@ -347,7 +362,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:giveItem', function(sourc
         return
     end
     local playerPed = GetPlayerPed(source)
-
+    local isMove = false
     local Target = RSGCore.Functions.GetPlayer(target)
     if not Target or Target.PlayerData.metadata['isdead'] or Target.PlayerData.metadata['inlaststand'] or Target.PlayerData.metadata['ishandcuffed'] then
         cb(false)
@@ -366,6 +381,11 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:giveItem', function(sourc
     if not itemInfo then
         cb(false)
         return
+    end
+
+    if itemInfo.type == 'weapon' then 
+        isMove = true
+        checkWeapon(source, item) 
     end
 
     local hasItem = HasItem(source, item)
@@ -392,13 +412,12 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:giveItem', function(sourc
         return
     end
 
-    local removeItem = RemoveItem(source, item, giveAmount, slot, 'Item given to ID #' .. target)
+    local removeItem = RemoveItem(source, item, giveAmount, slot, 'Item given to ID #' .. target, isMove)
     if not removeItem then
         cb(false)
         return
     end
 
-    if itemInfo.type == 'weapon' then checkWeapon(source, item) end
     TriggerClientEvent('rsg-inventory:client:giveAnim', source)
     TriggerClientEvent('rsg-inventory:client:ItemBox', source, itemInfo, 'remove', giveAmount)
     TriggerClientEvent('rsg-inventory:client:giveAnim', target)
@@ -456,7 +475,7 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     if not Player then return end
-
+    local isMove = false
     fromSlot, toSlot, fromAmount, toAmount = tonumber(fromSlot), tonumber(toSlot), tonumber(fromAmount), tonumber(toAmount)
 
     local fromItem = getItem(fromInventory, src, fromSlot)
@@ -464,17 +483,22 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
 
     if fromItem then
         if not toItem and toAmount > fromItem.amount then return end
-        if fromInventory == 'player' and toInventory ~= 'player' then checkWeapon(src, fromItem) end
+        if fromInventory == 'player' and toInventory ~= 'player' then 
+            isMove = true
+            checkWeapon(src, fromItem) 
+        end
 
         local fromId = getIdentifier(fromInventory, src)
         local toId = getIdentifier(toInventory, src)
 
+        if fromId ~= toId then isMove = true end
+
         if toItem and fromItem.name == toItem.name then
-            if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item') then
+            if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
                 AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item')
             end
         elseif not toItem and toAmount < fromAmount then
-            if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item') then
+            if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
                 AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item')
             end
         else
@@ -482,13 +506,13 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
                 local fromItemAmount = fromItem.amount
                 local toItemAmount = toItem.amount
 
-                if RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item') and RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item') then
+                if RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item', isMove) and RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item', isMove) then
                     AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item')
                     AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item')
                 end
             else
-                if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item') then
-                    AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item')
+                if RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item', isMove) then
+                    AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item', isMove)
                 end
             end
         end

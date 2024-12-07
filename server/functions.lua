@@ -380,6 +380,11 @@ function ClearInventory(source, filterItems)
     if not player.Offline then
         local logMessage = string.format('**%s (citizenid: %s | id: %s)** inventory cleared', GetPlayerName(source), player.PlayerData.citizenid, source)
         TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'ClearInventory', 'red', logMessage)
+        local ped = GetPlayerPed(source)
+        local weapon = GetSelectedPedWeapon(ped)
+        if weapon ~= `WEAPON_UNARMED` then
+            RemoveWeaponFromPed(ped, weapon)
+        end
         if Player(source).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', source) end
     end
 end
@@ -697,7 +702,7 @@ exports('AddItem', AddItem)
 --- @param slot number - The slot number of the item in the inventory. If not provided, it will find the first slot with the item.
 --- @param reason string - The reason for removing the item. Defaults to 'No reason specified' if not provided.
 --- @return boolean - Returns true if the item was successfully removed, false otherwise.
-function RemoveItem(identifier, item, amount, slot, reason)
+function RemoveItem(identifier, item, amount, slot, reason, isMove)
     if not RSGCore.Shared.Items[item:lower()] then
         print('RemoveItem: Invalid item')
         return false
@@ -740,6 +745,10 @@ function RemoveItem(identifier, item, amount, slot, reason)
     if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
         print('RemoveItem: Item not found in slot')
         return false
+    end
+
+    if RSGCore.Shared.Items[item:lower()]['type'] == 'weapon' and player and isMove then
+        TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
     end
 
     amount = tonumber(amount)
