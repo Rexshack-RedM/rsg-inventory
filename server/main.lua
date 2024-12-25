@@ -196,6 +196,9 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(item)
             TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData, itemData.info.quality and itemData.info.quality > 0)
             TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
         end
+    elseif itemData.type == 'weapon_thrown' then
+        TriggerClientEvent('rsg-weapons:client:UseThrownWeapon', src, itemData, itemData.info.quality and itemData.info.quality > 0)
+        TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
     else
         UseItem(itemData.name, src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
