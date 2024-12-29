@@ -190,12 +190,18 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(item)
             local params = { serial = itemData.info.serie, citizenid = Player.PlayerData.citizenid }
             MySQL.Sync.execute("INSERT INTO player_weapons (serial, citizenid) values (@serial, @citizenid)", params)
             Wait(1000)
-            TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData, itemData.info.quality and itemData.info.quality > 0)
+            TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData)
             TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
         else
-            TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData, itemData.info.quality and itemData.info.quality > 0)
+            TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData)
             TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
         end
+    elseif itemData.type == 'weapon_thrown' then
+        TriggerClientEvent('rsg-weapons:client:UseThrownWeapon', src, itemData)
+        TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
+    elseif itemData.type == 'equipment' then
+        TriggerClientEvent('rsg-weapons:client:UseEquipment', src, itemData)
+        TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
     else
         UseItem(itemData.name, src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
