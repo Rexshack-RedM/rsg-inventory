@@ -89,6 +89,7 @@ const InventoryContainer = Vue.createApp({
                 notificationImage: "",
                 notificationType: "added",
                 notificationAmount: 1,
+                notificationTimeout: null,
                 // Required items box
                 showRequiredItems: false,
                 requiredItems: [],
@@ -780,8 +781,14 @@ const InventoryContainer = Vue.createApp({
             this.notificationType = itemData.type === "add" ? "Received" : itemData.type === "use" ? "Used" : "Removed";
             this.notificationAmount = itemData.amount || 1;
             this.showNotification = true;
-            setTimeout(() => {
+
+            if (this.notificationTimeout) {
+                clearTimeout(this.notificationTimeout);
+            }
+
+            this.notificationTimeout = setTimeout(() => {
                 this.showNotification = false;
+                this.notificationTimeout = null;
             }, 3000);
         },
         showRequiredItem(data) {
