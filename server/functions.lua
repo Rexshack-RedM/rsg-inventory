@@ -48,7 +48,7 @@ local function SetupShopItems(shopItems)
     return items
 end
 
--- Exported Functions
+-- Exported Function
 
 function LoadInventory(source, citizenid)
     local inventory = MySQL.prepare.await('SELECT inventory FROM players WHERE citizenid = ?', { citizenid })
@@ -159,6 +159,21 @@ function SetItemData(source, itemName, key, val)
 end
 
 exports('SetItemData', SetItemData)
+
+--- Retrieves the weight of an item from the shared item configuration.
+--- @param itemName string - The name of the item to retrieve the weight for.
+--- @return number|nil - The weight of the item, or nil if the item doesn't exist.
+function GetItemWeight(itemName)
+    itemName = itemName:lower()
+    local itemInfo = RSGCore.Shared.Items[itemName]
+    if itemInfo then
+        return itemInfo.weight
+    else
+        return nil
+    end
+end
+
+exports('GetItemWeight', GetItemWeight)
 
 function UseItem(itemName, ...)
     local itemData = RSGCore.Functions.CanUseItem(itemName)
