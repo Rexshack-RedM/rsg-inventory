@@ -1,6 +1,7 @@
 RSGCore = exports['rsg-core']:GetCoreObject()
 PlayerData = nil
 local hotbarShown = false
+local lastItemBoxCall = 0
 
 -- Handlers
 
@@ -145,12 +146,29 @@ RegisterNetEvent('rsg-inventory:client:updateInventory', function()
 end)
 
 RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount)
-    SendNUIMessage({
-        action = 'itemBox',
-        item = itemData,
-        type = type,
-        amount = amount
-    })
+    local function sendItemBox()
+        SendNUIMessage({
+            action = 'itemBox',
+            item = itemData,
+            type = type,
+            amount = amount
+        })
+    end
+
+    local currentTime = GetGameTimer()
+    local timeElapsed = currentTime - lastItemBoxCall
+
+    if timeElapsed >= 1000 then
+        sendItemBox()
+        lastItemBoxCall = currentTime
+    else
+        local delay = 1000 - timeElapsed
+        lib.timer(delay, function()
+            sendItemBox()
+        end, true)
+        lastItemBoxCall = currentTime + delay
+    end
+
     if type == 'remove' then
         TriggerServerEvent('rsg-inventory:server:updateHotbar')
     end
