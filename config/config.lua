@@ -19,6 +19,9 @@ Config = {
         Hotbar = 0x26E9DC00, -- 'Z',
     },
 
+    HotbarSpamProtectionTimeout = 500 -- in miliseconds
+    HotbarSpamProtectionNotify = false -- should player recieve notification when spamming hotbar
+
     CleanupDropTime = 15,    -- in minutes
     CleanupDropInterval = 1, -- in minutes
 
