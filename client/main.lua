@@ -309,18 +309,14 @@ end)
 -- Vending
 
 CreateThread(function()
-    exports['rsg-target']:AddTargetModel(Config.VendingObjects, {
-        options = {
-            {
-
-                action = function()
-                    TriggerServerEvent('rsg-inventory:server:openVending')
-                end,
-                icon = 'fa-solid fa-cash-register',
-                label = Lang:t('menu.vending'),
-            },
-        },
-        distance = 2.5
+    exports.ox_target:addModel(Config.VendingObjects, {
+        label = Lang:t('menu.vending'),
+        icon = 'fa-solid fa-cash-register',
+        distance = 2.5,
+        onSelect = function(data)
+            data.coords = GetEntityCoords(data.entity)
+            TriggerServerEvent('rsg-inventory:server:openVending', data)
+        end,
     })
 end)
 

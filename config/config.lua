@@ -40,7 +40,7 @@ Config = {
     },
 
     VendingItems = {
-        { name = 'consumable_water_filtered',    price = 4, amount = 50 },
-        { name = 'consumable_bread_roll', price = 4, amount = 50 },
+        { name = 'water', price = 0.1, amount = 50 },
+        { name = 'bread', price = 0.1, amount = 50 },
     },
 }
