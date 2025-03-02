@@ -348,7 +348,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
             else
                 Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
                 AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
-                TriggerEvent('rsg-shops:server:UpdateShopItems', shop, itemInfo, amount)
+                TriggerClientEvent('rsg-inventory:client:updateInventory', source)
                 cb(true)
             end
         else
