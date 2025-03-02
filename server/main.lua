@@ -306,6 +306,11 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
         return
     end
 
+    if sinvtype == 'player' then
+        --TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
+        cb(false)
+    end
+
     local shopInfo = RegisteredShops[shop]
     if not shopInfo then
         cb(false)
@@ -334,29 +339,23 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     end
 
     if not CanAddItem(source, itemInfo.name, amount) then
-        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot hold item', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot carry this', type = 'error', duration = 5000 })
         cb(false)
         return
     end
 
     if price then
         if Player.PlayerData.money.cash >= price then
-
-            if sinvtype == 'player' then
-                TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
-                cb(false)
-            else
-                Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-                AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
-                TriggerEvent('rsg-shops:server:UpdateShopItems', shop, itemInfo, amount)
-                cb(true)
-            end
+            Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
+            AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
+            TriggerClientEvent('rsg-inventory:client:updateInventory', source)
+            cb(true)
         else
             TriggerClientEvent('ox_lib:notify', source, {title = 'You do not have enough money', type = 'error', duration = 5000 })
             cb(false)
         end
     else
-        TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, {title = 'Item has no price or is not for sale', type = 'error', duration = 5000 })
         cb(false)
     end
 end)

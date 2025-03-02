@@ -124,11 +124,13 @@ RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
 end)
 
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
+    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
     hotbarShown = not hotbarShown
     SendNUIMessage({
         action = 'toggleHotbar',
         open = hotbarShown,
-        items = items
+        items = items,
+        token = token,
     })
 end)
 
@@ -139,9 +141,11 @@ RegisterNetEvent('rsg-inventory:client:closeInv', function()
 end)
 
 RegisterNetEvent('rsg-inventory:client:updateInventory', function()
+    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
     SendNUIMessage({
         action = 'update',
-        inventory = PlayerData.items
+        inventory = PlayerData.items,
+        token = token,
     })
 end)
 
@@ -175,9 +179,11 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
 end)
 
 RegisterNetEvent('rsg-inventory:client:updateHotbar', function(items)
+    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
     SendNUIMessage({
         action = 'updateHotbar',
-        items = items
+        items = items,
+        token = token,
     })
 end)
 
@@ -189,13 +195,15 @@ RegisterNetEvent('rsg-inventory:server:RobPlayer', function(TargetId)
 end)
 
 RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
+    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
         inventory = items,
         slots = Config.MaxSlots,
         maxweight = Config.MaxWeight,
-        other = other
+        other = other,
+        token = token,
     })
 end)
 
@@ -301,18 +309,14 @@ end)
 -- Vending
 
 CreateThread(function()
-    exports['rsg-target']:AddTargetModel(Config.VendingObjects, {
-        options = {
-            {
-
-                action = function()
-                    TriggerServerEvent('rsg-inventory:server:openVending')
-                end,
-                icon = 'fa-solid fa-cash-register',
-                label = Lang:t('menu.vending'),
-            },
-        },
-        distance = 2.5
+    exports.ox_target:addModel(Config.VendingObjects, {
+        label = Lang:t('menu.vending'),
+        icon = 'fa-solid fa-cash-register',
+        distance = 2.5,
+        onSelect = function(data)
+            data.coords = GetEntityCoords(data.entity)
+            TriggerServerEvent('rsg-inventory:server:openVending', data)
+        end,
     })
 end)
 
@@ -405,16 +409,36 @@ CreateThread(function()
     end
 end)
 
--- execute slot commands
+local lastUsed = 0
 for i = 1, 5 do
     RegisterCommand('slot_' .. i, function()
+        local currentTime = GetGameTimer()
+
+        if lastUsed and currentTime - lastUsed < Config.HotbarSpamProtectionTimeout then
+            if Config.HotbarSpamProtectionNotify then
+                lib.notify({ 
+                    title = 'Error', 
+                    description = 'You are pressing buttons too fast! Please wait a moment before trying again.', 
+                    type = 'error', 
+                    duration = 5000 
+                })
+                
+            end
+
+            return
+        end
+
+        lastUsed = currentTime
+
         local itemData = PlayerData.items[i]
         if not itemData then return end
+        
         if itemData.type == "weapon" then
             if holdingDrop then
-                return lib.notify({ title = 'Error', description = 'Your already holding a bag, Go Drop it!', type = 'error', duration = 7000 })
+                return lib.notify({ title = 'Error', description = 'You are already holding a bag, go drop it!', type = 'error', duration = 5000 })
             end
         end
+        
         TriggerServerEvent('rsg-inventory:server:useItem', itemData)
     end, false)
 end

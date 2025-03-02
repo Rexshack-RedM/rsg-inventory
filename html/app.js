@@ -107,6 +107,19 @@ const InventoryContainer = Vue.createApp({
                 transferAmount: null,
             };
         },
+        validateToken(csrfToken) {
+            return axios
+                .post("https://rsg-core/validateCSRF", {
+                    clientToken: csrfToken,
+                })
+                .then((response) => {
+                    return response.data.valid;
+                })
+                .catch((error) => {
+                    console.error("Error validating CSRF:", error);
+                    return false;
+                });
+        },
         openInventory(data) {
             if (this.showHotbar) {
                 this.toggleHotbar(false);
@@ -521,33 +534,33 @@ const InventoryContainer = Vue.createApp({
                 });
                 if (response.data) {
                     const sourceInventory = this.getInventoryByType("other");
-                    const targetInventory = this.getInventoryByType("player");
+                    //const targetInventory = this.getInventoryByType("player");
                     const amountToTransfer = transferAmount !== null ? transferAmount : sourceItem.amount;
                     if (sourceItem.amount < amountToTransfer) {
                         this.inventoryError(sourceSlot);
                         return;
                     }
-                    let targetItem = targetInventory[targetSlot];
-                    if (!targetItem || targetItem.name !== sourceItem.name) {
-                        let foundSlot = Object.keys(targetInventory).find((slot) => targetInventory[slot] && targetInventory[slot].name === sourceItem.name);
-                        if (foundSlot) {
-                            targetInventory[foundSlot].amount += amountToTransfer;
-                        } else {
-                            const targetInventoryKeys = Object.keys(targetInventory);
-                            if (targetInventoryKeys.length < this.totalSlots) {
-                                let freeSlot = Array.from({ length: this.totalSlots }, (_, i) => i + 1).find((i) => !(i in targetInventory));
-                                targetInventory[freeSlot] = {
-                                    ...sourceItem,
-                                    amount: amountToTransfer,
-                                };
-                            } else {
-                                this.inventoryError(sourceSlot);
-                                return;
-                            }
-                        }
-                    } else {
-                        targetItem.amount += amountToTransfer;
-                    }
+                    // let targetItem = targetInventory[targetSlot];
+                    // if (!targetItem || targetItem.name !== sourceItem.name) {
+                    //     let foundSlot = Object.keys(targetInventory).find((slot) => targetInventory[slot] && targetInventory[slot].name === sourceItem.name);
+                    //     if (foundSlot) {
+                    //         targetInventory[foundSlot].amount += amountToTransfer;
+                    //     } else {
+                    //         const targetInventoryKeys = Object.keys(targetInventory);
+                    //         if (targetInventoryKeys.length < this.totalSlots) {
+                    //             let freeSlot = Array.from({ length: this.totalSlots }, (_, i) => i + 1).find((i) => !(i in targetInventory));
+                    //             targetInventory[freeSlot] = {
+                    //                 ...sourceItem,
+                    //                 amount: amountToTransfer,
+                    //             };
+                    //         } else {
+                    //             this.inventoryError(sourceSlot);
+                    //             return;
+                    //         }
+                    //     }
+                    // } else {
+                    //     targetItem.amount += amountToTransfer;
+                    // }
                     sourceItem.amount -= amountToTransfer;
                     if (sourceItem.amount <= 0) {
                         delete sourceInventory[sourceSlot];
@@ -940,20 +953,27 @@ const InventoryContainer = Vue.createApp({
                 }
             }
         });
-
-        window.addEventListener("message", (event) => {
+        
+        window.addEventListener("message", async (event) => {
             switch (event.data.action) {
                 case "open":
-                    this.openInventory(event.data);
+                    let isValid = await this.validateToken(event.data.token)
+                    if (isValid) {
+                        this.openInventory(event.data);
+                    }
                     break;
                 case "close":
                     this.closeInventory();
                     break;
                 case "update":
-                    this.updateInventory(event.data);
+                    if (this.validateToken(event.data.token)) {
+                        this.updateInventory(event.data);
+                    }
                     break;
                 case "toggleHotbar":
-                    this.toggleHotbar(event.data);
+                    if (this.validateToken(event.data.token)) {
+                        this.toggleHotbar(event.data);
+                    }
                     break;
                 case "itemBox":
                     this.showItemNotification(event.data);
@@ -962,7 +982,9 @@ const InventoryContainer = Vue.createApp({
                     this.showRequiredItem(event.data);
                     break;
                 case "updateHotbar":
-                    this.hotbarItems = event.data.items;
+                    if (this.validateToken(event.data.token)) {
+                        this.hotbarItems = event.data.items;
+                    }
                     break;
                 default:
                     console.warn(`Unexpected action: ${event.data.action}`);

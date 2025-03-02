@@ -19,6 +19,9 @@ Config = {
         Hotbar = 0x26E9DC00, -- 'Z',
     },
 
+    HotbarSpamProtectionTimeout = 500, -- in miliseconds
+    HotbarSpamProtectionNotify = false, -- should player recieve notification when spamming hotbar
+
     CleanupDropTime = 15,    -- in minutes
     CleanupDropInterval = 1, -- in minutes
 
@@ -37,7 +40,7 @@ Config = {
     },
 
     VendingItems = {
-        { name = 'consumable_water_filtered',    price = 4, amount = 50 },
-        { name = 'consumable_bread_roll', price = 4, amount = 50 },
+        { name = 'water', price = 0.1, amount = 50 },
+        { name = 'bread', price = 0.1, amount = 50 },
     },
 }

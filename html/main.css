@@ -184,7 +184,8 @@ div {
 }
 
 .item-slot-amount {
-    font-size: 0.7vh;
+    font-size: 1.2vh;
+    font-weight: bolder;
     color: white;
     position: absolute;
     top: 5px;
@@ -197,7 +198,8 @@ div {
 }
 
 .item-price {
-    font-size: 0.7vh;
+    font-size: 1.2vh;
+    font-weight: bolder;
     color: white;
     position: absolute;
     top: 5px;
@@ -206,14 +208,14 @@ div {
     height: 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: left;
 }
 
 .item-slot-label {
     position: absolute;
     white-space: nowrap;
     bottom: 0;
-    height: 1vh;
+    height: 1.5vh;
     width: 100%;
     background-color: #cccccc;
     display: flex;
@@ -250,10 +252,15 @@ div {
 
 .item-slot-label > p {
     text-transform: uppercase;
-    font-weight: bolder;
+    font-weight: bold;
     color: #000000;
-    font-size: 0.7vh;
+    font-size: 1.2vh;
     text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 100%; 
+    display: block;
 }
 
 /* Weight Bar Styles */
