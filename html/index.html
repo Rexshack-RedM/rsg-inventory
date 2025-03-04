@@ -198,6 +198,7 @@
                         <li @click="giveItem(contextMenuItem, 1)">Single</li>
                         <li @click="giveItem(contextMenuItem, 'half')">Half</li>
                         <li @click="giveItem(contextMenuItem, 'all')">All</li>
+                        <li @click="giveItem(contextMenuItem, 'enteramount')">Amount</li>
                     </ul>
                 </li>
                 <li @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
@@ -206,6 +207,7 @@
                         <li @click="dropItem(contextMenuItem, 1)">Single</li>
                         <li @click="dropItem(contextMenuItem, 'half')">Half</li>
                         <li @click="dropItem(contextMenuItem, 'all')">All</li>
+                        <li @click="dropItem(contextMenuItem, 'enteramount')">Amount</li>
                     </ul>
                 </li>
                 <li @click="splitAndPlaceItem(contextMenuItem, 'player')">Split</li>

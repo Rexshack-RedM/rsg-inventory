@@ -263,6 +263,16 @@ RegisterNUICallback('GiveItem', function(data, cb)
     end
 end)
 
+RegisterNUICallback('GiveItemAmount', function(data, cb)
+    local input = lib.inputDialog('Enter Amount', {
+        {type = 'number', label = 'Number input', icon = 'hashtag'},
+    })
+
+    if input then
+        cb(tonumber(input[1]))
+    end
+end)
+
 RegisterNUICallback('GetWeaponData', function(cData, cb)
     local data = {
         WeaponData = RSGCore.Shared.Items[cData.weapon],
