@@ -124,7 +124,7 @@ RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
 end)
 
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
-    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
+    local token = exports['rsg-core']:GenerateCSRFToken()
     hotbarShown = not hotbarShown
     SendNUIMessage({
         action = 'toggleHotbar',
@@ -141,7 +141,7 @@ RegisterNetEvent('rsg-inventory:client:closeInv', function()
 end)
 
 RegisterNetEvent('rsg-inventory:client:updateInventory', function()
-    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
+    local token = exports['rsg-core']:GenerateCSRFToken()
     SendNUIMessage({
         action = 'update',
         inventory = PlayerData.items,
@@ -179,7 +179,7 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
 end)
 
 RegisterNetEvent('rsg-inventory:client:updateHotbar', function(items)
-    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
+    local token = exports['rsg-core']:GenerateCSRFToken()
     SendNUIMessage({
         action = 'updateHotbar',
         items = items,
@@ -195,7 +195,7 @@ RegisterNetEvent('rsg-inventory:server:RobPlayer', function(TargetId)
 end)
 
 RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
-    local token = lib.callback.await('RSGCore:Server:GenerateToken', false)
+    local token = exports['rsg-core']:GenerateCSRFToken()
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',

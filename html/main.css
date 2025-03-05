@@ -194,7 +194,11 @@ div {
     height: 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: right;
+}
+
+.text-red {
+    color: orangered;
 }
 
 .item-price {
@@ -425,7 +429,7 @@ div {
 
 .input-container {
     position: absolute;
-    width: 4%;
+    width: 6%;
     top: calc(26% + ((47.16% - 3vh) / 2));
     left: 50%;
     transform: translate(-50%, -50%);
@@ -450,7 +454,7 @@ div {
     border: none;
     background-color: transparent;
     color: white;
-    font-size: 1vh;
+    font-size: 1.6vh;
     width: 85%;
     outline: none;
     text-align: center;
@@ -462,6 +466,12 @@ div {
 .clear-button {
     margin-left: 5px;
     background-color: #2c2c2c;
+    border: none;
+}
+
+.clear-button:hover {
+    margin-left: 5px;
+    background-color: white;
     border: none;
 }
 

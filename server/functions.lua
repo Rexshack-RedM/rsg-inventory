@@ -20,16 +20,31 @@ local function GetFirstFreeSlot(items, maxSlots)
     return nil
 end
 
-local function SetupShopItems(shopItems)
+local function SetupShopItems(shopItems, shopName)
     local items = {}
     local slot = 1
     if shopItems and next(shopItems) then
         for _, item in pairs(shopItems) do
             local itemInfo = RSGCore.Shared.Items[item.name:lower()]
             if itemInfo then
+                local maxStock = nil
+                if Config.ShopsStockEnabled then
+                    maxStock = item.amount
+
+                    if Config.ShopsStockPersistent then
+                        if ShopsStockCache[shopName] and ShopsStockCache[shopName].items[itemInfo['name']] then
+                            amount = tonumber(ShopsStockCache[shopName].items[itemInfo['name']].stock)
+                        end
+                    else
+                        amount = maxStock
+                    end
+                else
+                    amount = nil
+                end
+
                 items[slot] = {
                     name = itemInfo['name'],
-                    amount = tonumber(item.amount),
+                    amount = amount,
                     info = item.info or {},
                     label = itemInfo['label'],
                     description = itemInfo['description'] or '',
@@ -41,11 +56,66 @@ local function SetupShopItems(shopItems)
                     image = itemInfo['image'],
                     slot = slot,
                 }
+
+                if Config.ShopsEnableBuybackStockLimit then 
+                    items[slot].maxStock = maxStock
+                end
+                lib.print.info(items[slot])
                 slot = slot + 1
             end
         end
     end
     return items
+end
+
+function SaveItemsInStock()
+    local saveData = {}
+    for shopName, shopData in pairs(RegisteredShops) do 
+        for slot, item in pairs(shopData.items) do 
+            saveData[#saveData + 1] = {
+                shop_name = shopName,
+                item_name = item.name,
+                stock = item.amount,
+            }
+        end
+    end
+    lib.print.info(saveData)
+    if #saveData == 0 then return end
+
+    local values = {}
+    local placeholders = {}
+
+    for _, item in ipairs(saveData) do
+        table.insert(placeholders, "(?, ?, ?)")
+        table.insert(values, item.shop_name)
+        table.insert(values, item.item_name)
+        table.insert(values, item.stock)
+    end
+
+    local query = [[
+        REPLACE INTO shop_stock (shop_name, item_name, stock)
+        VALUES ]] .. table.concat(placeholders, ", ")
+
+    exports.oxmysql:execute(query, values)
+end
+
+function LoadItemsInStock()
+    local query = "SELECT shop_name, item_name, stock FROM shop_stock"
+
+    exports.oxmysql:execute(query, {}, function(result)
+        if not result or #result == 0 then return end
+
+        for _, row in ipairs(result) do
+            if not ShopsStockCache[row.shop_name] then
+                ShopsStockCache[row.shop_name] = { items = {} }
+            end
+
+            ShopsStockCache[row.shop_name].items[row.item_name] = {
+                name = row.item_name,
+                stock = row.stock
+            }
+        end
+    end)
 end
 
 -- Exported Function
@@ -498,29 +568,34 @@ exports('ClearStash', ClearStash)
 --- @param shopData table The data of the shop to create.
 function CreateShop(shopData)
     if shopData.name then
+        if RegisteredShops[shopData.name] then return end
+
         RegisteredShops[shopData.name] = {
             name = shopData.name,
             label = shopData.label,
             coords = shopData.coords,
             slots = #shopData.items,
-            items = SetupShopItems(shopData.items)
+            items = SetupShopItems(shopData.items, shopData.name)
         }
     else
         for key, data in pairs(shopData) do
             if type(data) == 'table' then
                 if data.name then
                     local shopName = type(key) == 'number' and data.name or key
+                    if RegisteredShops[shopData.name] then goto continue end
                     RegisteredShops[shopName] = {
                         name = shopName,
                         label = data.label,
                         coords = data.coords,
                         slots = #data.items,
-                        items = SetupShopItems(data.items)
+                        items = SetupShopItems(data.items, shopName)
                     }
                 else
                     CreateShop(data)
                 end
             end
+            
+            ::continue::
         end
     end
 end
@@ -548,7 +623,8 @@ function OpenShop(source, name)
         label = RegisteredShops[name].label,
         maxweight = 5000000,
         slots = #RegisteredShops[name].items,
-        inventory = RegisteredShops[name].items
+        inventory = RegisteredShops[name].items,
+        stockEnabled = Config.ShopsStockEnabled,
     }
     TriggerClientEvent('rsg-inventory:client:openInventory', source, Player.PlayerData.items, formattedInventory)
 end
