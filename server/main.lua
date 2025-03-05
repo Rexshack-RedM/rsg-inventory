@@ -86,6 +86,12 @@ AddEventHandler('RSGCore:Server:PlayerLoaded', function(Player)
     end)
 end)
 
+AddEventHandler('txAdmin:events:serverShuttingDown', function()
+    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
+        SaveItemsInStock()
+    end
+end)
+
 AddEventHandler('onResourceStop', function(resourceName) 
     if resourceName ~= GetCurrentResourceName() then return end
     
