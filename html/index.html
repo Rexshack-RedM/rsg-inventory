@@ -6,7 +6,8 @@
         <title>RSG Inventory</title>
         <link rel="stylesheet" href="main.css" />
         <link rel="stylesheet" href="https://unpkg.com/floating-vue@5.2.2/dist/style.css" />
-        <script src="https://kit.fontawesome.com/d37231be1f.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@floating-ui/core@1.6.0"></script>
         <script src="https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.6.1"></script>
@@ -88,8 +89,10 @@
                             <div class="item-slot-img" v-if="getItemInSlot(slot, 'other')" v-tooltip.right-end="{content: generateTooltipContent(getItemInSlot(slot, 'other')), html: true}">
                                 <img :src="'images/' + getItemInSlot(slot, 'other').image" alt="" />
                             </div>
-                            <div class="item-slot-amount" v-if="getItemInSlot(slot, 'other')">
-                                <p>x{{ getItemInSlot(slot, 'other').amount }}</p>
+                            <div class="item-slot-amount" v-if="getItemInSlot(slot, 'other') && typeof getItemInSlot(slot, 'other').amount === 'number'" :class="{'text-red': getItemInSlot(slot, 'other').amount < 1}">
+                                <p>
+                                    x{{ getItemInSlot(slot, 'other').amount }}{{ typeof getItemInSlot(slot, 'other').maxStock === 'number' ? '/' + getItemInSlot(slot, 'other').maxStock : '' }}
+                                </p>
                             </div>
                             <div v-if="isShopInventory && getItemInSlot(slot, 'other')" class="item-price">
                                 <p>${{ getItemInSlot(slot, 'other').price }}</p>
@@ -210,7 +213,14 @@
                         <li @click="dropItem(contextMenuItem, 'enteramount')">Amount</li>
                     </ul>
                 </li>
-                <li @click="splitAndPlaceItem(contextMenuItem, 'player')">Split</li>
+                <li @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
+                    Split
+                    <ul v-if="showSubmenu" class="submenu">
+                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 1)">Single</li>
+                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 'half')">Half</li>
+                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 'enteramount')">Amount</li>
+                    </ul>
+                </li>
                 <li v-if="contextMenuItem.name.includes('weapon_')" @click="copySerial(contextMenuItem)">Copy Serial</li>
                 <li v-if="contextMenuItem.name.includes('weapon_')" @click="openWeaponAttachments(contextMenuItem)">Attachments</li>
             </ul>

@@ -2,6 +2,7 @@ RSGCore = exports['rsg-core']:GetCoreObject()
 Inventories = {}
 Drops = {}
 RegisteredShops = {}
+ShopsStockCache = {}
 
 CreateThread(function()
     MySQL.query('SELECT * FROM inventories', {}, function(result)
@@ -85,6 +86,14 @@ AddEventHandler('RSGCore:Server:PlayerLoaded', function(Player)
     end)
 end)
 
+AddEventHandler('onResourceStop', function(resourceName) 
+    if resourceName ~= GetCurrentResourceName() then return end
+    
+    if Config.ShopsStockPersistent then
+        SaveItemsInStock()
+    end
+end)
+
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     local Players = RSGCore.Functions.GetRSGPlayers()
@@ -118,6 +127,12 @@ AddEventHandler('onResourceStart', function(resourceName)
         end)
 
         Player(k).state.inv_busy = false
+    end
+
+    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
+        LoadItemsInStock()
+    else
+        ClearStockDb()
     end
 end)
 
@@ -296,6 +311,10 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     local price = itemInfo.price
     local sinvtype = data.sourceinvtype
 
+    if itemInfo.unique and amount > 1 then
+        amount = 1
+    end
+
     if price then
         price = itemInfo.price * amount
     end
@@ -304,11 +323,6 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     if not Player then
         cb(false)
         return
-    end
-
-    if sinvtype == 'player' then
-        --TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy your items!', type = 'error', duration = 5000 })
-        cb(false)
     end
 
     local shopInfo = RegisteredShops[shop]
@@ -327,12 +341,50 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
         end
     end
 
+    if sinvtype == 'player' then
+        if not Config.ShopsEnableBuyback then
+            cb(false)
+            return
+        end
+
+        for slot, item in ipairs(shopInfo.items) do 
+            if itemInfo.name == item.name and item.price ~= nil then 
+                if Config.ShopsEnableBuybackStockLimit and item.maxStock < (item.amount + amount) then
+                    TriggerClientEvent('ox_lib:notify', source, {title = 'This item is fully stocked, shop wont buy more!', type = 'error', duration = 5000 })
+                    cb(false)
+                    return
+                end
+
+                if HasItem(source, itemInfo.name, amount) then
+                    if Config.ShopsStockEnabled then 
+                        item.amount = item.amount + amount
+                    end
+
+                    local buyprice = tonumber(string.format("%.2f", (item.price * amount) * Config.ShopsBuybackPriceMultiplier))
+                    RemoveItem(source, itemInfo.name, amount, itemInfo.slot, 'shop-sell')
+                    Player.Functions.AddMoney('cash', buyprice, 'shop-sell')
+                    TriggerClientEvent('rsg-inventory:client:updateInventory', source)
+                    cb(true)
+                    return
+                else
+                    TriggerClientEvent('ox_lib:notify', source, {title = 'Not enough items to sell!', type = 'error', duration = 5000 })
+                    cb(false)
+                    return
+                end
+            end
+        end
+
+        TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy this item!', type = 'error', duration = 5000 })
+        cb(false)
+        return
+    end
+
     if shopInfo.items[itemInfo.slot].name ~= itemInfo.name then -- Check if item name passed is the same as the item in that slot
         cb(false)
         return
     end
 
-    if amount > shopInfo.items[itemInfo.slot].amount then
+    if Config.ShopsStockEnabled and amount > shopInfo.items[itemInfo.slot].amount then
         TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot purchase larger quantity than currently in stock', type = 'error', duration = 5000 })
         cb(false)
         return
@@ -346,6 +398,10 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
 
     if price then
         if Player.PlayerData.money.cash >= price then
+            if Config.ShopsStockEnabled then 
+                shopInfo.items[itemInfo.slot].amount = shopInfo.items[itemInfo.slot].amount - amount
+            end
+
             Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
             AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
             TriggerClientEvent('rsg-inventory:client:updateInventory', source)
