@@ -89,7 +89,7 @@ end)
 AddEventHandler('onResourceStop', function(resourceName) 
     if resourceName ~= GetCurrentResourceName() then return end
     
-    if Config.ShopsStockPersistent then
+    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
         SaveItemsInStock()
     end
 end)

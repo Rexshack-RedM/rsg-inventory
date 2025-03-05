@@ -98,13 +98,13 @@ function SaveItemsInStock()
         REPLACE INTO shop_stock (shop_name, item_name, stock)
         VALUES ]] .. table.concat(placeholders, ", ")
 
-    exports.oxmysql:execute(query, values)
+    MySQL.query(query, values)
 end
 
 function LoadItemsInStock()
     local query = "SELECT shop_name, item_name, stock FROM shop_stock"
 
-    exports.oxmysql:execute(query, {}, function(result)
+    MySQL.query(query, {}, function(result)
         if not result or #result == 0 then return end
 
         for _, row in ipairs(result) do
