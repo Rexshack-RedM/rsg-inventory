@@ -129,8 +129,10 @@ AddEventHandler('onResourceStart', function(resourceName)
         Player(k).state.inv_busy = false
     end
 
-    if Config.ShopsStockPersistent then
+    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
         LoadItemsInStock()
+    else
+        ClearStockDb()
     end
 end)
 
@@ -339,7 +341,12 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
         end
     end
 
-    if sinvtype == 'player' and Config.ShopsEnableBuyback then
+    if sinvtype == 'player' then
+        if not Config.ShopsEnableBuyback then
+            cb(false)
+            return
+        end
+
         for slot, item in ipairs(shopInfo.items) do 
             if itemInfo.name == item.name and item.price ~= nil then 
                 if Config.ShopsEnableBuybackStockLimit and item.maxStock < (item.amount + amount) then

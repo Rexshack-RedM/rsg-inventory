@@ -34,6 +34,8 @@ local function SetupShopItems(shopItems, shopName)
                     if Config.ShopsStockPersistent then
                         if ShopsStockCache[shopName] and ShopsStockCache[shopName].items[itemInfo['name']] then
                             amount = tonumber(ShopsStockCache[shopName].items[itemInfo['name']].stock)
+                        else 
+                            amount = maxStock
                         end
                     else
                         amount = maxStock
@@ -60,7 +62,7 @@ local function SetupShopItems(shopItems, shopName)
                 if Config.ShopsEnableBuybackStockLimit then 
                     items[slot].maxStock = maxStock
                 end
-                lib.print.info(items[slot])
+
                 slot = slot + 1
             end
         end
@@ -79,7 +81,7 @@ function SaveItemsInStock()
             }
         end
     end
-    lib.print.info(saveData)
+
     if #saveData == 0 then return end
 
     local values = {}
@@ -116,6 +118,11 @@ function LoadItemsInStock()
             }
         end
     end)
+end
+
+function ClearStockDb()
+    local query = "TRUNCATE TABLE shop_stock"
+    exports.oxmysql:execute(query)
 end
 
 -- Exported Function
