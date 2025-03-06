@@ -19,15 +19,15 @@ shared_scripts {
 client_scripts {
     'client/drops/functions.lua',
     'client/functions.lua', 
-    'client/main.lua',
-    'client/drops/loops.lua',
-    'client/events.lua',
-    'client/drops/events.lua',
     'client/commands.lua',
     'client/exports.lua',
+    'client/events.lua',
+    'client/drops/events.lua',
     'client/ui/events.lua',
     'client/ui/callbacks.lua',
     'client/drops/ui/callbacks.lua',
+    'client/main.lua',
+    'client/drops/loops.lua',
 }
 
 server_scripts {

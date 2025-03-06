@@ -1,22 +1,13 @@
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     LocalPlayer.state:set('inv_busy', false, true)
-    Drops.ResetPlayerState()
-    Drops.GetDrops()
 end)
 
 RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
     LocalPlayer.state:set('inv_busy', true, true)
-    Drops.ResetPlayerState()
 end)
 
 RegisterNetEvent('RSGCore:Client:UpdateObject', function()
     RSGCore = exports['rsg-core']:GetCoreObject()
-end)
-
-AddEventHandler('onResourceStart', function(resourceName)
-    if resourceName == GetCurrentResourceName() then
-        Drops.ResetPlayerState()
-    end
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()

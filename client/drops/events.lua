@@ -1,3 +1,14 @@
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        Drops.ResetPlayerState()
+    end
+end)
+
+RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
+    Drops.ResetPlayerState()
+    Drops.GetDrops()
+end)
+
 RegisterNetEvent('rsg-inventory:client:removeDropTarget', function(dropId)
     repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
     local bag = NetworkGetEntityFromNetworkId(dropId)
