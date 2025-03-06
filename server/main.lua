@@ -280,7 +280,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:createDrop', function(sou
         local bag = CreateObjectNoOffset(Config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
         while not DoesEntityExist(bag) do Wait(0) end
         local dropId = NetworkGetNetworkIdFromEntity(bag)   
-        local newDropId = 'drop-' .. dropId
+        local newDropId = CreateDropId(dropId)
         local itemsTable = setmetatable({ item }, {
             __len = function(t)
                 local length = 0

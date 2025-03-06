@@ -13,11 +13,21 @@ shared_scripts {
     'locales/en.lua',
     'locales/*.lua',
     'config/*.lua',
+    'shared/helpers.lua',
 }
 
 client_scripts {
+    'client/drops/functions.lua',
+    'client/functions.lua', 
     'client/main.lua',
-    'client/drops.lua'
+    'client/drops/loops.lua',
+    'client/events.lua',
+    'client/drops/events.lua',
+    'client/commands.lua',
+    'client/exports.lua',
+    'client/ui/events.lua',
+    'client/ui/callbacks.lua',
+    'client/drops/ui/callbacks.lua',
 }
 
 server_scripts {
