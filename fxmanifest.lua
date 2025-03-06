@@ -38,6 +38,7 @@ server_scripts {
     'server/shops/exports.lua',
     'server/main.lua',
     'server/events/*.lua',
+    'server/drops/events/*.lua',
     'server/shops/events/*.lua',
     'server/commands.lua',
     'server/versionchecker.lua',
