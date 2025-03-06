@@ -18,7 +18,7 @@ RegisterNUICallback('DropItem', function(item, cb)
         PlaceObjectOnGroundProperly(bag)
         FreezeEntityPosition(bag, true)
 
-        local newDropId = CreateDropId(dropId)
+        local newDropId = Helpers.CreateDropId(dropId)
         cb(newDropId)
 
     end, item)

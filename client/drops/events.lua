@@ -20,7 +20,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
     repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
     local bag = NetworkGetEntityFromNetworkId(dropId)
     repeat Wait(10) until DoesEntityExist(bag)
-    local newDropId = CreateDropId(dropId)
+    local newDropId = Helpers.CreateDropId(dropId)
 
     exports['rsg-target']:AddTargetEntity(bag, {
         options = {
