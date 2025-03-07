@@ -5,7 +5,7 @@ game 'rdr3'
 lua54 'yes'
 
 description 'rsg-inventory'
-version '2.2.6'
+version '2.2.7'
 
 shared_scripts {
     '@ox_lib/init.lua',
