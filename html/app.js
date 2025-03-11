@@ -58,6 +58,7 @@ const InventoryContainer = Vue.createApp({
                 totalSlots: 0,
                 // Escape Key
                 isInventoryOpen: false,
+                additionalCloseKey: 'KeyI',
                 // Single pane
                 isOtherInventoryEmpty: true,
                 // Error handling
@@ -988,9 +989,9 @@ const InventoryContainer = Vue.createApp({
         },
     },
     mounted() {
-        window.addEventListener("keydown", (event) => {
-            const key = event.key;
-            if (key === "Escape" || key === "Tab") {
+        window.addEventListener("keyup", (event) => {
+            const code = event.code;
+            if (code === "Escape" || code === "Tab" || code === this.additionalCloseKey) {
                 if (this.isInventoryOpen) {
                     this.closeInventory();
                 }
