@@ -1,14 +1,5 @@
 Shops = Shops or {}
 
-Shops.GetFirstFreeSlot = function(items, maxSlots)
-    for i = 1, maxSlots do
-        if items[i] == nil then
-            return i
-        end
-    end
-    return nil
-end
-
 Shops.SetupShopItems = function(shopItems, shopName)
     local items = {}
     local slot = 1

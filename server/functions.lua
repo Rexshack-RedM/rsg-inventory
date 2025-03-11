@@ -42,6 +42,15 @@ Inventory.GetItem = function(inventoryId, src, slot)
     return nil
 end
 
+Inventory.GetFirstFreeSlot = function(items, maxSlots)
+    for i = 1, maxSlots do
+        if items[i] == nil then
+            return i
+        end
+    end
+    return nil
+end
+
 Inventory.GetIdentifier = function(inventoryId, src)
     if inventoryId == 'player' then
         return src

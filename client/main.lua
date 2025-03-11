@@ -49,7 +49,7 @@ CreateThread(function()
         
         if Inventory.CanPlayerUseInventory() then
             for i = 1, #slots do
-                if IsDisabledControlPressed(0, keybinds[i]) and IsInputDisabled(0) then
+                if IsDisabledControlPressed(0, keybinds[tostring(i)]) and IsInputDisabled(0) then
                     ExecuteCommand(slots[i])
                 end
             end

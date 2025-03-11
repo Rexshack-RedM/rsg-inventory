@@ -2,13 +2,14 @@ Inventory = Inventory or {}
 
 Inventory.LoadInventory = function(source, citizenid)
     local inventory = MySQL.prepare.await('SELECT inventory FROM players WHERE citizenid = ?', { citizenid })
+    inventory = json.decode(inventory)
+    if not inventory or not next(inventory) then return {} end
+
     local loadedInventory = {}
     local missingItems = {}
-    inventory = json.decode(inventory)
-    if not inventory or not next(inventory) then return loadedInventory end
 
     for _, item in pairs(inventory) do
-        if item then
+        if item and item.name then
             local itemInfo = RSGCore.Shared.Items[item.name:lower()]
 
             if itemInfo then
@@ -629,47 +630,75 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         return false
     end
 
-    slot = tonumber(slot) or Inventory.GetFirstSlotByItem(inventory, item)
+    amount = tonumber(amount)
+    
+    if slot then
+        slot = tonumber(slot)
+        local inventoryItem = nil
+        local itemKey = nil
 
-    if not slot then
-        print('RemoveItem: Slot not found')
-        return false
-    end
-
-    local inventoryItem = nil
-    local itemKey = nil
-
-    for key, invItem in pairs(inventory) do
-        if invItem.slot == slot then
-            inventoryItem = invItem
-            itemKey = key
-            break
+        for key, invItem in pairs(inventory) do
+            if invItem.slot == slot then
+                inventoryItem = invItem
+                itemKey = key
+                break
+            end
         end
-    end
 
-    if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
-        print('RemoveItem: Item not found in slot')
-        return false
+        if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
+            print('RemoveItem: Item not found in slot')
+            return false
+        end
+
+        if inventoryItem.amount < amount then
+            print('RemoveItem: Not enough items in slot')
+            return false
+        end
+
+        inventoryItem.amount = inventoryItem.amount - amount
+        if inventoryItem.amount <= 0 then
+            inventory[itemKey] = nil
+        else
+            inventory[itemKey] = inventoryItem
+        end
+
+    else
+        local totalRemoved = 0
+
+        for itemKey, invItem in pairs(inventory) do
+            if invItem.name:lower() == item:lower() then
+                local available = invItem.amount
+                local removeAmount = math.min(available, amount - totalRemoved)
+                invItem.amount = invItem.amount - removeAmount
+                totalRemoved = totalRemoved + removeAmount
+
+                if invItem.amount <= 0 then
+                    inventory[itemKey] = nil
+                else
+                    inventory[itemKey] = invItem
+                end
+
+                if totalRemoved >= amount then
+                    break
+                end
+            end
+        end
+
+        if totalRemoved < amount then
+            print('RemoveItem: Not enough items in inventory')
+            return false
+        end
+
+        slot = 'Multiple'
     end
 
     if RSGCore.Shared.Items[item:lower()]['type'] == 'weapon' and player and isMove then
         TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
     end
 
-    amount = tonumber(amount)
-    if inventoryItem.amount < amount then
-        print('RemoveItem: Not enough items in slot')
-        return false
+    if player then 
+        player.Functions.SetPlayerData('items', inventory)
     end
-
-    inventoryItem.amount = inventoryItem.amount - amount
-    if inventoryItem.amount <= 0 then
-        inventory[itemKey] = nil
-    else
-        inventory[itemKey] = inventoryItem
-    end
-
-    if player then player.Functions.SetPlayerData('items', inventory) end
 
     local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
     local removeReason = reason or 'No reason specified'
@@ -686,6 +715,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         '**Reason:** ' .. removeReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
+
     return true
 end
 

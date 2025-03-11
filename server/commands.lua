@@ -72,16 +72,16 @@ end, 'god')
 RSGCore.Commands.Add('clearinv', 'Clear Inventory (Admin Only)', { { name = 'id', help = 'Player ID' } }, false, function(source, args)
     local id = tonumber(args[1])
     if not id then
-        ClearInventory(source)
+        Inventory.ClearInventory(source)
         return
     end
-    ClearInventory(id)
+    Inventory.ClearInventory(id)
 end, 'admin')
 
 -- Keybindings
 
 RegisterCommand('closeInv', function(source)
-    CloseInventory(source)
+    Inventory.CloseInventory(source)
 end, false)
 
 RegisterCommand('hotbar', function(source)
