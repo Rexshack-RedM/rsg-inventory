@@ -85,6 +85,7 @@ const InventoryContainer = Vue.createApp({
                 // Hotbar
                 showHotbar: false,
                 hotbarItems: [],
+                wasHotbarEnabled: false,
                 // Notification box
                 showNotification: false,
                 notificationText: "",
@@ -125,7 +126,10 @@ const InventoryContainer = Vue.createApp({
         },
         openInventory(data) {
             if (this.showHotbar) {
+                this.wasHotbarEnabled = true;
                 this.toggleHotbar(false);
+            } else {
+                this.wasHotbarEnabled = false;
             }
 
             this.isInventoryOpen = true;
@@ -206,9 +210,24 @@ const InventoryContainer = Vue.createApp({
         },
         async closeInventory() {
             let inventoryName = this.otherInventoryName;
+            const wasHotbarEnabled = this.wasHotbarEnabled;
+            let hotbarItems = []
+            if (wasHotbarEnabled) {
+                hotbarItems = Array(5).fill(null).map((_, index) => {
+                    const item = this.playerInventory[index + 1];
+                    return item !== undefined ? item : null;
+                });
+            }
+
             Object.assign(this, this.getInitialState());
             try {
                 await axios.post("https://rsg-inventory/CloseInventory", { name: inventoryName });
+                if (wasHotbarEnabled) {
+                    this.toggleHotbar({
+                        open: true,
+                        items: hotbarItems,
+                    });
+                }
             } catch (error) {
                 console.error("Error closing inventory:", error);
             }

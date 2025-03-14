@@ -142,7 +142,6 @@ end
 --- Applies decay to all items in a player's inventory and updates their data.
 --- @param player table The player object.
 Inventory.CheckPlayerItemsDecay = function(player)
-    --- @type boolean, table<number, table>
     local needsUpdate, removedItems = Inventory.CheckItemsDecay(player.PlayerData.items)
 
     if needsUpdate then
@@ -151,4 +150,21 @@ Inventory.CheckPlayerItemsDecay = function(player)
             TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name], 'remove', item.amount)
         end
     end
+end
+
+--- Applies decay to single item in a player's inventory and updates their data.
+--- @param player table The player object.
+--- @param item table item object.
+Inventory.CheckPlayerItemDecay = function(player, item) 
+    local updated, quality, delete = Inventory.CheckItemDecay(item)
+    if updated then
+        if delete and quality <= 0 then
+            player.PlayerData.items[item.slot] = nil
+            TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name], 'remove', item.amount)
+        end
+        
+        player.Functions.SetPlayerData('items', player.PlayerData.items)
+    end
+
+    return player.PlayerData.items[item.slot]
 end

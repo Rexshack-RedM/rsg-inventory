@@ -97,7 +97,7 @@
                             <div v-if="isShopInventory && getItemInSlot(slot, 'other')" class="item-price">
                                 <p>${{ getItemInSlot(slot, 'other').price }}</p>
                             </div>
-                            <div class="item-slot-durability" v-if="getItemInSlot(slot, 'other')">
+                            <div class="item-slot-durability" v-if="getItemInSlot(slot, 'other') && 'quality' in getItemInSlot(slot, 'other').info">
                                 <div
                                     class="item-slot-durability-fill"
                                     v-if="getItemInSlot(slot, 'other').info && 'quality' in getItemInSlot(slot, 'other').info"
@@ -129,7 +129,7 @@
                         <div class="item-slot-amount" v-if="getHotbarItemInSlot(slot)">
                             <p>x{{ getHotbarItemInSlot(slot).amount }}</p>
                         </div>
-                        <div class="item-slot-durability" v-if="getHotbarItemInSlot(slot)">
+                        <div class="item-slot-durability" v-if="getHotbarItemInSlot(slot) && 'quality' in getHotbarItemInSlot(slot).info">
                             <div
                                 class="item-slot-durability-fill"
                                 v-if="getHotbarItemInSlot(slot).info && 'quality' in getHotbarItemInSlot(slot).info"

@@ -53,7 +53,7 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
             amount = amount
         })
         
-        if type == 'remove' then
+        if type == 'remove' or type == 'add' then
             TriggerServerEvent('rsg-inventory:server:updateHotbar')
         end
     end

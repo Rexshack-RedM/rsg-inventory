@@ -179,9 +179,9 @@ exports('GetFirstSlotByItem', Inventory.GetFirstSlotByItem)
 Inventory.GetItemBySlot = function(source, slot)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
-    Inventory.CheckPlayerItemsDecay(Player)
-    local items = Player.PlayerData.items
-    return items[tonumber(slot)]
+    local item = Player.PlayerData.items[tonumber(slot)]
+    if not item then return end
+    return Inventory.CheckPlayerItemDecay(Player, item)
 end
 
 exports('GetItemBySlot', Inventory.GetItemBySlot)
