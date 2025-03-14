@@ -4,6 +4,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     local shop = string.gsub(data.shop, 'shop%-', '')
     local price = itemInfo.price
     local sinvtype = data.sourceinvtype
+    local targetSlot = data.targetslot
 
     if itemInfo.unique and amount > 1 then
         amount = 1
@@ -97,7 +98,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
             end
 
             Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-            Inventory.AddItem(source, itemInfo.name, amount, nil, itemInfo.info, 'shop-purchase')
+            Inventory.AddItem(source, itemInfo.name, amount, targetSlot, itemInfo.info, 'shop-purchase')
             TriggerClientEvent('rsg-inventory:client:updateInventory', source)
             cb(true)
         else

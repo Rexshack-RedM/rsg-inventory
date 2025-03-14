@@ -61,6 +61,7 @@ Shops.OpenShop = function(source, name)
         inventory = RegisteredShops[name].items,
         stockEnabled = Config.ShopsStockEnabled,
     }
+    Inventory.CheckPlayerItemsDecay(Player)
     TriggerClientEvent('rsg-inventory:client:openInventory', source, Player.PlayerData.items, formattedInventory)
 end
 

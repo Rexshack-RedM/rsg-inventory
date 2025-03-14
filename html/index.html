@@ -43,7 +43,7 @@
                             <div class="item-slot-amount" v-if="getItemInSlot(slot, 'player')">
                                 <p>x{{ getItemInSlot(slot, 'player').amount }}</p>
                             </div>
-                            <div class="item-slot-durability" v-if="getItemInSlot(slot, 'player')">
+                            <div class="item-slot-durability" v-if="getItemInSlot(slot, 'player') && getItemInSlot(slot, 'player').info && 'quality' in getItemInSlot(slot, 'player').info">
                                 <div
                                     class="item-slot-durability-fill"
                                     v-if="getItemInSlot(slot, 'player').info && 'quality' in getItemInSlot(slot, 'player').info"

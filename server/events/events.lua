@@ -94,7 +94,7 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
 
         if fromId ~= toId then isMove = true end
 
-        if toItem and fromItem.name == toItem.name then
+        if toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality then
             if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
                 Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item')
             end

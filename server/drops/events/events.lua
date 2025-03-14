@@ -9,6 +9,7 @@ RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
     if drop.isOpen then return end
     local distance = #(playerCoords - drop.coords)
     if distance > 2.5 then return end
+    Inventory.CheckItemsDecay(drop.items)
     local formattedInventory = {
         name = dropId,
         label = dropId,

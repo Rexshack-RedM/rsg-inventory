@@ -337,16 +337,18 @@ div {
 }
 
 .notification-title {
+    position: absolute;
     color: white;
     align-self: flex-start;
-    margin-top: 5px;
+    margin-top: 6px;
     margin-left: 5px;
 }
 
 .notification-title p {
     margin: 0;
     padding: 0;
-    font-size: 0.7vh;
+    font-size: 1.2vh;
+    font-weight: bolder;
 }
 
 .required-item-container {

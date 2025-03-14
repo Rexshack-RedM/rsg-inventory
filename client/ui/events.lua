@@ -52,6 +52,10 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
             type = type,
             amount = amount
         })
+        
+        if type == 'remove' then
+            TriggerServerEvent('rsg-inventory:server:updateHotbar')
+        end
     end
 
     local lastItemBoxCall = LocalPlayer.state.lastItemBoxCall or 0
@@ -67,10 +71,6 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
             sendItemBox()
         end, true)
         lastItemBoxCall = currentTime + delay
-    end
-
-    if type == 'remove' then
-        TriggerServerEvent('rsg-inventory:server:updateHotbar')
     end
 
     LocalPlayer.state.lastItemBoxCall = lastItemBoxCall
