@@ -218,15 +218,12 @@ div {
 .item-slot-label {
     position: absolute;
     white-space: nowrap;
-    bottom: 0;
+    bottom: 6px;
     height: 1.5vh;
     width: 100%;
-    background-color: #cccccc;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1), 0 2px 2px rgba(0, 0, 0, 0.2);
-    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
 }
 
 .item-slot-durability {
@@ -256,15 +253,23 @@ div {
 
 .item-slot-label > p {
     text-transform: uppercase;
+    color: white;
+    font-size: 0.8vh;
     font-weight: bold;
-    color: #000000;
-    font-size: 1.2vh;
     text-align: center;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     width: 100%; 
     display: block;
+}
+
+.hotbar .item-slot-durability {
+    position: absolute;
+    bottom: 0vh;
+    width: 99%;
+    height: 6px;
+    background-color: #2d2d2d;
 }
 
 /* Weight Bar Styles */
@@ -320,7 +325,7 @@ div {
     display: flex;
     justify-content: center;
     position: fixed;
-    bottom: 2vh;
+    bottom: 14vh;
     left: 50%;
     transform: translate(-50%);
 }
@@ -337,16 +342,18 @@ div {
 }
 
 .notification-title {
+    position: absolute;
     color: white;
     align-self: flex-start;
-    margin-top: 5px;
+    margin-top: 6px;
     margin-left: 5px;
 }
 
 .notification-title p {
     margin: 0;
     padding: 0;
-    font-size: 0.7vh;
+    font-size: 1.2vh;
+    font-weight: bolder;
 }
 
 .required-item-container {

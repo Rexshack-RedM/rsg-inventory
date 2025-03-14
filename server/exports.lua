@@ -8,11 +8,15 @@ Inventory.LoadInventory = function(source, citizenid)
     local loadedInventory = {}
     local missingItems = {}
 
+    local currentTime = os.time()
+
     for _, item in pairs(inventory) do
         if item and item.name then
             local itemInfo = RSGCore.Shared.Items[item.name:lower()]
+            local updated, quality, delete = Inventory.CheckItemDecay(item, itemInfo, currentTime)
+            local check = not (updated and delete and quality <= 0)
 
-            if itemInfo then
+            if itemInfo and check then
                 loadedInventory[item.slot] = {
                     name = itemInfo['name'],
                     amount = item.amount,
@@ -175,8 +179,9 @@ exports('GetFirstSlotByItem', Inventory.GetFirstSlotByItem)
 Inventory.GetItemBySlot = function(source, slot)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
-    local items = Player.PlayerData.items
-    return items[tonumber(slot)]
+    local item = Player.PlayerData.items[tonumber(slot)]
+    if not item then return end
+    return Inventory.CheckPlayerItemDecay(Player, item)
 end
 
 exports('GetItemBySlot', Inventory.GetItemBySlot)
@@ -262,6 +267,7 @@ exports('GetSlots', Inventory.GetSlots)
 Inventory.GetItemCount = function(source, items)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
+    Inventory.CheckPlayerItemsDecay(Player)
     local isTable = type(items) == 'table'
     local itemsSet = isTable and {} or nil
     if isTable then
@@ -365,6 +371,8 @@ exports('ClearInventory', Inventory.ClearInventory)
 Inventory.HasItem = function(source, items, amount)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return false end
+    Inventory.CheckPlayerItemsDecay(Player)
+
     local isTable = type(items) == 'table'
     local isArray = isTable and table.type(items) == 'array' or false
     local totalItems = isArray and #items or 0
@@ -418,6 +426,8 @@ Inventory.OpenInventoryById = function(source, targetId)
     local TargetPlayer = RSGCore.Functions.GetPlayer(tonumber(targetId))
     if not RSGPlayer or not TargetPlayer then return end
     if Player(targetId).state.inv_busy then Inventory.CloseInventory(targetId) end
+    Inventory.CheckPlayerItemsDecay(RSGPlayer)
+    Inventory.CheckPlayerItemsDecay(TargetPlayer)
     local playerItems = RSGPlayer.PlayerData.items
     local targetItems = TargetPlayer.PlayerData.items
     local formattedInventory = {
@@ -456,6 +466,7 @@ Inventory.OpenInventory = function (source, identifier, data)
 
     if not identifier then
         Player(source).state.inv_busy = true
+        Inventory.CheckPlayerItemsDecay(RSGPlayer)
         TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items)
         return
     end
@@ -472,7 +483,11 @@ Inventory.OpenInventory = function (source, identifier, data)
         return
     end
 
-    if not inventory then inventory = Inventory.InitializeInventory(identifier, data) end
+    if not inventory then 
+        inventory = Inventory.InitializeInventory(identifier, data) 
+    else
+        Inventory.CheckItemsDecay(inventory.items)
+    end
     inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or Config.StashSize.maxweight
     inventory.slots = (data and data.slots) or (inventory and inventory.slots) or Config.StashSize.slots
     inventory.label = (data and data.label) or (inventory and inventory.label) or identifier
@@ -485,6 +500,8 @@ Inventory.OpenInventory = function (source, identifier, data)
         slots = inventory.slots,
         inventory = inventory.items
     }
+
+    Inventory.CheckPlayerItemsDecay(RSGPlayer)
     TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items, formattedInventory)
 end
 
@@ -504,6 +521,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         print('AddItem: Invalid item')
         return false
     end
+
     local inventory, inventoryWeight, inventorySlots
     local player = RSGCore.Functions.GetPlayer(identifier)
 
@@ -526,20 +544,33 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         return false
     end
 
+    Inventory.CheckItemsDecay(inventory)
+
+    amount = tonumber(amount) or 1
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
         print('AddItem: Not enough weight available')
         return false
     end
 
-    amount = tonumber(amount) or 1
-    local updated = false
+    info = info or {}
+    if itemInfo.decay then
+        info.quality = info.quality or 100
+        info.lastUpdate = info.lastUpdate or os.time()
+    end
 
+    local updated = false
     if not itemInfo.unique then
-        slot = slot or Inventory.GetFirstSlotByItem(inventory, item)
+        if not slot then
+            if itemInfo.decay or info.quality then
+                slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality)
+            else
+                slot = Inventory.GetFirstSlotByItem(inventory, item)
+            end
+        end
         if slot then
             for _, invItem in pairs(inventory) do
-                if invItem.slot == slot then
+                if invItem.slot == slot and info.quality == invItem.info.quality then
                     invItem.amount = invItem.amount + amount
                     updated = true
                     break
@@ -558,7 +589,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         inventory[slot] = {
             name = item,
             amount = amount,
-            info = info or {},
+            info = info,
             label = itemInfo.label,
             description = itemInfo.description or '',
             weight = itemInfo.weight,
@@ -573,7 +604,14 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
 
         if RSGCore.Shared.SplitStr(item, '_')[1] == 'weapon' then
             if not inventory[slot].info.serie then
-                inventory[slot].info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
+                inventory[slot].info.serie = tostring(
+                    RSGCore.Shared.RandomInt(2) .. 
+                    RSGCore.Shared.RandomStr(3) .. 
+                    RSGCore.Shared.RandomInt(1) .. 
+                    RSGCore.Shared.RandomStr(2) .. 
+                    RSGCore.Shared.RandomInt(3) .. 
+                    RSGCore.Shared.RandomStr(4)
+                )
             end
             if not inventory[slot].info.quality then
                 inventory[slot].info.quality = 100
@@ -630,7 +668,9 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         return false
     end
 
-    amount = tonumber(amount)
+    Inventory.CheckItemsDecay(inventory)
+
+    amount = tonumber(amount) or 1
     
     if slot then
         slot = tonumber(slot)
@@ -722,6 +762,7 @@ end
 exports('RemoveItem', Inventory.RemoveItem)
 
 Inventory.GetInventory = function(identifier)
+    Inventory.CheckItemsDecay(Inventories[identifier].items)
     return Inventories[identifier]
 end
 
