@@ -37,6 +37,7 @@ Config = {
     ShopsEnableBuyback = true, -- enable shops buying items for fraction of selling price
     ShopsBuybackPriceMultiplier = 0.1, -- fraction of buyback price (1 = full price, 0.1 = 10% of selling price)
     ShopsEnableBuybackStockLimit = true, -- shops won't buyback item if default stock amount is reached
+    ShopsMinimumSellQuality = 50, -- shops won't buyback item if item quality drops to this value (set -1 to disable)
 
     VendingObjects = {
         `s_inv_whiskey02x`,
