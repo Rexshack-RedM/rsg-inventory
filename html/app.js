@@ -981,7 +981,7 @@ const InventoryContainer = Vue.createApp({
 
             if (item.info && Object.keys(item.info).length > 0) {
                 for (const [key, value] of Object.entries(item.info)) {
-                    if (key !== "description") {
+                    if (key !== "description" && key !== "lastUpdate") {
                         let valueStr = value;
                         if (key === "attachments") {
                             valueStr = Object.keys(value).length > 0 ? "true" : "false";
