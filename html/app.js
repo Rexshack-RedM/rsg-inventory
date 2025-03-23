@@ -74,7 +74,6 @@ const InventoryContainer = Vue.createApp({
                 otherInventoryMaxWeight: 1000000,
                 otherInventorySlots: 100,
                 isShopInventory: false,
-                isShopStockEnabled: false,
                 // Where item is coming from
                 inventory: "",
                 // Context Menu
@@ -180,7 +179,6 @@ const InventoryContainer = Vue.createApp({
 
                 if (this.otherInventoryName.startsWith("shop-")) {
                     this.isShopInventory = true;
-                    this.isShopStockEnabled = data.other.stockEnabled;
                 } else {
                     this.isShopInventory = false;
                 }
@@ -578,7 +576,7 @@ const InventoryContainer = Vue.createApp({
                 return;
             }
 
-            if (this.isShopStockEnabled && sourceItem.amount < 1) {
+            if (sourceItem.amount < 1) {
                 this.inventoryError(sourceSlot);
                 return;
             }
@@ -594,7 +592,7 @@ const InventoryContainer = Vue.createApp({
                 });
 
                 if (response.data) {
-                    if (!this.isShopStockEnabled) {
+                    if (!sourceItem.amount) {
                         this.busy = false;
                         return;
                     }
@@ -603,7 +601,7 @@ const InventoryContainer = Vue.createApp({
                     if (sourceInventoryType == 'player') {
                         for (const key in this.otherInventory) {
                             const item = this.otherInventory[key];
-                            if (item.name == sourceItem.name) {
+                            if (item.name == sourceItem.name && item.amount) {
                                 this.otherInventory[key].amount += amountToTransfer
                                 break
                             }

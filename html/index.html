@@ -94,8 +94,11 @@
                                     x{{ getItemInSlot(slot, 'other').amount }}{{ typeof getItemInSlot(slot, 'other').maxStock === 'number' ? '/' + getItemInSlot(slot, 'other').maxStock : '' }}
                                 </p>
                             </div>
-                            <div v-if="isShopInventory && getItemInSlot(slot, 'other')" class="item-price">
+                            <div v-if="isShopInventory && getItemInSlot(slot, 'other') && getItemInSlot(slot, 'other').price" class="item-price">
                                 <p>${{ getItemInSlot(slot, 'other').price }}</p>
+                            </div>
+                            <div v-if="isShopInventory && getItemInSlot(slot, 'other') && getItemInSlot(slot, 'other').buyPrice" class="item-sell-price">
+                                <p>Sell: ${{ getItemInSlot(slot, 'other').buyPrice }}</p>
                             </div>
                             <div class="item-slot-durability" v-if="getItemInSlot(slot, 'other') && 'quality' in getItemInSlot(slot, 'other').info">
                                 <div
