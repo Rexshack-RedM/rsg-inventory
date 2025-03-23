@@ -47,7 +47,7 @@ RegisterNUICallback('GiveItemAmount', function(data, cb)
     })
 
     if input then
-        cb(tonumber(input[1]))
+        cb(math.abs(tonumber(input[1])))
     end
 end)
 

@@ -37,42 +37,38 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     end
 
     if sinvtype == 'player' then
-        if not Config.ShopsEnableBuyback then
-            cb(false)
-            return
-        end
-
         for slot, item in ipairs(shopInfo.items) do 
-            if itemInfo.info.quality and itemInfo.info.quality < Config.ShopsMinimumSellQuality then
-                TriggerClientEvent('ox_lib:notify', source, {title = 'The quality of this item is too low!', type = 'error', duration = 5000 })
-                cb(false)
-                return
-            end
+            if itemInfo.name == item.name and item.buyPrice ~= nil then 
 
-            if itemInfo.name == item.name and item.price ~= nil then 
-                if Config.ShopsEnableBuybackStockLimit and item.maxStock < (item.amount + amount) then
+                if itemInfo.info.quality and itemInfo.info.quality < (item.minQuality or 1) then
+                    TriggerClientEvent('ox_lib:notify', source, {title = 'The quality of this item is too low!', type = 'error', duration = 5000 })
+                    cb(false)
+                    return
+                end
+
+                if item.maxStock and item.maxStock < (item.amount + amount) then
                     TriggerClientEvent('ox_lib:notify', source, {title = 'This item is fully stocked, shop wont buy more!', type = 'error', duration = 5000 })
                     cb(false)
                     return
                 end
 
                 if Inventory.HasItem(source, itemInfo.name, amount) then
-                    if Config.ShopsStockEnabled then 
+                    if item.amount then 
                         item.amount = item.amount + amount
                     end
 
-                    local buyprice = (item.price * amount) * Config.ShopsBuybackPriceMultiplier
+                    local buyprice = (item.buyPrice * amount)
                     if itemInfo.info.quality and itemInfo.info.quality then 
                         buyprice = buyprice * (itemInfo.info.quality / 100)
                     end
+
+                    buyprice = math.round(buyprice, 2)
                     
                     if buyprice < 0.01 then 
                         TriggerClientEvent('ox_lib:notify', source, {title = 'This is worthless! Try selling a larger quantity.', type = 'error', duration = 5000 })
                         cb(false)
                         return
                     end
-
-                    buyprice = math.round(buyprice, 2)
 
                     Inventory.RemoveItem(source, itemInfo.name, amount, itemInfo.slot, 'shop-sell')
                     Player.Functions.AddMoney('cash', buyprice, 'shop-sell')
@@ -97,7 +93,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
         return
     end
 
-    if Config.ShopsStockEnabled and amount > shopInfo.items[itemInfo.slot].amount then
+    if shopInfo.items[itemInfo.slot].amount and amount > shopInfo.items[itemInfo.slot].amount then
         TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot purchase larger quantity than currently in stock', type = 'error', duration = 5000 })
         cb(false)
         return
@@ -111,7 +107,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
 
     if price then
         if Player.PlayerData.money.cash >= price then
-            if Config.ShopsStockEnabled then 
+            if shopInfo.items[itemInfo.slot].amount then 
                 shopInfo.items[itemInfo.slot].amount = shopInfo.items[itemInfo.slot].amount - amount
             end
 

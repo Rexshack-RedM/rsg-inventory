@@ -1,24 +1,21 @@
 Shops = Shops or {}
 
-Shops.SetupShopItems = function(shopItems, shopName)
+Shops.SetupShopItems = function(shopItems, shopData)
     local items = {}
     local slot = 1
     if shopItems and next(shopItems) then
         for _, item in pairs(shopItems) do
             local itemInfo = RSGCore.Shared.Items[item.name:lower()]
             if itemInfo then
-                local maxStock = nil
-                if Config.ShopsStockEnabled then
-                    maxStock = item.amount
-
-                    if Config.ShopsStockPersistent then
-                        if ShopsStockCache[shopName] and ShopsStockCache[shopName].items[itemInfo['name']] then
-                            amount = tonumber(ShopsStockCache[shopName].items[itemInfo['name']].stock)
+                if item.amount then
+                    if shopData.persistentStock then
+                        if ShopsStockCache[shopData.name] and ShopsStockCache[shopData.name].items[itemInfo['name']] then
+                            amount = tonumber(ShopsStockCache[shopData.name].items[itemInfo['name']].stock)
                         else 
-                            amount = maxStock
+                            amount = item.amount
                         end
                     else
-                        amount = maxStock
+                        amount = item.amount
                     end
                 else
                     amount = nil
@@ -27,6 +24,9 @@ Shops.SetupShopItems = function(shopItems, shopName)
                 items[slot] = {
                     name = itemInfo['name'],
                     amount = amount,
+                    maxStock = item.maxStock,
+                    defaultstock = item.amount,
+                    restock = item.restock,
                     info = item.info or {},
                     label = itemInfo['label'],
                     description = itemInfo['description'] or '',
@@ -35,13 +35,11 @@ Shops.SetupShopItems = function(shopItems, shopName)
                     unique = itemInfo['unique'],
                     useable = itemInfo['useable'],
                     price = item.price,
+                    buyPrice = item.buyPrice,
                     image = itemInfo['image'],
                     slot = slot,
+                    minQuality = item.minQuality,
                 }
-
-                if Config.ShopsEnableBuybackStockLimit then 
-                    items[slot].maxStock = maxStock
-                end
 
                 slot = slot + 1
             end
@@ -53,12 +51,16 @@ end
 Shops.SaveItemsInStock = function()
     local saveData = {}
     for shopName, shopData in pairs(RegisteredShops) do 
-        for slot, item in pairs(shopData.items) do 
-            saveData[#saveData + 1] = {
-                shop_name = shopName,
-                item_name = item.name,
-                stock = item.amount,
-            }
+        if shopData.persistentStock then
+            for slot, item in pairs(shopData.items) do 
+                if item.amount then 
+                    saveData[#saveData + 1] = {
+                        shop_name = shopName,
+                        item_name = item.name,
+                        stock = item.amount,
+                    }
+                end
+            end
         end
     end
 
@@ -98,9 +100,4 @@ Shops.LoadItemsInStock = function()
             }
         end
     end)
-end
-
-Shops.ClearStockDb = function()
-    local query = "TRUNCATE TABLE shop_stock"
-    exports.oxmysql:execute(query)
 end

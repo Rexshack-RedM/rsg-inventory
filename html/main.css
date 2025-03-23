@@ -215,6 +215,20 @@ div {
     justify-content: left;
 }
 
+.item-sell-price {
+    font-size: 1.2vh;
+    font-weight: bolder;
+    color: white;
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    width: 50px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: left;
+}
+
 .item-slot-label {
     position: absolute;
     white-space: nowrap;

@@ -1,23 +1,25 @@
 AddEventHandler('txAdmin:events:serverShuttingDown', function()
-    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
-        Shops.SaveItemsInStock()
-    end
+    Shops.SaveItemsInStock()
 end)
 
 AddEventHandler('onResourceStop', function(resourceName) 
     if resourceName ~= GetCurrentResourceName() then return end
     
-    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
-        Shops.SaveItemsInStock()
-    end
+    Shops.SaveItemsInStock()
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
 
-    if Config.ShopsStockEnabled and Config.ShopsStockPersistent then
-        Shops.LoadItemsInStock()
-    else
-        Shops.ClearStockDb()
+    Shops.LoadItemsInStock()
+end)
+
+lib.cron.new(Config.ShopsRestockCycle, function() 
+    for name, shopData in pairs(RegisteredShops) do 
+        for slot, item in pairs(shopData.items) do 
+            if item.restock and item.amount then 
+                item.amount = math.min(item.defaultstock, item.amount + item.restock)
+            end
+        end
     end
 end)
