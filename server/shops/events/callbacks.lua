@@ -1,8 +1,8 @@
 RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', function(source, cb, data)
     local itemInfo = data.item
-    local amount = data.amount
+    local amount = math.round(data.amount)
     local shop = string.gsub(data.shop, 'shop%-', '')
-    local price = itemInfo.price
+    local price = math.round(itemInfo.price, 2)
     local sinvtype = data.sourceinvtype
     local targetSlot = data.targetslot
 
@@ -11,7 +11,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     end
 
     if price then
-        price = itemInfo.price * amount
+        price = math.round(itemInfo.price * amount, 2)
     end
     local Player = RSGCore.Functions.GetPlayer(source)
 
