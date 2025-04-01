@@ -701,13 +701,13 @@ const InventoryContainer = Vue.createApp({
             const playerItemKey = Object.keys(this.playerInventory).find((key) => this.playerInventory[key] && this.playerInventory[key].slot === item.slot);
             if (playerItemKey) {
                 try {
+                    if (item.shouldClose) {
+                        this.closeInventory();
+                    }
                     await axios.post("https://rsg-inventory/UseItem", {
                         inventory: "player",
                         item: item,
                     });
-                    if (item.shouldClose) {
-                        this.closeInventory();
-                    }
                 } catch (error) {
                     console.error("Error using the item: ", error);
                 }
