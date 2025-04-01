@@ -602,7 +602,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
             combinable = itemInfo.combinable
         }
 
-        if RSGCore.Shared.SplitStr(item, '_')[1] == 'weapon' then
+        if itemInfo.type == 'weapon' then
             if not inventory[slot].info.serie then
                 inventory[slot].info.serie = tostring(
                     RSGCore.Shared.RandomInt(2) .. 
