@@ -500,7 +500,8 @@ Inventory.OpenInventory = function (source, identifier, data)
         slots = inventory.slots,
         inventory = inventory.items
     }
-
+    
+    Player(source).state.inv_busy = true
     Inventory.CheckPlayerItemsDecay(RSGPlayer)
     TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items, formattedInventory)
 end

@@ -42,8 +42,8 @@ exports('CreateShop', Shops.CreateShop)
 --- @param name string The identifier of the inventory to open.
 Shops.OpenShop = function(source, name)
     if not name then return end
-    local Player = RSGCore.Functions.GetPlayer(source)
-    if not Player then return end
+    local player = RSGCore.Functions.GetPlayer(source)
+    if not player then return end
     if not RegisteredShops[name] then return end
     local playerPed = GetPlayerPed(source)
     local playerCoords = GetEntityCoords(playerPed)
@@ -62,8 +62,10 @@ Shops.OpenShop = function(source, name)
         inventory = RegisteredShops[name].items,
         persistentStock = RegisteredShops[name].persistentStock,
     }
-    Inventory.CheckPlayerItemsDecay(Player)
-    TriggerClientEvent('rsg-inventory:client:openInventory', source, Player.PlayerData.items, formattedInventory)
+
+    Player(source).state.inv_busy = true
+    Inventory.CheckPlayerItemsDecay(player)
+    TriggerClientEvent('rsg-inventory:client:openInventory', source, player.PlayerData.items, formattedInventory)
 end
 
 exports('OpenShop', Shops.OpenShop)
