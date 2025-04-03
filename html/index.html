@@ -179,12 +179,12 @@
                     </div>
                 </div>
             </div>
-            <div class="weapon-attachments" v-if="showWeaponAttachments">
+            <!-- <div class="weapon-attachments" v-if="showWeaponAttachments">
                 <img class="weapon" :src="'images/' + selectedWeapon.image" alt="" />
                 <div class="attachment-slot" v-for="(attachment, i) in selectedWeaponAttachments" :key="i" @click="removeAttachment(attachment)">
                     <img :src="'images/' + attachment.attachment + '.png'" alt="" />
                 </div>
-            </div>
+            </div> -->
             <div v-if="draggedItem" class="item-slot" :class="{ 'dragged-item': draggedItem }" :style="{ top: dragY + 'px', left: dragX + 'px' }">
                 <div class="item-slot-img">
                     <img :src="'images/' + draggedItem.image" alt="" />
@@ -225,7 +225,7 @@
                     </ul>
                 </li>
                 <li v-if="contextMenuItem.name.includes('weapon_')" @click="copySerial(contextMenuItem)">Copy Serial</li>
-                <li v-if="contextMenuItem.name.includes('weapon_')" @click="openWeaponAttachments(contextMenuItem)">Attachments</li>
+                <!-- <li v-if="contextMenuItem.name.includes('weapon_')" @click="openWeaponAttachments(contextMenuItem)">Attachments</li> -->
             </ul>
         </div>
     </body>
