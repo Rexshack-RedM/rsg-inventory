@@ -2,6 +2,7 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', functio
     local itemInfo = data.item
     local amount = math.round(data.amount)
     local shop = string.gsub(data.shop, 'shop%-', '')
+    local price = itemInfo.price
     local sinvtype = data.sourceinvtype
     local targetSlot = data.targetslot
 
