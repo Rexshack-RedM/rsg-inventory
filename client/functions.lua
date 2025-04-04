@@ -1,13 +1,13 @@
 Inventory = {}
 
 Inventory.CanPlayerUseInventory = function() 
-    local playerData = RSGCore.Functions.GetPlayerData()
+    local metadata = RSGCore.PlayerData.metadata
 
-    if not playerData.metadata then 
+    if not metadata then 
         return false 
     end
     
-    if playerData.metadata["isdead"] or playerData.metadata["ishandcuffed"] then
+    if metadata["isdead"] or metadata["ishandcuffed"] then
         return false
     end
 
