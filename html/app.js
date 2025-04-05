@@ -108,6 +108,10 @@ const InventoryContainer = Vue.createApp({
                 dragStartInventoryType: "player",
                 transferAmount: null,
                 busy: false,
+                dragThreshold: 5,
+                isMouseDown: false,
+                mouseDownX: 0,
+                mouseDownY: 0,
             };
         },
         validateToken(csrfToken) {
@@ -257,7 +261,11 @@ const InventoryContainer = Vue.createApp({
                 if (event.shiftKey && itemInSlot) {
                     this.splitAndPlaceItem(itemInSlot, inventory);
                 } else {
-                    this.startDrag(event, slot, inventory);
+                    this.isMouseDown = true;
+                    this.mouseDownX = event.clientX;
+                    this.mouseDownY = event.clientY;
+                    this.currentlyDraggingSlot = slot;
+                    this.dragStartInventoryType = inventory;
                 }
             } else if (event.button === 2 && itemInSlot) {
                 if (this.otherInventoryName.startsWith("shop-")) {
@@ -394,13 +402,24 @@ const InventoryContainer = Vue.createApp({
             return ghostElement;
         },
         drag(event) {
-            if (!this.currentlyDraggingItem) return;
+            if (this.isMouseDown && !this.ghostElement) {
+                const dx = Math.abs(event.clientX - this.mouseDownX);
+                const dy = Math.abs(event.clientY - this.mouseDownY);
+                if (dx >= this.dragThreshold || dy >= this.dragThreshold) {
+                    this.startDrag(event, this.currentlyDraggingSlot, this.dragStartInventoryType);
+                }
+                return;
+            }
+
+            if (!this.currentlyDraggingItem || !this.ghostElement) return;
+
             const centeredX = event.clientX - this.ghostElement.offsetWidth / 2;
             const centeredY = event.clientY - this.ghostElement.offsetHeight / 2;
             this.ghostElement.style.left = `${centeredX}px`;
             this.ghostElement.style.top = `${centeredY}px`;
         },
         endDrag(event) {
+            this.isMouseDown = false;
             if (!this.currentlyDraggingItem) {
                 return;
             }
@@ -429,7 +448,7 @@ const InventoryContainer = Vue.createApp({
                 const { currentlyDraggingSlot, currentlyDraggingItem, transferAmount } = this;
                 const targetInventory = this.getInventoryByType("player");
                 const targetItem = targetInventory[targetSlot];
-                if ((targetItem && targetItem.name !== currentlyDraggingItem.name) 
+                if ((targetItem && targetItem.name !== currentlyDraggingItem.name)
                     || (targetItem && targetItem.name === currentlyDraggingItem.name && currentlyDraggingItem.unique)
                     || (targetItem && targetItem.name === currentlyDraggingItem.name && targetItem.info.quality && targetItem.info.quality !== 100)) {
                     this.inventoryError(currentlyDraggingSlot);
@@ -513,13 +532,13 @@ const InventoryContainer = Vue.createApp({
 
                 if (this.dragStartInventoryType === "player" && targetInventoryType === "other" && isShop !== -1) {
                     this.handlePurchase(
-                        this.currentlyDraggingSlot, 
-                        sourceItem, 
-                        this.transferAmount !== null ? this.transferAmount : sourceItem.amount, 
+                        this.currentlyDraggingSlot,
+                        sourceItem,
+                        this.transferAmount !== null ? this.transferAmount : sourceItem.amount,
                         this.dragStartInventoryType)
                     return;
                 }
-                
+
                 if (targetInventoryType !== this.dragStartInventoryType) {
                     if (targetInventoryType == "other") {
                         const totalWeightAfterTransfer = this.otherInventoryWeight + sourceItem.weight * amountToTransfer;
@@ -606,7 +625,7 @@ const InventoryContainer = Vue.createApp({
                                 break
                             }
                         }
-                    }else {
+                    } else {
                         if (sourceItem.amount < amountToTransfer) {
                             this.inventoryError(sourceSlot);
                             this.busy = false;
@@ -614,7 +633,7 @@ const InventoryContainer = Vue.createApp({
                         }
                         sourceItem.amount -= amountToTransfer;
                     }
-                    
+
                     this.busy = false;
                 } else {
                     this.inventoryError(sourceSlot);
@@ -627,10 +646,10 @@ const InventoryContainer = Vue.createApp({
         },
         async dropItem(item, quantity) {
             if (item && item.name) {
-                const playerItemKey = Object.keys(this.playerInventory).find((key) => 
+                const playerItemKey = Object.keys(this.playerInventory).find((key) =>
                     this.playerInventory[key] && this.playerInventory[key].slot === item.slot
                 );
-                
+
                 if (playerItemKey) {
                     let amountToGive;
 
@@ -643,7 +662,7 @@ const InventoryContainer = Vue.createApp({
                                 amountToGive = item.amount;
                                 break;
                             case "enteramount":
-                                const amounttt  = await axios.post("https://rsg-inventory/GiveItemAmount")
+                                const amounttt = await axios.post("https://rsg-inventory/GiveItemAmount")
                                 amountToGive = amounttt.data;
                                 break;
                             default:
@@ -681,7 +700,7 @@ const InventoryContainer = Vue.createApp({
                             } else {
                                 this.playerInventory[playerItemKey].amount = remainingAmount;
                             }
-                            
+
                             this.otherInventory[1] = newItem;
                             this.otherInventoryName = response.data;
                             this.otherInventoryLabel = response.data;
@@ -778,7 +797,7 @@ const InventoryContainer = Vue.createApp({
                                 amountToGive = selectedItem.amount;
                                 break;
                             case "enteramount":
-                                const amounttt  = await axios.post("https://rsg-inventory/GiveItemAmount")
+                                const amounttt = await axios.post("https://rsg-inventory/GiveItemAmount")
                                 amountToGive = amounttt.data;
                                 break;
                             default:
@@ -802,7 +821,7 @@ const InventoryContainer = Vue.createApp({
                             info: selectedItem.info,
                         });
                         if (!response.data) return;
-                        
+
                         this.playerInventory[selectedItem.slot].amount -= amountToGive;
                         if (this.playerInventory[selectedItem.slot].amount === 0) {
                             delete this.playerInventory[selectedItem.slot];
@@ -830,13 +849,13 @@ const InventoryContainer = Vue.createApp({
             if (item && item.amount > 1) {
                 if (splitamount == 'half') {
                     amount = Math.ceil(item.amount / 2);
-                }else if (splitamount == 'enteramount') {
-                    const inputAmount  = await axios.post("https://rsg-inventory/GiveItemAmount")
+                } else if (splitamount == 'enteramount') {
+                    const inputAmount = await axios.post("https://rsg-inventory/GiveItemAmount")
                     amount = inputAmount.data;
 
                     if (amount < 1) {
                         amount = 1;
-                    }else if (amount > item.amount) {
+                    } else if (amount > item.amount) {
                         amount = item.amount;
                     }
                 }
@@ -1031,7 +1050,7 @@ const InventoryContainer = Vue.createApp({
                 }
             }
         });
-        
+
         window.addEventListener("message", async (event) => {
             switch (event.data.action) {
                 case "open":
@@ -1070,9 +1089,9 @@ const InventoryContainer = Vue.createApp({
         });
     },
     beforeUnmount() {
-        window.removeEventListener("mousemove", () => {});
-        window.removeEventListener("keydown", () => {});
-        window.removeEventListener("message", () => {});
+        window.removeEventListener("mousemove", () => { });
+        window.removeEventListener("keydown", () => { });
+        window.removeEventListener("message", () => { });
     },
 });
 
