@@ -1,8 +1,12 @@
 Inventory = {}
 
 Inventory.CanPlayerUseInventory = function() 
-    local metadata = RSGCore.PlayerData.metadata
+    local playerData = RSGCore.Functions.GetPlayerData()
+    if not playerData then 
+        return false
+    end
 
+    local metadata = playerData.metadata
     if not metadata then 
         return false 
     end

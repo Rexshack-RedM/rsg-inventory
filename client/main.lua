@@ -21,14 +21,12 @@ CreateThread(function()
     }
 
     while true do
-        local sleep = 0
-        Wait(sleep)
+        Wait(0)
 
         if Inventory.CanPlayerUseInventory() then
             for key, command in pairs(commands) do
                 if IsControlJustReleased(0, key) then
                     ExecuteCommand(command)
-                    sleep = 1000
                     break
                 end
             end
