@@ -1,21 +1,14 @@
 Inventory = {}
 
-Inventory.CanPlayerUseInventory = function() 
-    local playerData = RSGCore.Functions.GetPlayerData()
-    if not playerData then 
-        return false
-    end
+Inventory.CanPlayerUseInventory = function()
+    local canUse = false
 
-    local metadata = playerData.metadata
-    if not metadata then 
-        return false 
-    end
-    
-    if metadata["isdead"] or metadata["ishandcuffed"] then
-        return false
-    end
+    RSGCore.Functions.GetPlayerData(function(playerData)
+        local metadata = playerData and playerData.metadata
+        canUse = metadata and not metadata["isdead"] and not metadata["ishandcuffed"]
+    end)
 
-    return true
+    return canUse
 end
 
 Inventory.UseHotbarItem = function(slot)
