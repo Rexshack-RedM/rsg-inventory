@@ -36,19 +36,25 @@ end)
 
 CreateThread(function()
     local keybinds = RSGCore.Shared.Keybinds
-    local slots = { "slot_1", "slot_2", "slot_3", "slot_4", "slot_5" }
+    local slots = { 
+        ["1"] = "slot_1", 
+        ["2"] = "slot_2", 
+        ["3"] = "slot_3", 
+        ["4"] = "slot_4", 
+        ["5"] = "slot_5"
+     }
 
     while true do
         Wait(0)
 
-        for i = 1, #slots do
-            DisableControlAction(0, keybinds[i])
+        for slot, _ in pairs(slots) do
+            DisableControlAction(0, keybinds[slot])
         end
         
-        for i = 1, #slots do
-            if IsDisabledControlPressed(0, keybinds[i]) and IsInputDisabled(0) then
+        for slot, bind in pairs(slots) do
+            if IsDisabledControlPressed(0, keybinds[slot]) and IsInputDisabled(0) then
                 if Inventory.CanPlayerUseInventory() then
-                    ExecuteCommand(slots[i])
+                    ExecuteCommand(bind)
                 end
             end
         end
