@@ -39,7 +39,9 @@ CreateThread(function()
                 LocalPlayer.state.dropBagObject = nil
                 LocalPlayer.state.heldDrop = nil
             end
+            Wait(0)
+        else
+            Wait(1000)
         end
-        Wait(0)
     end
 end)

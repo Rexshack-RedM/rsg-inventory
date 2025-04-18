@@ -51,7 +51,7 @@ RegisterNUICallback('GiveItemAmount', function(data, cb)
     end
 end)
 
-RegisterNUICallback('GetWeaponData', function(cData, cb)
+--[[ RegisterNUICallback('GetWeaponData', function(cData, cb)
     local data = {
         WeaponData = RSGCore.Shared.Items[cData.weapon],
         AttachmentData = Inventory.FormatWeaponAttachments(cData.ItemData),
@@ -92,4 +92,4 @@ RegisterNUICallback('RemoveAttachment', function(data, cb)
             cb({})
         end
     end, data.AttachmentData, WeaponData)
-end)
+end) ]]

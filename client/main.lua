@@ -16,45 +16,32 @@ end)
 
 CreateThread(function()
     local commands = {
-        [Config.Keybinds.Open] = "inventory",
-        [Config.Keybinds.Hotbar] = "hotbar"
+        [Config.Keybinds.Open] = { command = "inventory", disabled = false },
+        [Config.Keybinds.Hotbar] = { command = "hotbar", disabled = false },
+        [RSGCore.Shared.Keybinds["1"]] = { command = "slot_1", disabled = true },
+        [RSGCore.Shared.Keybinds["2"]] = { command = "slot_2", disabled = true },
+        [RSGCore.Shared.Keybinds["3"]] = { command = "slot_3", disabled = true },
+        [RSGCore.Shared.Keybinds["4"]] = { command = "slot_4", disabled = true },
+        [RSGCore.Shared.Keybinds["5"]] = { command = "slot_5", disabled = true }
     }
 
     while true do
         Wait(0)
-        for key, command in pairs(commands) do
-            if IsControlJustReleased(0, key) then
-                if Inventory.CanPlayerUseInventory() then
-                    ExecuteCommand(command)
+        for key, data in pairs(commands) do
+            if data.disabled then
+                DisableControlAction(0, key)
+                if IsDisabledControlPressed(0, key) then
+                    if Inventory.CanPlayerUseInventory() then
+                        ExecuteCommand(data.command)
+                    end
+                    break
                 end
-
-                break
-            end
-        end
-    end
-end)
-
-CreateThread(function()
-    local keybinds = RSGCore.Shared.Keybinds
-    local slots = { 
-        ["1"] = "slot_1", 
-        ["2"] = "slot_2", 
-        ["3"] = "slot_3", 
-        ["4"] = "slot_4", 
-        ["5"] = "slot_5"
-     }
-
-    while true do
-        Wait(0)
-
-        for slot, _ in pairs(slots) do
-            DisableControlAction(0, keybinds[slot])
-        end
-        
-        for slot, bind in pairs(slots) do
-            if IsDisabledControlPressed(0, keybinds[slot]) and IsInputDisabled(0) then
-                if Inventory.CanPlayerUseInventory() then
-                    ExecuteCommand(bind)
+            else
+                if IsControlJustReleased(0, key) then
+                    if Inventory.CanPlayerUseInventory() then
+                        ExecuteCommand(data.command)
+                    end
+                    break
                 end
             end
         end
