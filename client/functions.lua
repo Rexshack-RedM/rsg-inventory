@@ -49,7 +49,7 @@ Inventory.NotifyHotbarSpamProtection = function()
     end
 end
 
-Inventory.FormatWeaponAttachments = function(itemdata)
+--[[ Inventory.FormatWeaponAttachments = function(itemdata)
     if not itemdata.info or not itemdata.info.attachments or #itemdata.info.attachments == 0 then
         return {}
     end
@@ -72,5 +72,4 @@ Inventory.FormatWeaponAttachments = function(itemdata)
         end
     end
     return attachments
-end
-
+end ]]

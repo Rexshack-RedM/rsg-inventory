@@ -5,7 +5,7 @@ game 'rdr3'
 lua54 'yes'
 
 description 'rsg-inventory'
-version '2.4.0'
+version '2.4.1'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -53,5 +53,3 @@ files {
     'html/images/*.png',
     'html/*.png',
 }
-
-dependency 'rsg-weapons'

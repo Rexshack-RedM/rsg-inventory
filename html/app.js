@@ -93,7 +93,7 @@ const InventoryContainer = Vue.createApp({
                 notificationAmount: 1,
                 notificationTimeout: null,
                 // Required items box
-                showRequiredItems: false,
+                //showRequiredItems: false,
                 requiredItems: [],
                 // Attachments
                 selectedWeapon: null,
@@ -898,7 +898,7 @@ const InventoryContainer = Vue.createApp({
                 this.notificationTimeout = null;
             }, 3000);
         },
-        showRequiredItem(data) {
+/*         showRequiredItem(data) {
             if (data.toggle) {
                 this.requiredItems = data.items;
                 this.showRequiredItems = true;
@@ -908,7 +908,7 @@ const InventoryContainer = Vue.createApp({
                     this.requiredItems = [];
                 }, 100);
             }
-        },
+        }, */
         inventoryError(slot) {
             const slotElement = document.getElementById(`slot-${slot}`);
             if (slotElement) {
@@ -937,7 +937,7 @@ const InventoryContainer = Vue.createApp({
                 document.body.removeChild(el);
             }
         },
-        openWeaponAttachments() {
+        /* openWeaponAttachments() {
             if (!this.contextMenuItem) {
                 return;
             }
@@ -988,7 +988,7 @@ const InventoryContainer = Vue.createApp({
                     console.error(error);
                     this.selectedWeaponAttachments.splice(index, 0, attachment);
                 });
-        },
+        }, */
         generateTooltipContent(item) {
             if (!item) {
                 return "";
@@ -1075,9 +1075,9 @@ const InventoryContainer = Vue.createApp({
                 case "itemBox":
                     this.showItemNotification(event.data);
                     break;
-                case "requiredItem":
+/*                 case "requiredItem":
                     this.showRequiredItem(event.data);
-                    break;
+                    break; */
                 case "updateHotbar":
                     if (this.validateToken(event.data.token)) {
                         this.hotbarItems = event.data.items;

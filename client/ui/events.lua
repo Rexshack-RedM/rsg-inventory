@@ -1,4 +1,4 @@
-RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
+--[[ RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
     local itemTable = {}
     if bool then
         for k in pairs(items) do
@@ -15,7 +15,7 @@ RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
         items = itemTable,
         toggle = bool
     })
-end)
+end) ]]
 
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
     local token = exports['rsg-core']:GenerateCSRFToken()
