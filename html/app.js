@@ -898,7 +898,7 @@ const InventoryContainer = Vue.createApp({
                 this.notificationTimeout = null;
             }, 3000);
         },
-/*         showRequiredItem(data) {
+        /* showRequiredItem(data) {
             if (data.toggle) {
                 this.requiredItems = data.items;
                 this.showRequiredItems = true;
@@ -1075,7 +1075,7 @@ const InventoryContainer = Vue.createApp({
                 case "itemBox":
                     this.showItemNotification(event.data);
                     break;
-/*                 case "requiredItem":
+                /* case "requiredItem":
                     this.showRequiredItem(event.data);
                     break; */
                 case "updateHotbar":
