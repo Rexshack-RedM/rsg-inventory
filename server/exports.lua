@@ -778,3 +778,16 @@ Inventory.CreateInventory = function (identifier, data)
 end
 
 exports('CreateInventory', Inventory.CreateInventory)
+
+-- Deletes an inventory from the global Inventories table
+--- @param identifier string - The identifier of the inventory to delete
+Inventory.DeleteInventory = function(identifier)
+    if Inventories[identifier] then
+        Inventories[identifier] = nil
+        print('[rsg-inventory] Deleted inventory: ' .. identifier)
+        return true
+    end
+    return false
+end
+
+exports('DeleteInventory', Inventory.DeleteInventory)
