@@ -898,7 +898,7 @@ const InventoryContainer = Vue.createApp({
                 this.notificationTimeout = null;
             }, 3000);
         },
-/*         showRequiredItem(data) {
+        /* showRequiredItem(data) {
             if (data.toggle) {
                 this.requiredItems = data.items;
                 this.showRequiredItems = true;
@@ -994,24 +994,36 @@ const InventoryContainer = Vue.createApp({
                 return "";
             }
             let content = `<div class="custom-tooltip"><div class="tooltip-header">${item.label}</div><hr class="tooltip-divider">`;
-            const description = item.info && item.info.description ? item.info.description.replace(/\n/g, "<br>") : item.description ? item.description.replace(/\n/g, "<br>") : "No description available.";
+        
+            const description = item.info?.description?.replace(/\n/g, "<br>") 
+                || item.description?.replace(/\n/g, "<br>") 
+                || "No description available.";
+        
+            const renderInfo = (obj, indent = 0) => {
+                let html = "";
+                for (const [key, value] of Object.entries(obj)) {
+                    if (key === "description" || key === "lastUpdate" || key === "componentshash") continue;
+        
+                    const padding = "&nbsp;".repeat(indent * 4);
 
-            if (item.info && Object.keys(item.info).length > 0) {
-                for (const [key, value] of Object.entries(item.info)) {
-                    if (key !== "description" && key !== "lastUpdate") {
-                        let valueStr = value;
-                        if (key === "attachments") {
-                            valueStr = Object.keys(value).length > 0 ? "true" : "false";
-                        }
-                        content += `<div class="tooltip-info"><span class="tooltip-info-key">${this.formatKey(key)}:</span> ${valueStr}</div>`;
+                    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+                        html += `<div class="tooltip-info"><span class="tooltip-info-key">${padding}${this.formatKey(key)}:</span></div>`;
+                        html += renderInfo(value, indent + 1);
+                    } else {
+                        html += `<div class="tooltip-info"><span class="tooltip-info-key">${padding}${this.formatKey(key)}:</span> ${value}</div>`;
                     }
                 }
+                return html;
+            };
+            
+            if (item.info && Object.keys(item.info).length > 0) {
+                content += renderInfo(item.info);
             }
-
+        
             content += `<div class="tooltip-description">${description}</div>`;
-            content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight !== undefined && item.weight !== null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
-
+            content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight != null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
             content += `</div>`;
+        
             return content;
         },
         formatKey(key) {
@@ -1075,7 +1087,7 @@ const InventoryContainer = Vue.createApp({
                 case "itemBox":
                     this.showItemNotification(event.data);
                     break;
-/*                 case "requiredItem":
+                /* case "requiredItem":
                     this.showRequiredItem(event.data);
                     break; */
                 case "updateHotbar":

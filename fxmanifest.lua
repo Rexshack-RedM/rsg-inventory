@@ -18,7 +18,7 @@ shared_scripts {
 
 client_scripts {
     'client/drops/functions.lua',
-    'client/functions.lua', 
+    'client/functions.lua',
     'client/commands.lua',
     'client/exports.lua',
     'client/events.lua',
