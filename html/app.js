@@ -998,16 +998,12 @@ const InventoryContainer = Vue.createApp({
             const description = item.info?.description?.replace(/\n/g, "<br>") 
                 || item.description?.replace(/\n/g, "<br>") 
                 || "No description available.";
-
-            const hiddenKeys = [
-                "componentshash", "components"
-            ];
-
+        
             const renderInfo = (obj, indent = 0) => {
                 let html = "";
                 for (const [key, value] of Object.entries(obj)) {
-                    if (hiddenKeys.includes(key)) continue;
-
+                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components") continue;
+        
                     const padding = "&nbsp;".repeat(indent * 4);
 
                     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
@@ -1018,7 +1014,7 @@ const InventoryContainer = Vue.createApp({
                     }
                 }
                 return html;
-             };
+            };
             
             if (item.info && Object.keys(item.info).length > 0) {
                 content += renderInfo(item.info);
