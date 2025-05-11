@@ -66,7 +66,7 @@ Inventory.SaveInventory = function(source, offline)
                 ItemsJson[#ItemsJson + 1] = {
                     name = item.name,
                     amount = item.amount,
-                    info = item.info,
+                    info = type(item.info) == "table" and item.info or {},
                     type = item.type,
                     slot = slot,
                 }
