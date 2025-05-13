@@ -93,8 +93,8 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     SendNUIMessage({
         action = 'open',
         inventory = items,
-        slots = Player.PlayerData.slots,
-        maxweight = Player.PlayerData.weight,
+        slots = Player.slots,
+        maxweight = Player.weight,
         other = other,
         token = token,
         closeKey = Config.Keybinds.Close,
