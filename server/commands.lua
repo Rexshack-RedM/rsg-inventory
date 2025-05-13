@@ -51,7 +51,7 @@ RSGCore.Commands.Add('randomitems', 'Receive random items', {}, false, function(
             amount = 1
         end
         local emptySlot = nil
-        for i = 1, Config.MaxSlots do
+        for i = 1, player.PlayerData.slots do
             if not playerInventory[i] then
                 emptySlot = i
                 break
