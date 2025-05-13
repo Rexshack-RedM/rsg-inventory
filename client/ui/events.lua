@@ -87,12 +87,14 @@ end)
 
 RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     local token = exports['rsg-core']:GenerateCSRFToken()
+    local Player = RSGCore.Functions.GetPlayerData()
+
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
         inventory = items,
-        slots = Config.MaxSlots,
-        maxweight = Config.MaxWeight,
+        slots = Player.PlayerData.slots,
+        maxweight = Player.PlayerData.weight,
         other = other,
         token = token,
         closeKey = Config.Keybinds.Close,

@@ -239,7 +239,7 @@ Inventory.GetSlots = function(identifier)
     local player = RSGCore.Functions.GetPlayer(identifier)
     if player then
         inventory = player.PlayerData.items
-        maxSlots = Config.MaxSlots
+        maxSlots = player.PlayerData.slots
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
         maxSlots = Inventories[identifier].slots
@@ -299,7 +299,7 @@ Inventory.CanAddItem = function(source, item, amount)
     if not itemData then return false end
     local weight = itemData.weight * amount
     local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
-    if totalWeight > Config.MaxWeight then
+    if totalWeight > Player.PlayerData.weight then
         return false, 'weight'
     end
     local slotsUsed = 0
@@ -308,7 +308,7 @@ Inventory.CanAddItem = function(source, item, amount)
             slotsUsed = slotsUsed + 1
         end
     end
-    if slotsUsed >= Config.MaxSlots then
+    if slotsUsed >= Player.PlayerData.slots then
         return false, 'slots'
     end
     return true
@@ -328,7 +328,7 @@ Inventory.GetFreeWeight = function(source)
     if not Player then return 0 end
 
     local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items)
-    local freeWeight = Config.MaxWeight - totalWeight
+    local freeWeight = Player.PlayerData.weight - totalWeight
     return freeWeight
 end
 
@@ -433,8 +433,8 @@ Inventory.OpenInventoryById = function(source, targetId)
     local formattedInventory = {
         name = 'otherplayer-' .. targetId,
         label = GetPlayerName(targetId),
-        maxweight = Config.MaxWeight,
-        slots = Config.MaxSlots,
+        maxweight = TargetPlayer.PlayerData.weight,
+        slots = TargetPlayer.PlayerData.slots,
         inventory = targetItems
     }
     Wait(1500)
@@ -528,8 +528,8 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
 
     if player then
         inventory = player.PlayerData.items
-        inventoryWeight = Config.MaxWeight
-        inventorySlots = Config.MaxSlots
+        inventoryWeight = player.PlayerData.weight
+        inventorySlots = player.PlayerData.slots
     elseif Inventories[identifier] then
         inventory = Inventories[identifier].items
         inventoryWeight = Inventories[identifier].maxweight
