@@ -769,12 +769,25 @@ end
 
 exports('GetInventory', Inventory.GetInventory)
 
--- Initialize inventory if it doesn't exist
+--- Initialize or update inventory data
 --- @param identifier string - The identifier of the inventory.
 --- @param data table - The data of the inventory
 Inventory.CreateInventory = function (identifier, data)
-    if Inventories[identifier] then return end
-    Inventories[identifier] = Inventory.InitializeInventory(identifier, data)
+    if Inventories[identifier] then 
+        if data.label then
+            Inventories[identifier].label = data.label
+        end
+
+        if data.maxweight then
+            Inventories[identifier].maxweight = data.maxweight
+        end
+
+        if data.slots then
+            Inventories[identifier].slots = data.slots
+        end
+    else
+        Inventories[identifier] = Inventory.InitializeInventory(identifier, data)
+    end
 end
 
 exports('CreateInventory', Inventory.CreateInventory)
