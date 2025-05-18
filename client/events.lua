@@ -13,8 +13,8 @@ end)
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
     if IsPedInAnyVehicle(cache.ped, false) then return end
 
-    local dict = 'mp_common'
+    local dict = 'mech_butcher'
     lib.requestAnimDict(dict)
-    TaskPlayAnim(cache.ped, dict, 'givetake1_b', 8.0, 1.0, -1, 16, 0, false, false, false)
+    TaskPlayAnim(cache.ped, dict, 'small_fish_give_player', 8.0, 1.0, -1, 16, 0, false, false, false)
     RemoveAnimDict(dict)
 end)
