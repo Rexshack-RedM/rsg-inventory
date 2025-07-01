@@ -1,3 +1,5 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
+
 --[[ RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
     local itemTable = {}
     if bool then
@@ -88,10 +90,13 @@ end)
 RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     local token = exports['rsg-core']:GenerateCSRFToken()
     local Player = RSGCore.Functions.GetPlayerData()
+    local PlayerData = RSGCore.Functions.GetPlayerData()
+    local playerName = PlayerData.charinfo.firstname .. " " .. PlayerData.charinfo.lastname
 
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
+        playerName = playerName,
         inventory = items,
         slots = Player.slots,
         maxweight = Player.weight,
