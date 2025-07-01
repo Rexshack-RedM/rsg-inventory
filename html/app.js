@@ -66,6 +66,7 @@ const InventoryContainer = Vue.createApp({
                 // Player Inventory
                 playerInventory: {},
                 inventoryLabel: "Inventory",
+                playerName: "",
                 totalWeight: 0,
                 // Other inventory
                 otherInventory: {},
@@ -140,6 +141,15 @@ const InventoryContainer = Vue.createApp({
             this.totalSlots = data.slots;
             this.playerInventory = {};
             this.otherInventory = {};
+
+            // Add player name handling
+            if (data.playerName) {
+                this.playerName = data.playerName;
+                this.inventoryLabel = this.playerName;
+            } else {
+                this.playerName = "Player";
+                this.inventoryLabel = "Inventory";
+            }
 
             if (data.inventory) {
                 if (Array.isArray(data.inventory)) {
