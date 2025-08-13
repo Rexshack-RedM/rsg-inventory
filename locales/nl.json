@@ -1,8 +1,7 @@
 {
-  "progress": {
-    "snowballs": "Sneeuwballen aan het verzamelen..."
-  },
-  "notify": {
+
+
+"notify": {
     "failed": "Mislukt",
     "canceled": "Geannuleerd",
     "vlocked": "Voertuig vergrendeld",
@@ -12,6 +11,15 @@
     "noaccess": "Geen toegang",
     "nosell": "Dit item kan niet worden verkocht",
     "itemexist": "Item bestaat niet",
+    "quality_too_low": "De kwaliteit van dit item is te laag!",
+    "shop_fully_stocked": "Dit item is volledig op voorraad, de winkel koopt er geen meer!",
+    "worthless_item": "Dit is waardeloos! Probeer een grotere hoeveelheid te verkopen.",
+    "not_enough_items": "Niet genoeg items om te verkopen!",
+    "shop_does_not_buy": "Deze winkel koopt dit item niet!",
+    "cannot_purchase_more_than_stock": "Kan geen grotere hoeveelheid kopen dan momenteel op voorraad is",
+    "cannot_carry": "Je kunt dit niet dragen",
+    "no_price_or_not_for_sale": "Dit item heeft geen prijs of is niet te koop",
+    "not_enough_money": "Je hebt niet genoeg geld",
     "notencash": "Je hebt niet genoeg contant geld",
     "noitem": "Je hebt de vereiste items niet",
     "gsitem": "Je kunt jezelf geen item geven",
@@ -29,14 +37,19 @@
     "anfoc": "Argumenten niet correct ingevuld",
     "yhg": "Je hebt gegeven: ",
     "cgitem": "Kan item niet geven",
+    "Prompt": "Kon drop-positie niet updaten op de server",
     "idne": "Item bestaat niet",
-    "pdne": "Speler is niet online"
+    "SpamProtection": "Je drukt te snel op de knoppen! Wacht even voordat je het opnieuw probeert.",
+    "pdne": "Speler is niet online",
+    "error.fullbag": "Je houdt al een tas vast, laat hem vallen!"
   },
+
   "inf_mapping": {
     "opn_inv": "Open inventaris",
     "tog_slots": "Schakel sneltoets-slots",
     "use_item": "Gebruik het item in slot "
   },
+
   "menu": {
     "vending": "Verkoopautomaat",
     "bin": "Open container",
@@ -47,6 +60,7 @@
     "error_gun_and_bag": "Je kunt geen geweer en een tas tegelijk vasthouden",
     "error_already_holding_bag": "Je draagt al een tas, leg deze eerst weg"
   },
+
   "interaction": {
     "craft": "~g~E~w~ - Vervaardigen"
   }

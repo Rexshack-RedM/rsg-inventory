@@ -1,9 +1,9 @@
 CreateThread(function()
-    local scenarioHash = GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH")
-    local conditionalHash = GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH")
-    local dropPromptGroup = GetRandomIntInRange(0, 0xffffff)
-    local dropGroupTitle = CreateVarString(10, 'LITERAL_STRING', 'Loot bag')
-    local dropBagPromptTitle = CreateVarString(10, 'LITERAL_STRING', 'Drop bag') 
+    local scenarioHash     = GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH")
+    local conditionalHash  = GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH")
+    local dropPromptGroup  = GetRandomIntInRange(0, 0xffffff)
+    local dropGroupTitle   = CreateVarString(10, 'LITERAL_STRING', 'Loot bag')
+    local dropBagPromptTitle = CreateVarString(10, 'LITERAL_STRING', 'Drop bag')
     local dropBagPrompt = UiPromptRegisterBegin()
     PromptSetControlAction(dropBagPrompt, RSGCore.Shared.Keybinds['G'])
     PromptSetText(dropBagPrompt, dropBagPromptTitle)
@@ -22,23 +22,36 @@ CreateThread(function()
                 if DoesEntityExist(bagObject) then
                     ClearPedTasksImmediately(cache.ped)
                     TaskStartScenarioInPlaceHash(cache.ped, scenarioHash, 0, 1, conditionalHash, -1.0, 0)
-                    Wait(1000)
+                    Wait(1000)                   
                     DetachEntity(bagObject, true, true)
-                    local coords = GetEntityCoords(cache.ped)
-                    local forward = GetEntityForwardVector(cache.ped)
-                    local x, y, z = table.unpack(coords + forward * 0.57)
-                    SetEntityCoords(bagObject, x, y, z - 0.9, false, false, false, false)
+                    local coords   = GetEntityCoords(cache.ped)
+                    local forward  = GetEntityForwardVector(cache.ped)
+                    local x = coords.x + (forward.x * 0.57)
+                    local y = coords.y + (forward.y * 0.57)
+                    local z = coords.z - 0.90
+                    local dropCoords = vector3(x, y, z)
+                    SetEntityCoords(bagObject, x, y, z, false, false, false, false)
                     SetEntityRotation(bagObject, 0.0, 0.0, 0.0, 2)
                     PlaceObjectOnGroundProperly(bagObject)
                     FreezeEntityPosition(bagObject, true)
-
-                    lib.callback('rsg-inventory:updateDrop', false, LocalPlayer.state.heldDrop, coords)
+                    local ok = lib.callback.await('rsg-inventory:updateDrop', false, LocalPlayer.state.heldDrop, dropCoords)
+                    if not ok then
+                        lib.notify({
+                            title       = 'Error',
+                            description = locale('notify.Prompt'),
+                            type        = 'error',
+                            duration    = 4000
+                        })
+                    end
                 end
-                LocalPlayer.state.holdingDrop = false
+
+             
+                LocalPlayer.state.holdingDrop  = false
                 LocalPlayer.state.dropBagObject = nil
-                LocalPlayer.state.heldDrop = nil
+                LocalPlayer.state.heldDrop      = nil
             end
         end
+
         Wait(waitTime)
     end
 end)
