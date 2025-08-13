@@ -51,5 +51,5 @@ files {
     'html/main.css',
     'html/app.js',
     'html/images/*.png',
-    'html/*.png',
+    'html/assets/*.*',
 }
