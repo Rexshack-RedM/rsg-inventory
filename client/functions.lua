@@ -4,12 +4,11 @@ local config = require 'shared.config'
 function Inventory.CanPlayerUseInventory()
     local playerData = RSGCore.Functions.GetPlayerData()
     if not playerData or not playerData.metadata then return false end
-
     local meta = playerData.metadata
     return not meta.isdead and not meta.ishandcuffed
 end
 
-local function Inventory.NotifyHotbarSpamProtection()
+function Inventory.NotifyHotbarSpamProtection()
     if not config.HotbarSpamProtectionNotify then return end
     lib.notify({
         title       = locale('error.error'),
@@ -26,9 +25,11 @@ function Inventory.UseHotbarItem(slot)
         return Inventory.NotifyHotbarSpamProtection()
     end
     LocalPlayer.state.hotbarLastUsed = currentTime
+
     local playerData = RSGCore.Functions.GetPlayerData()
     local itemData = playerData.items and playerData.items[slot]
     if not itemData then return end
+
     if itemData.type == "weapon" and LocalPlayer.state.holdingDrop then
         return lib.notify({
             title       = locale('error.error'),
@@ -37,6 +38,7 @@ function Inventory.UseHotbarItem(slot)
             duration    = 5000
         })
     end
+
     TriggerServerEvent('rsg-inventory:server:useItem', itemData)
 end
 
