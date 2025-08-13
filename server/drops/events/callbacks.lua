@@ -1,51 +1,61 @@
 lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
     return Drops
 end)
-RSGCore.Functions.CreateCallback('rsg-inventory:server:createDrop', function(source, cb, item)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    local isMove = false
-    if not Player then
-        cb(false)
-        return
-    end
-    local playerPed = GetPlayerPed(src)
+
+lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
+    local Player = RSGCore.Functions.GetPlayer(source)
+    if not Player then return false end
+
+    local playerPed = GetPlayerPed(source)
     local playerCoords = GetEntityCoords(playerPed)
-        if item.type == 'weapon' then
-            isMove = true
-            Inventory.CheckWeapon(src, item) 
-        end
-    if Inventory.RemoveItem(src, item.name, item.amount, item.fromSlot, 'dropped item', isMove) then
-        TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
-        local bag = CreateObjectNoOffset(Config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
-        while not DoesEntityExist(bag) do Wait(0) end
-        local dropId = NetworkGetNetworkIdFromEntity(bag)   
-        local newDropId = Helpers.CreateDropId(dropId)
-        local itemsTable = setmetatable({ item }, {
-            __len = function(t)
-                local length = 0
-                for _ in pairs(t) do length += 1 end
-                return length
-            end
-        })
-        if not Drops[newDropId] then
-            Drops[newDropId] = {
-                name = newDropId,
-                label = 'Drop',
-                items = itemsTable,
-                entityId = dropId,
-                createdTime = os.time(),
-                coords = playerCoords,
-                maxweight = Config.DropSize.maxweight,
-                slots = Config.DropSize.slots,
-                isOpen = true
-            }
-            TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, dropId)
-        else
-            table.insert(Drops[newDropId].items, item)
-        end
-        cb(dropId)
-    else
-        cb(false)
+    local isMove = false
+
+    if item.type == 'weapon' then
+        isMove = true
+        Inventory.CheckWeapon(source, item)
     end
+
+    if not Inventory.RemoveItem(source, item.name, item.amount, item.fromSlot, 'dropped item', isMove) then
+        return false
+    end
+
+    
+    TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
+
+    
+    local bag = CreateObjectNoOffset(Config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
+
+    local timeout = 100 
+    while not DoesEntityExist(bag) and timeout > 0 do
+        Wait(50)
+        timeout -= 1
+    end
+
+    if not DoesEntityExist(bag) then return false end
+
+    local dropId = NetworkGetNetworkIdFromEntity(bag)
+    local newDropId = Helpers.CreateDropId(dropId)
+
+    local itemsTable = { item }
+
+
+    if not Drops[newDropId] then
+        Drops[newDropId] = {
+            name = newDropId,
+            label = 'Drop',
+            items = itemsTable,
+            entityId = dropId,
+            createdTime = os.time(),
+            coords = playerCoords,
+            maxweight = Config.DropSize.maxweight,
+            slots = Config.DropSize.slots,
+            isOpen = true
+        }
+
+        TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, dropId)
+    else
+        table.insert(Drops[newDropId].items, item)
+    end
+
+    return dropId
 end)
