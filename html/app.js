@@ -12,6 +12,17 @@ const InventoryContainer = Vue.createApp({
             }, 0);
             return isNaN(weight) ? 0 : weight;
         },
+        playerMoney() {
+            let totalMoney = 0;
+            Object.values(this.playerInventory).forEach((item) => {
+                if (item && item.name === 'dollar' && item.amount !== undefined) {
+                    totalMoney += item.amount * 100;
+                } else if (item && item.name === 'cent' && item.amount !== undefined) {
+                    totalMoney += item.amount;
+                }
+            });
+            return totalMoney;
+        },
         otherInventoryWeight() {
             const weight = Object.values(this.otherInventory).reduce((total, item) => {
                 if (item && item.weight !== undefined && item.amount !== undefined) {
@@ -53,53 +64,58 @@ const InventoryContainer = Vue.createApp({
     methods: {
         getInitialState() {
             return {
-                // Config Options
+
                 maxWeight: 0,
                 totalSlots: 0,
-                // Escape Key
+
                 isInventoryOpen: false,
                 additionalCloseKey: 'KeyI',
-                // Single pane
+
                 isOtherInventoryEmpty: true,
-                // Error handling
+
                 errorSlot: null,
-                // Player Inventory
+
                 playerInventory: {},
-                inventoryLabel: "Inventory",
+                inventoryLabel: "Satchel",
                 totalWeight: 0,
-                // Other inventory
+
                 otherInventory: {},
                 otherInventoryName: "",
                 otherInventoryLabel: "Drop",
                 otherInventoryMaxWeight: 1000000,
                 otherInventorySlots: 100,
                 isShopInventory: false,
-                // Where item is coming from
+
                 inventory: "",
-                // Context Menu
+
                 showContextMenu: false,
                 contextMenuPosition: { top: "0px", left: "0px" },
                 contextMenuItem: null,
                 showSubmenu: false,
-                // Hotbar
+
                 showHotbar: false,
                 hotbarItems: [],
                 wasHotbarEnabled: false,
-                // Notification box
+
                 showNotification: false,
                 notificationText: "",
                 notificationImage: "",
                 notificationType: "added",
                 notificationAmount: 1,
+                notificationDescription: "",
                 notificationTimeout: null,
-                // Required items box
-                //showRequiredItems: false,
+
                 requiredItems: [],
-                // Attachments
+
                 selectedWeapon: null,
                 showWeaponAttachments: false,
                 selectedWeaponAttachments: [],
-                // Dragging and dropping
+
+                selectedItem: null,
+                tooltipPosition: { topVh: 0, leftVw: 0 },
+
+                playerId: null,
+
                 currentlyDraggingItem: null,
                 currentlyDraggingSlot: null,
                 dragStartX: 0,
@@ -112,6 +128,7 @@ const InventoryContainer = Vue.createApp({
                 isMouseDown: false,
                 mouseDownX: 0,
                 mouseDownY: 0,
+                scrollBoundElements: [],
             };
         },
         validateToken(csrfToken) {
@@ -138,6 +155,7 @@ const InventoryContainer = Vue.createApp({
             this.isInventoryOpen = true;
             this.maxWeight = data.maxweight;
             this.totalSlots = data.slots;
+            this.playerId = data.playerId || null;
             this.playerInventory = {};
             this.otherInventory = {};
 
@@ -189,6 +207,10 @@ const InventoryContainer = Vue.createApp({
 
                 this.isOtherInventoryEmpty = false;
             }
+
+            this.$nextTick(() => {
+                this.attachGridScrollListeners();
+            });
         },
         updateInventory(data) {
             this.playerInventory = {};
@@ -245,16 +267,48 @@ const InventoryContainer = Vue.createApp({
             }
             return null;
         },
+        showItemInfo(item, evt) {
+            if (item) {
+                if (this.showContextMenu || this.currentlyDraggingItem || this.isMouseDown) return;
+                this.selectedItem = item;
+                if (evt && evt.clientX !== undefined) {
+                    const viewportW = window.innerWidth;
+                    const viewportH = window.innerHeight;
+                    const approxWidthPx = viewportW * 0.26;
+                            const approxHeightPx = viewportH * 0.24;
+        const paddingPx = Math.max(viewportW, viewportH) * 0.006;
+                    let leftPx = evt.clientX + paddingPx;
+                    let topPx = evt.clientY - approxHeightPx / 2;
+
+                    if (leftPx + approxWidthPx > viewportW) {
+                        leftPx = viewportW - approxWidthPx - paddingPx;
+                    }
+                    if (topPx + approxHeightPx > viewportH) {
+                        topPx = viewportH - approxHeightPx - paddingPx;
+                    }
+                    if (topPx < 0) topPx = paddingPx;
+                    const leftVw = (leftPx / viewportW) * 100;
+                    const topVh = (topPx / viewportH) * 100;
+                    this.tooltipPosition = { topVh, leftVw };
+                }
+            }
+        },
+        hideItemInfo() {
+            this.selectedItem = null;
+        },
         getHotbarItemInSlot(slot) {
             return this.hotbarItems[slot - 1] || null;
         },
         containerMouseDownAction(event) {
-            if (event.button === 0 && this.showContextMenu) {
-                this.showContextMenu = false;
+            if (event.button === 0) {
+                if (this.showContextMenu) {
+                    this.showContextMenu = false;
+                }
+                this.hideItemInfo();
             }
         },
         handleMouseDown(event, slot, inventory) {
-            if (event.button === 1) return; // skip middle mouse
+            if (event.button === 1) return;
             event.preventDefault();
             const itemInSlot = this.getItemInSlot(slot, inventory);
             if (event.button === 0) {
@@ -367,6 +421,7 @@ const InventoryContainer = Vue.createApp({
             if (!item) return;
             const slotElement = event.target.closest(".item-slot");
             if (!slotElement) return;
+            this.hideItemInfo();
             this.dragStartInventoryType = inventoryType;
             const ghostElement = this.createGhostElement(slotElement);
             document.body.appendChild(ghostElement);
@@ -739,6 +794,7 @@ const InventoryContainer = Vue.createApp({
                 this.showContextMenu = false;
                 this.contextMenuItem = null;
             } else {
+                this.hideItemInfo();
                 if (item.inventory === "other") {
                     const matchingItemKey = Object.keys(this.playerInventory).find((key) => this.playerInventory[key].name === item.name);
                     const matchingItem = this.playerInventory[matchingItemKey];
@@ -780,6 +836,31 @@ const InventoryContainer = Vue.createApp({
                 };
                 this.contextMenuItem = item;
             }
+        },
+        attachGridScrollListeners() {
+    
+            if (this.scrollBoundElements && this.scrollBoundElements.length) {
+                this.scrollBoundElements.forEach((el) => {
+                    el.removeEventListener('scroll', this.hideItemInfo);
+                    el.removeEventListener('wheel', this.hideItemInfo);
+                });
+            }
+            this.scrollBoundElements = [];
+    
+            const grids = document.querySelectorAll('.item-grid');
+            grids.forEach((el) => {
+                el.addEventListener('scroll', this.hideItemInfo, { passive: true });
+                el.addEventListener('wheel', this.hideItemInfo, { passive: true });
+                this.scrollBoundElements.push(el);
+            });
+        },
+        detachGridScrollListeners() {
+            if (!this.scrollBoundElements) return;
+            this.scrollBoundElements.forEach((el) => {
+                el.removeEventListener('scroll', this.hideItemInfo);
+                el.removeEventListener('wheel', this.hideItemInfo);
+            });
+            this.scrollBoundElements = [];
         },
         async giveItem(item, quantity) {
             if (item && item.name) {
@@ -883,10 +964,14 @@ const InventoryContainer = Vue.createApp({
             }
         },
         showItemNotification(itemData) {
-            this.notificationText = itemData.item.label;
-            this.notificationImage = "images/" + itemData.item.image;
-            this.notificationType = itemData.type === "add" ? "Received" : itemData.type === "use" ? "Used" : "Removed";
+            const item = itemData.item || {};
+            const rawType = (itemData.type || '').toLowerCase();
+            this.notificationText = item.label || "";
+            this.notificationImage = item.image ? "images/" + item.image : "";
+            this.notificationType = rawType === "add" ? "Received" : rawType === "use" ? "Used" : (rawType === "drop" || rawType === "remove") ? "Removed" : "";
             this.notificationAmount = itemData.amount || 1;
+            const desc = item.info?.description || item.description || "";
+            this.notificationDescription = typeof desc === 'string' ? desc : '';
             this.showNotification = true;
 
             if (this.notificationTimeout) {
@@ -895,6 +980,7 @@ const InventoryContainer = Vue.createApp({
 
             this.notificationTimeout = setTimeout(() => {
                 this.showNotification = false;
+                this.notificationDescription = "";
                 this.notificationTimeout = null;
             }, 3000);
         },
@@ -1077,6 +1163,7 @@ const InventoryContainer = Vue.createApp({
                 case "update":
                     if (this.validateToken(event.data.token)) {
                         this.updateInventory(event.data);
+                        this.$nextTick(() => this.attachGridScrollListeners());
                     }
                     break;
                 case "toggleHotbar":
@@ -1101,6 +1188,7 @@ const InventoryContainer = Vue.createApp({
         });
     },
     beforeUnmount() {
+        this.detachGridScrollListeners();
         window.removeEventListener("mousemove", () => { });
         window.removeEventListener("keydown", () => { });
         window.removeEventListener("message", () => { });

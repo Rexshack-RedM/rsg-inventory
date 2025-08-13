@@ -95,6 +95,7 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
         inventory = items,
         slots = Player.slots,
         maxweight = Player.weight,
+        playerId = Player.source or Player.id or Player.citizenid,
         other = other,
         token = token,
         closeKey = Config.Keybinds.Close,
