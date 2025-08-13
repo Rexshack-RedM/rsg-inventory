@@ -9,7 +9,6 @@ version '2.6.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'config/*.lua',
     'shared/helpers.lua',
 }
 
@@ -47,7 +46,8 @@ files {
     'html/index.html',
     'html/main.css',
     'html/app.js',
+    "config/*.lua", --- for lib.load
     'locales/*.json',
     'html/images/*.png',
     'html/assets/*.*',
-}
+}  
