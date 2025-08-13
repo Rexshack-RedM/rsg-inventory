@@ -28,16 +28,95 @@ RegisterNUICallback('SetInventoryData', function(data, cb)
     cb('ok')
 end)
 
+local function GetPlayerFromServerID(playerid)
+    for _, player in ipairs(GetActivePlayers()) do
+        if GetPlayerServerId(player) == serverId then
+            return player
+        end
+    end
+    return nil
+end
+
+local function GetNearbyPlayers()
+    local nearbyPlayers = {}
+    local myCoords = GetEntityCoords(PlayerPedId())
+    for _, player in ipairs(GetActivePlayers()) do
+        if player ~= PlayerId() then
+            local ped = GetPlayerPed(player)
+            local dist = #(GetEntityCoords(ped) - myCoords)
+            if dist < 3.0 then
+                nearbyPlayers[#nearbyPlayers + 1] = {
+                    value = GetPlayerServerId(player),
+                    label = "Player : " .. GetPlayerServerId(player),
+                }
+            end
+        end
+    end
+
+    return nearbyPlayers
+end
+
 RegisterNUICallback('GiveItem', function(data, cb)
-    local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
-    if player ~= -1 and distance < 3 then
-        local playerId = GetPlayerServerId(player)
-        RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
-            cb(success)
-        end, playerId, data.item.name, data.amount, data.slot, data.info)
-    else
-        lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
-        cb(false)
+    if Config.GiveItemType == "nearby" then
+        local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
+        if player ~= -1 and distance < 3 then
+            local playerId = GetPlayerServerId(player)
+            RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
+                cb(success)
+            end, playerId, data.item.name, data.amount, data.slot, data.info)
+        else
+            lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
+            cb(false)
+        end
+    elseif Config.GiveItemType == "id" then
+        local getplayerid = lib.inputDialog('Enter Player ID', {
+            {type = 'number', label = 'Number input', icon = 'hashtag'},
+        })
+        if not getplayerid[1] then
+            cb(false)
+            return
+        end
+        local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
+        if player ~= -1 then
+            local playerId = GetPlayerServerId(player)
+            if distance < 3 and playerId == tonumber(getplayerid[1]) then
+                RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
+                    cb(success)
+                end, tonumber(getplayerid[1]), data.item.name, data.amount, data.slot, data.info)
+            else
+                lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
+                cb(false)
+            end
+        else
+            lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
+            cb(false)
+        end
+
+    elseif Config.GiveItemType == "nearby_menu" then
+        local input = lib.inputDialog('Select Player', {
+            {type = 'select', label = 'Player Nearbys',  options = GetNearbyPlayers()},
+        })
+
+        if input then
+            if input[1] then
+                local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
+                if player ~= -1 then
+                    local playerId = GetPlayerServerId(player)
+                    if distance < 3.0 and playerId == tonumber(input[1]) then
+                        RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
+                            cb(success)
+                        end, tonumber(input[1]), data.item.name, data.amount, data.slot, data.info)
+                    else
+                        lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
+                        cb(false)
+                    end
+                end
+            else
+                cb(false)
+                return
+            end
+        end
+
     end
 end)
 

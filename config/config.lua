@@ -46,3 +46,9 @@ Config = {
         { name = 'bread', price = 0.1, amount = 50 },
     },
 }
+
+--- nearby_menu == opens a dropdown menu that shows nearby players within distance of 3.0
+--- nearby = simple when you giveitem, it will give to the nearest person
+--- id = player id needs to be entered to give the item
+
+Config.GiveItemType = "nearby" --- nearby_menu | nearby | id
