@@ -57,7 +57,7 @@ local function GetNearbyPlayers()
 end
 
 RegisterNUICallback('GiveItem', function(data, cb)
-    if Config.GiveItemType = "nearby" then
+    if Config.GiveItemType == "nearby" then
         local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
         if player ~= -1 and distance < 3 then
             local playerId = GetPlayerServerId(player)
@@ -68,7 +68,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
             lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
             cb(false)
         end
-    elseif Config.GiveItemType = "id" then
+    elseif Config.GiveItemType == "id" then
         local getplayerid = lib.inputDialog('Enter Player ID', {
             {type = 'number', label = 'Number input', icon = 'hashtag'},
         })
@@ -92,7 +92,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
             cb(false)
         end
 
-    elseif Config.GiveItemType = "nearby_menu" then
+    elseif Config.GiveItemType == "nearby_menu" then
         local input = lib.inputDialog('Select Player', {
             {type = 'select', label = 'Player Nearbys',  options = GetNearbyPlayers()},
         })
