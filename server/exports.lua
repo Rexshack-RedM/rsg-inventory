@@ -1,5 +1,5 @@
 Inventory = Inventory or {}
-
+local config = lib.load("config.config")
 Inventory.LoadInventory = function(source, citizenid)
     local inventory = MySQL.prepare.await('SELECT inventory FROM players WHERE citizenid = ?', { citizenid })
     inventory = json.decode(inventory)
@@ -488,8 +488,8 @@ Inventory.OpenInventory = function (source, identifier, data)
     else
         Inventory.CheckItemsDecay(inventory.items)
     end
-    inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or Config.StashSize.maxweight
-    inventory.slots = (data and data.slots) or (inventory and inventory.slots) or Config.StashSize.slots
+    inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or config.StashSize.maxweight
+    inventory.slots = (data and data.slots) or (inventory and inventory.slots) or config.StashSize.slots
     inventory.label = (data and data.label) or (inventory and inventory.label) or identifier
     inventory.isOpen = source
 

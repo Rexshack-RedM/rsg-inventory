@@ -1,4 +1,4 @@
-Config = {
+config = {
     UseTarget = GetConvar('UseTarget', 'false') == 'true',
 
     MaxWeight = 120000,
@@ -51,4 +51,4 @@ Config = {
 --- nearby = simple when you giveitem, it will give to the nearest person
 --- id = player id needs to be entered to give the item
 
-Config.GiveItemType = "nearby" --- nearby_menu | nearby | id
+config.GiveItemType = "nearby" --- nearby_menu | nearby | id

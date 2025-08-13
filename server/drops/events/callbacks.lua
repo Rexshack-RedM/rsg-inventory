@@ -1,3 +1,5 @@
+local config = lib.load("config.config")
+
 lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
     return Drops
 end)
@@ -23,7 +25,7 @@ lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
     TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
 
     
-    local bag = CreateObjectNoOffset(Config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
+    local bag = CreateObjectNoOffset(config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
 
     local timeout = 100 
     while not DoesEntityExist(bag) and timeout > 0 do
@@ -47,8 +49,8 @@ lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
             entityId = dropId,
             createdTime = os.time(),
             coords = playerCoords,
-            maxweight = Config.DropSize.maxweight,
-            slots = Config.DropSize.slots,
+            maxweight = config.DropSize.maxweight,
+            slots = config.DropSize.slots,
             isOpen = true
         }
 

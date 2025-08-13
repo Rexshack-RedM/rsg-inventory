@@ -1,49 +1,28 @@
 {
-  "progress": {
-    "snowballs": "Colecteaza bulgari de zapada.."
+  "error": {
+    "error_already_holding_bag": "Ții deja o geantă, las-o jos mai întâi",
+    "error_gun_and_bag": "Nu poți ține o armă și o geantă în același timp",
+    "error": "Eroare",
+    "error.fullbag": "Ții deja o geantă, las-o jos!",
+    "pdne": "Jucătorul nu este online",
+    "SpamProtection": "Apeși butoanele prea repede! Așteaptă puțin înainte de a încerca din nou.",
+    "not_enough_money": "Nu ai destui bani",
+    "cannot_carry": "Nu poți transporta asta",
+    "cannot_purchase_more_than_stock": "Nu poți cumpăra mai mult decât este în stoc",
+    "shop_does_not_buy": "Acest magazin nu cumpără acest articol!",
+    "not_enough_items": "Nu ai suficiente articole pentru a vinde!",
+    "worthless_item": "Acest lucru este fără valoare! Încearcă să vinzi o cantitate mai mare.",
+    "shop_fully_stocked": "Acest articol este complet în stoc, magazinul nu mai cumpără!",
+    "quality_too_low": "Calitatea acestui articol este prea scăzută!"
   },
-  "notify": {
-    "failed": "Esuat",
-    "canceled": "Anulat",
-    "vlocked": "Vehicul Blocat",
-    "notowned": "Nu detine acest obiect!",
-    "missitem": "Nu are acest obiect!",
-    "nonb": "Nimeni in apropiere!",
-    "noaccess": "Nu este accesibil",
-    "nosell": "Nu poate vinde acest obiect..",
-    "itemexist": "Obiectul nu exista",
-    "notencash": "Nu are suficienti bani..",
-    "noitem": "Nu are obiectele corecte..",
-    "gsitem": "Nu poate sa-si ofere un obiect?",
-    "tftgitem": "Este prea departe pentru a da obiecte!",
-    "infound": "Obiectul pe care a incercat sa-l ofere nu a fost gasit!",
-    "iifound": "Obiect incorect gasit, incearca din nou!",
-    "gitemrec": "A primit ",
-    "gitemfrom": " De la ",
-    "gitemyg": "A dat ",
-    "gitinvfull": "Inventarul celorlalti jucatori este plin!",
-    "giymif": "Inventarul lui este plin!",
-    "gitydhei": "Nu are suficiente obiecte",
-    "gitydhitt": "Nu are suficiente obiecte pentru a transfera",
-    "navt": "Nu este un tip valid..",
-    "anfoc": "Argumentele nu sunt completate corect..",
-    "yhg": "A dat ",
-    "cgitem": "Nu poate da obiect!",
-    "idne": "Obiectul nu exista",
-    "pdne": "Jucatorul nu este online"
-  },
-  "inf_mapping": {
-    "opn_inv": "Deschide Inventarul",
-    "tog_slots": "Comuta sloturile de taste",
-    "use_item": "Folosește obiectul din slot "
-  },
-  "menu": {
-    "vending": "Automat de vanzare",
-    "bin": "Deschide Pubela",
-    "craft": "Mestesug",
-    "o_bag": "Deschide Rucsacul"
-  },
-  "interaction": {
-    "craft": "~g~E~w~ - Mestesug"
+  "info": {
+    "menu_pickup_bag": "Ridică geanta",
+    "o_bag": "Deschide geanta",
+    "vending": "Automat de vânzare",
+    "idne": "Articolul nu există",
+    "Prompt": "Nu s-a putut actualiza poziția de drop pe server",
+    "cgitem": "Nu pot da articolul",
+    "yhg": "Ai oferit: ",
+    "no_price_or_not_for_sale": "Acest articol nu are preț sau nu este de vânzare"
   }
 }

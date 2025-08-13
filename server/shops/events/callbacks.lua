@@ -22,12 +22,12 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
             if itemInfo.name == item.name and item.buyPrice then
 
                 if itemInfo.info.quality and itemInfo.info.quality < (item.minQuality or 1) then
-                    TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.quality_too_low'), type = 'error', duration = 5000 })
+                    TriggerClientEvent('ox_lib:notify', source, { title = locale('error.quality_too_low'), type = 'error', duration = 5000 })
                     return false
                 end
 
                 if item.maxStock and item.maxStock < (item.amount + amount) then
-                    TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.shop_fully_stocked'), type = 'error', duration = 5000 })
+                    TriggerClientEvent('ox_lib:notify', source, { title = locale('error.shop_fully_stocked'), type = 'error', duration = 5000 })
                     return false
                 end
 
@@ -41,7 +41,7 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
 
                     buyprice = math.round(buyprice, 2)
                     if buyprice < 0.01 then
-                        TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.worthless_item'), type = 'error', duration = 5000 })
+                        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.worthless_item'), type = 'error', duration = 5000 })
                         return false
                     end
 
@@ -50,13 +50,13 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
                     TriggerClientEvent('rsg-inventory:client:updateInventory', source)
                     return true
                 else
-                    TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.not_enough_items'), type = 'error', duration = 5000 })
+                    TriggerClientEvent('ox_lib:notify', source, { title = locale('error.not_enough_items'), type = 'error', duration = 5000 })
                     return false
                 end
             end
         end
 
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.shop_does_not_buy'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.shop_does_not_buy'), type = 'error', duration = 5000 })
         return false
     end
 
@@ -64,22 +64,22 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
     if not shopSlot or shopSlot.name ~= itemInfo.name then return false end
 
     if shopSlot.amount and amount > shopSlot.amount then
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.cannot_purchase_more_than_stock'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.cannot_purchase_more_than_stock'), type = 'error', duration = 5000 })
         return false
     end
 
     if not Inventory.CanAddItem(source, itemInfo.name, amount) then
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.cannot_carry'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.cannot_carry'), type = 'error', duration = 5000 })
         return false
     end
 
     if not price then
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.no_price_or_not_for_sale'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.no_price_or_not_for_sale'), type = 'error', duration = 5000 })
         return false
     end
 
     if Player.PlayerData.money.cash < price then
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('notify.not_enough_money'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.not_enough_money'), type = 'error', duration = 5000 })
         return false
     end
 

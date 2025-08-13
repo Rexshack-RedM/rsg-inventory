@@ -1,12 +1,14 @@
 
 local RSGCore = exports['rsg-core']:GetCoreObject()
+local config = lib.load("config.config")
+
 
 CreateThread(function()
-    local models = Config.VendingObjects
+    local models = config.VendingObjects
     if not models or #models == 0 then return end
 
     exports.ox_target:addModel(models, {
-        label = locale('menu.vending'),
+        label = locale('info.vending'),
         icon = 'fa-solid fa-cash-register',
         distance = 2.5,
         onSelect = function(data)
@@ -19,8 +21,8 @@ end)
 
 CreateThread(function()
     local commands = {
-        [Config.Keybinds.Open]             = { command = "inventory", disabled = false },
-        [Config.Keybinds.Hotbar]           = { command = "hotbar",    disabled = false },
+        [config.Keybinds.Open]             = { command = "inventory", disabled = false },
+        [config.Keybinds.Hotbar]           = { command = "hotbar",    disabled = false },
         [RSGCore.Shared.Keybinds["1"]]     = { command = "slot_1",    disabled = true  },
         [RSGCore.Shared.Keybinds["2"]]     = { command = "slot_2",    disabled = true  },
         [RSGCore.Shared.Keybinds["3"]]     = { command = "slot_3",    disabled = true  },

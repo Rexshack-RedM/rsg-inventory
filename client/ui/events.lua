@@ -16,6 +16,7 @@
         toggle = bool
     })
 end) ]]
+local config = lib.load("config.config")
 
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
     local token = exports['rsg-core']:GenerateCSRFToken()
@@ -98,6 +99,6 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
         playerId = Player.source or Player.id or Player.citizenid,
         other = other,
         token = token,
-        closeKey = Config.Keybinds.Close,
+        closeKey = config.Keybinds.Close,
     })
 end)

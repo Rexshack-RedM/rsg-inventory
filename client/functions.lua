@@ -1,5 +1,5 @@
 Inventory = {}
-
+local config = lib.load("config.config")
 
 function Inventory.CanPlayerUseInventory()
     local playerData = RSGCore.Functions.GetPlayerData()
@@ -9,11 +9,20 @@ function Inventory.CanPlayerUseInventory()
     return not meta.isdead and not meta.ishandcuffed
 end
 
+local function Inventory.NotifyHotbarSpamProtection()
+    if not config.HotbarSpamProtectionNotify then return end
+    lib.notify({
+        title       = locale('error.error'),
+        description = locale('error.SpamProtection'),
+        type        = 'error',
+        duration    = 5000
+    })
+end
 
 function Inventory.UseHotbarItem(slot)
     local currentTime = GetGameTimer()
     local lastUsed = LocalPlayer.state.hotbarLastUsed or 0
-    if currentTime - lastUsed < Config.HotbarSpamProtectionTimeout then
+    if currentTime - lastUsed < config.HotbarSpamProtectionTimeout then
         return Inventory.NotifyHotbarSpamProtection()
     end
     LocalPlayer.state.hotbarLastUsed = currentTime
@@ -22,8 +31,8 @@ function Inventory.UseHotbarItem(slot)
     if not itemData then return end
     if itemData.type == "weapon" and LocalPlayer.state.holdingDrop then
         return lib.notify({
-            title       = 'Error',
-            description = locale('notify.error.fullbag'),
+            title       = locale('error.error'),
+            description = locale('error.error.fullbag'),
             type        = 'error',
             duration    = 5000
         })
@@ -32,15 +41,7 @@ function Inventory.UseHotbarItem(slot)
 end
 
 
-function Inventory.NotifyHotbarSpamProtection()
-    if not Config.HotbarSpamProtectionNotify then return end
-    lib.notify({
-        title       = 'Error',
-        description = locale('notify.SpamProtection'),
-        type        = 'error',
-        duration    = 5000
-    })
-end
+
 
 -- Optioneel: wapens attachments formatteren
 --[[ 

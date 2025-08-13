@@ -1,84 +1,120 @@
-RSGCore.Commands.Add('giveitem', 'Give An Item (Admin Only)', { { name = 'id', help = 'Player ID' }, { name = 'item', help = 'Name of the item (not a label)' }, { name = 'amount', help = 'Amount of items' } }, false, function(source, args)
-    local id = tonumber(args[1])
-    local player = RSGCore.Functions.GetPlayer(id)
-    local amount = tonumber(args[3]) or 1
-    local itemData = RSGCore.Shared.Items[tostring(args[2]):lower()]
-    if player then
-        if itemData then
-            -- check iteminfo
-            local info = {}
-            if itemData['name'] == 'id_card' then
-                info.citizenid = player.PlayerData.citizenid
-                info.firstname = player.PlayerData.charinfo.firstname
-                info.lastname = player.PlayerData.charinfo.lastname
-                info.birthdate = player.PlayerData.charinfo.birthdate
-                info.gender = player.PlayerData.charinfo.gender
-                info.nationality = player.PlayerData.charinfo.nationality
-            elseif itemData['type'] == 'weapon' then
-                amount = 1
-                info.serie = tostring(RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) .. RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4))
-                info.quality = 100
-            end
 
-            if Inventory.AddItem(id, itemData['name'], amount, false, info, 'give item command') then
-                TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.yhg') .. GetPlayerName(id) .. ' ' .. amount .. ' ' .. itemData['label'] .. '', type = 'success', duration = 5000 })
-                TriggerClientEvent('rsg-inventory:client:ItemBox', id, itemData, 'add', amount)
-                if Player(id).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', id) end
-            else
-                TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.cgitem'), type = 'error', duration = 5000 })
-            end
-        else
-            TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.idne'), type = 'error', duration = 5000 })
+
+local items = RSGCore.Shared.Items
+
+
+lib.addCommand('giveitem', {
+    help = 'Give an item to a player (Admin Only)',
+    restricted = 'group.admin',
+    params = {
+        { name = 'target', type = 'playerId', help = 'Target player ID' },
+        { name = 'item', type = 'string', help = 'Item name (not label)' },
+        { name = 'amount', type = 'number', help = 'Amount to give', optional = true },
+    }
+}, function(source, args)
+    local player = RSGCore.Functions.GetPlayer(args.target)
+    if not player then
+        return TriggerClientEvent('ox_lib:notify', source, { title = locale('error.pdne'), type = 'error', duration = 5000 })
+    end
+
+    local itemName = tostring(args.item):lower()
+    local itemData = items[itemName]
+    if not itemData then
+        return TriggerClientEvent('ox_lib:notify', source, { title = locale('info.idne'), type = 'error', duration = 5000 })
+    end
+
+    local amount = tonumber(args.amount) or 1
+    local info = {}
+
+    if itemData.name == 'id_card' then
+        local char = player.PlayerData.charinfo
+        info = {
+            citizenid = player.PlayerData.citizenid,
+            firstname = char.firstname,
+            lastname = char.lastname,
+            birthdate = char.birthdate,
+            gender = char.gender,
+            nationality = char.nationality
+        }
+    elseif itemData.type == 'weapon' then
+        amount = 1
+        info.serie = string.format(
+            "%s%s%s%s%s%s",
+            RSGCore.Shared.RandomInt(2),
+            RSGCore.Shared.RandomStr(3),
+            RSGCore.Shared.RandomInt(1),
+            RSGCore.Shared.RandomStr(2),
+            RSGCore.Shared.RandomInt(3),
+            RSGCore.Shared.RandomStr(4)
+        )
+        info.quality = 100
+    end
+
+    if Inventory.AddItem(args.target, itemData.name, amount, false, info, 'give item command') then
+        TriggerClientEvent('ox_lib:notify', source, {
+            title = locale('info.yhg') .. GetPlayerName(args.target) .. ' ' .. amount .. ' ' .. itemData.label,
+            type = 'success',
+            duration = 5000
+        })
+        TriggerClientEvent('rsg-inventory:client:ItemBox', args.target, itemData, 'add', amount)
+        if Player(args.target).state.inv_busy then
+            TriggerClientEvent('rsg-inventory:client:updateInventory', args.target)
         end
     else
-        TriggerClientEvent('ox_lib:notify', source, {title = Lang:t('notify.pdne'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.cgitem'), type = 'error', duration = 5000 })
     end
-end, 'admin')
+end)
 
-RSGCore.Commands.Add('randomitems', 'Receive random items', {}, false, function(source)
+
+lib.addCommand('randomitems', {
+    help = 'Receive 10 random non-weapon items',
+    restricted = 'group.god'
+}, function(source)
     local player = RSGCore.Functions.GetPlayer(source)
-    local playerInventory = player.PlayerData.items
+    if not player then return end
+
     local filteredItems = {}
-    for k, v in pairs(RSGCore.Shared.Items) do
-        if RSGCore.Shared.Items[k]['type'] ~= 'weapon' then
-            filteredItems[#filteredItems + 1] = v
+    for _, v in pairs(items) do
+        if v.type ~= 'weapon' then
+            filteredItems[#filteredItems+1] = v
         end
     end
-    for _ = 1, 10, 1 do
-        local randitem = filteredItems[math.random(1, #filteredItems)]
-        local amount = math.random(1, 10)
-        if randitem['unique'] then
-            amount = 1
-        end
-        local emptySlot = nil
+
+    local playerInventory = player.PlayerData.items
+    for _ = 1, 10 do
+        local randItem = filteredItems[math.random(#filteredItems)]
+        local amount = randItem.unique and 1 or math.random(1, 10)
+
+        local emptySlot
         for i = 1, player.PlayerData.slots do
             if not playerInventory[i] then
                 emptySlot = i
                 break
             end
         end
-        if emptySlot then
-            if Inventory.AddItem(source, randitem.name, amount, emptySlot, false, 'random items command') then
-                TriggerClientEvent('rsg-inventory:client:ItemBox', source, RSGCore.Shared.Items[randitem.name], 'add')
-                player = RSGCore.Functions.GetPlayer(source)
-                playerInventory = player.PlayerData.items
-                if Player(source).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', source) end
+
+        if emptySlot and Inventory.AddItem(source, randItem.name, amount, emptySlot, false, 'random items command') then
+            TriggerClientEvent('rsg-inventory:client:ItemBox', source, randItem, 'add')
+            playerInventory = RSGCore.Functions.GetPlayer(source).PlayerData.items
+            if Player(source).state.inv_busy then
+                TriggerClientEvent('rsg-inventory:client:updateInventory', source)
             end
-            Wait(1000)
         end
+        Wait(1000)
     end
-end, 'god')
+end)
 
-RSGCore.Commands.Add('clearinv', 'Clear Inventory (Admin Only)', { { name = 'id', help = 'Player ID' } }, false, function(source, args)
-    local id = tonumber(args[1])
-    if not id then
-        Inventory.ClearInventory(source)
-        return
-    end
-    Inventory.ClearInventory(id)
-end, 'admin')
 
--- Keybindings
+lib.addCommand('clearinv', {
+    help = 'Clear a player\'s inventory (Admin Only)',
+    restricted = 'group.admin',
+    params = {
+        { name = 'target', type = 'playerId', help = 'Player ID', optional = true }
+    }
+}, function(source, args)
+    Inventory.ClearInventory(args.target or source)
+end)
+
 
 RegisterCommand('closeInv', function(source)
     Inventory.CloseInventory(source)
@@ -88,14 +124,12 @@ RegisterCommand('hotbar', function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end
-    if not RSGPlayer or RSGPlayer.PlayerData.metadata['isdead'] or RSGPlayer.PlayerData.metadata['inlaststand'] or RSGPlayer.PlayerData.metadata['ishandcuffed'] then return end
-    local hotbarItems = {
-        RSGPlayer.PlayerData.items[1],
-        RSGPlayer.PlayerData.items[2],
-        RSGPlayer.PlayerData.items[3],
-        RSGPlayer.PlayerData.items[4],
-        RSGPlayer.PlayerData.items[5],
-    }
+    if RSGPlayer.PlayerData.metadata.isdead or RSGPlayer.PlayerData.metadata.inlaststand or RSGPlayer.PlayerData.metadata.ishandcuffed then return end
+
+    local hotbarItems = {}
+    for i = 1, 5 do
+        hotbarItems[i] = RSGPlayer.PlayerData.items[i]
+    end
     TriggerClientEvent('rsg-inventory:client:hotbar', source, hotbarItems)
 end, false)
 
@@ -103,6 +137,6 @@ RegisterCommand('inventory', function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end
-    if not RSGPlayer or RSGPlayer.PlayerData.metadata['isdead'] or RSGPlayer.PlayerData.metadata['ishandcuffed'] then return end
-	if not inventory then return Inventory.OpenInventory(source) end
+    if RSGPlayer.PlayerData.metadata.isdead or RSGPlayer.PlayerData.metadata.ishandcuffed then return end
+    if not inventory then Inventory.OpenInventory(source) end
 end, false)

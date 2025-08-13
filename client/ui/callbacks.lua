@@ -1,4 +1,6 @@
 -- ===== Helpers =====
+local config = lib.load("config.config")
+
 local function GetPlayerFromServerID(serverId)
     for _, pid in ipairs(GetActivePlayers()) do
         if GetPlayerServerId(pid) == serverId then
@@ -99,14 +101,14 @@ RegisterNUICallback('GiveItem', function(data, cb)
 
     local function notifyNoPlayer()
         lib.notify({
-            title = locale('error'),
+            title = locale('error.error'),
             description = locale('no_player_nearby'),
             type = 'error',
             duration = 7000
         })
     end
 
-    if Config.GiveItemType == "nearby" then
+    if config.GiveItemType == "nearby" then
         local pid, dist = GetClosestPlayerWithin(3.0)
         if pid ~= -1 and dist < 3.0 then
             local targetSid = GetPlayerServerId(pid)
@@ -119,7 +121,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
             cb(false)
         end
 
-    elseif Config.GiveItemType == "id" then
+    elseif config.GiveItemType == "id" then
         local getplayerid = lib.inputDialog(locale('enter_player_id'), {
             { type = 'number', label = locale('number_input'), icon = 'hashtag' },
         })
@@ -139,7 +141,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
             cb(false)
         end
 
-    elseif Config.GiveItemType == "nearby_menu" then
+    elseif config.GiveItemType == "nearby_menu" then
         local input = lib.inputDialog(locale('select_player_nearby'), {
             { type = 'select', label = locale('nearby_players_label'), options = GetNearbyPlayers(3.0) },
         })

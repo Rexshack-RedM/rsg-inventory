@@ -1,3 +1,5 @@
+local config = lib.load("config.config")
+
 RegisterNetEvent('rsg-inventory:server:openVending', function(data)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
@@ -6,10 +8,10 @@ RegisterNetEvent('rsg-inventory:server:openVending', function(data)
     local key = string.format("%s_%s_%s", data.coords.x, data.coords.y, data.coords.z)
     Inventory.CreateShop({
         name = 'vending-'..key,
-        label = 'Vending Machine',
+        label = locale('info.vending'),
         coords = data.coords,
-        slots = #Config.VendingItems,
-        items = Config.VendingItems
+        slots = #config.VendingItems,
+        items = config.VendingItems
     })
     Shops.OpenShop(src, 'vending-'..key)
 end)

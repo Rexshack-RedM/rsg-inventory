@@ -38,7 +38,7 @@ CreateThread(function()
                     if not ok then
                         lib.notify({
                             title       = 'Error',
-                            description = locale('notify.Prompt'),
+                            description = locale('info.Prompt'),
                             type        = 'error',
                             duration    = 4000
                         })

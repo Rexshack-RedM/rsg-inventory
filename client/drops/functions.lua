@@ -20,7 +20,7 @@ Drops.GetDrops = function()
                 {
                     name = 'open_drop_' .. k,
                     icon = 'fas fa-backpack',
-                    label = locale('menu.o_bag'),
+                    label = locale('info.o_bag'),
                     onSelect = function()
                         TriggerServerEvent('rsg-inventory:server:openDrop', k)
                         LocalPlayer.state.currentDrop = k

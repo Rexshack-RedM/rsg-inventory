@@ -1,12 +1,12 @@
 Inventory = Inventory or {}
-
+local config = lib.load("config.config")
 Inventory.InitializeInventory = function(inventoryId, data)
     Inventories[inventoryId] = {
         items = {},
         isOpen = false,
         label = data and data.label or inventoryId,
-        maxweight = data and data.maxweight or Config.StashSize.maxweight,
-        slots = data and data.slots or Config.StashSize.slots
+        maxweight = data and data.maxweight or config.StashSize.maxweight,
+        slots = data and data.slots or config.StashSize.slots
     }
     return Inventories[inventoryId]
 end

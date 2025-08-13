@@ -1,49 +1,28 @@
 {
-  "progress": {
-    "snowballs": "Collecting snowballs.."
+  "error": {
+    "error_already_holding_bag": "You are already carrying a bag, put it down first",
+    "error_gun_and_bag": "You cannot hold a gun and a bag at the same time",
+    "error": "Error",
+    "error.fullbag": "You are already carrying a bag, drop it!",
+    "pdne": "Player is not online",
+    "SpamProtection": "You are pressing the buttons too quickly! Please wait before trying again.",
+    "not_enough_money": "You do not have enough money",
+    "cannot_carry": "You cannot carry this",
+    "cannot_purchase_more_than_stock": "Cannot buy more than what is currently in stock",
+    "shop_does_not_buy": "This shop does not buy this item!",
+    "not_enough_items": "Not enough items to sell!",
+    "worthless_item": "This is worthless! Try selling a larger quantity.",
+    "shop_fully_stocked": "This item is fully stocked, the shop will not buy more!",
+    "quality_too_low": "The quality of this item is too low!"
   },
-  "notify": {
-    "failed": "Failed",
-    "canceled": "Canceled",
-    "vlocked": "Vehicle Locked",
-    "notowned": "You do not own this item!",
-    "missitem": "You don't have this item!",
-    "nonb": "No one nearby!",
-    "noaccess": "Not Accessible",
-    "nosell": "You can't sell this item..",
-    "itemexist": "Item doesn't exist",
-    "notencash": "You don't have enough cash..",
-    "noitem": "You don't have the right items..",
-    "gsitem": "You can't give yourself an item?",
-    "tftgitem": "You are too far away to give items!",
-    "infound": "Item you tried giving not found!",
-    "iifound": "Incorrect item found try again!",
-    "gitemrec": "You Received ",
-    "gitemfrom": " From ",
-    "gitemyg": "You gave ",
-    "gitinvfull": "The other players inventory is full!",
-    "giymif": "Your inventory is full!",
-    "gitydhei": "You do not have enough of the item",
-    "gitydhitt": "You do not have enough items to transfer",
-    "navt": "Not a valid type..",
-    "anfoc": "Arguments not filled out correctly..",
-    "yhg": "You Have Given ",
-    "cgitem": "Can't give item!",
-    "idne": "Item Does Not Exist",
-    "pdne": "Player Is Not Online"
-  },
-  "inf_mapping": {
-    "opn_inv": "Open Inventory",
-    "tog_slots": "Toggles keybind slots",
-    "use_item": "Uses the item in slot "
-  },
-  "menu": {
-    "vending": "Vending Machine",
-    "bin": "Open Dumpster",
-    "craft": "Craft",
-    "o_bag": "Open Bag"
-  },
-  "interaction": {
-    "craft": "~g~E~w~ - Craft"
+  "info": {
+    "menu_pickup_bag": "Pick up bag",
+    "o_bag": "Open bag",
+    "vending": "Vending machine",
+    "idne": "Item does not exist",
+    "Prompt": "Could not update drop position on the server",
+    "cgitem": "Cannot give item",
+    "yhg": "You have given: ",
+    "no_price_or_not_for_sale": "This item has no price or is not for sale"
   }
 }

@@ -70,7 +70,7 @@ end
 
 exports('OpenShop', Shops.OpenShop)
 
---- restock shop items by multiplier of item restock value (configured in rsg-shops)
+
 --- @param shopName string Name of the shop
 --- @param percentage int Percentage of default amount to restock (for example 10% of default stock). Default 100
 Shops.RestockShop = function(shopName, percentage)    

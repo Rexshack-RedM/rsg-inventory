@@ -1,3 +1,4 @@
+local config = lib.load("config.config")
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         Drops.ResetPlayerState()
@@ -48,7 +49,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
     exports.ox_target:addEntity(bag, {
         {
             icon = 'fas fa-backpack',
-            label = locale('menu.o_bag'),
+            label = locale('info.o_bag'),
             distance = 2.5,
             onSelect = function()
                 TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
@@ -57,15 +58,15 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
         },
         {
             icon = 'fas fa-hand-pointer',
-            label = locale('menu.menu_pickup_bag'),
+            label = locale('info.menu_pickup_bag'),
             distance = 2.5,
             onSelect = function()
                 local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
 
                 if weapon ~= `WEAPON_UNARMED` then
                     return lib.notify({
-                        title = locale('menu.error'),
-                        description = locale('menu.error_gun_and_bag'),
+                        title = locale('error.error'),
+                        description = locale('error.menu.error_gun_and_bag'),
                         type = 'error',
                         duration = 5500
                     })
@@ -73,8 +74,8 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
 
                 if LocalPlayer.state.holdingDrop then
                     return lib.notify({
-                        title = locale('menu.error'),
-                        description = locale('menu.error_already_holding_bag'),
+                        title = locale('error.error'),
+                        description = locale('error.error_already_holding_bag'),
                         type = 'error',
                         duration = 5500
                     })
@@ -92,17 +93,17 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
 
                 Wait(1000)
 
-                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), Config.ItemDropObjectBone)
+                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), config.ItemDropObjectBone)
                 AttachEntityToEntity(
                     bag,
                     PlayerPedId(),
                     boneIndex,
-                    Config.ItemDropObjectOffset[1].x,
-                    Config.ItemDropObjectOffset[1].y,
-                    Config.ItemDropObjectOffset[1].z,
-                    Config.ItemDropObjectOffset[2].x,
-                    Config.ItemDropObjectOffset[2].y,
-                    Config.ItemDropObjectOffset[2].z,
+                    config.ItemDropObjectOffset[1].x,
+                    config.ItemDropObjectOffset[1].y,
+                    config.ItemDropObjectOffset[1].z,
+                    config.ItemDropObjectOffset[2].x,
+                    config.ItemDropObjectOffset[2].y,
+                    config.ItemDropObjectOffset[2].z,
                     true, true, false, true, 1, true
                 )
 

@@ -1,67 +1,28 @@
 {
-
-
-"notify": {
-    "failed": "Mislukt",
-    "canceled": "Geannuleerd",
-    "vlocked": "Voertuig vergrendeld",
-    "notowned": "Dit item is niet van jou",
-    "missitem": "Je hebt dit item niet",
-    "nonb": "Niemand in de buurt",
-    "noaccess": "Geen toegang",
-    "nosell": "Dit item kan niet worden verkocht",
-    "itemexist": "Item bestaat niet",
-    "quality_too_low": "De kwaliteit van dit item is te laag!",
-    "shop_fully_stocked": "Dit item is volledig op voorraad, de winkel koopt er geen meer!",
-    "worthless_item": "Dit is waardeloos! Probeer een grotere hoeveelheid te verkopen.",
-    "not_enough_items": "Niet genoeg items om te verkopen!",
-    "shop_does_not_buy": "Deze winkel koopt dit item niet!",
-    "cannot_purchase_more_than_stock": "Kan geen grotere hoeveelheid kopen dan momenteel op voorraad is",
-    "cannot_carry": "Je kunt dit niet dragen",
-    "no_price_or_not_for_sale": "Dit item heeft geen prijs of is niet te koop",
-    "not_enough_money": "Je hebt niet genoeg geld",
-    "notencash": "Je hebt niet genoeg contant geld",
-    "noitem": "Je hebt de vereiste items niet",
-    "gsitem": "Je kunt jezelf geen item geven",
-    "tftgitem": "Je staat te ver weg om items te geven",
-    "infound": "Het item dat je wilt geven is niet gevonden",
-    "iifound": "Onjuist item gevonden, probeer opnieuw",
-    "gitemrec": "Je hebt ontvangen: ",
-    "gitemfrom": " van ",
-    "gitemyg": "Je hebt gegeven: ",
-    "gitinvfull": "De inventaris van de andere speler is vol",
-    "giymif": "Jouw inventaris is vol",
-    "gitydhei": "Je hebt niet genoeg van dit item",
-    "gitydhitt": "Je hebt niet genoeg items om over te dragen",
-    "navt": "Geen geldig type",
-    "anfoc": "Argumenten niet correct ingevuld",
-    "yhg": "Je hebt gegeven: ",
-    "cgitem": "Kan item niet geven",
-    "Prompt": "Kon drop-positie niet updaten op de server",
-    "idne": "Item bestaat niet",
-    "SpamProtection": "Je drukt te snel op de knoppen! Wacht even voordat je het opnieuw probeert.",
-    "pdne": "Speler is niet online",
-    "error.fullbag": "Je houdt al een tas vast, laat hem vallen!"
-  },
-
-  "inf_mapping": {
-    "opn_inv": "Open inventaris",
-    "tog_slots": "Schakel sneltoets-slots",
-    "use_item": "Gebruik het item in slot "
-  },
-
-  "menu": {
-    "vending": "Verkoopautomaat",
-    "bin": "Open container",
-    "craft": "Vervaardigen",
-    "o_bag": "Open tas",
-    "menu_pickup_bag": "Pak tas op",
-    "error": "Foutmelding",
+  "error": {
+    "error_already_holding_bag": "Je draagt al een tas, leg deze eerst weg",
     "error_gun_and_bag": "Je kunt geen geweer en een tas tegelijk vasthouden",
-    "error_already_holding_bag": "Je draagt al een tas, leg deze eerst weg"
+    "error": "Foutmelding",
+    "error.fullbag": "Je houdt al een tas vast, laat hem vallen!",
+    "pdne": "Speler is niet online",
+    "SpamProtection": "Je drukt te snel op de knoppen! Wacht even voordat je het opnieuw probeert.",
+    "not_enough_money": "Je hebt niet genoeg geld",
+    "cannot_carry": "Je kunt dit niet dragen",
+    "cannot_purchase_more_than_stock": "Kan geen grotere hoeveelheid kopen dan momenteel op voorraad is",
+    "shop_does_not_buy": "Deze winkel koopt dit item niet!",
+    "not_enough_items": "Niet genoeg items om te verkopen!",
+    "worthless_item": "Dit is waardeloos! Probeer een grotere hoeveelheid te verkopen.",
+    "shop_fully_stocked": "Dit item is volledig op voorraad, de winkel koopt er geen meer!",
+    "quality_too_low": "De kwaliteit van dit item is te laag!"
   },
-
-  "interaction": {
-    "craft": "~g~E~w~ - Vervaardigen"
+  "info": {
+    "menu_pickup_bag": "Pak tas op",
+    "o_bag": "Open tas",
+    "vending": "Verkoopautomaat",
+    "idne": "Item bestaat niet",
+    "Prompt": "Kon drop-positie niet updaten op de server",
+    "cgitem": "Kan item niet geven",
+    "yhg": "Je hebt gegeven: ",
+    "no_price_or_not_for_sale": "Dit item heeft geen prijs of is niet te koop"
   }
 }
