@@ -99,17 +99,17 @@ RegisterNUICallback('GiveItem', function(data, cb)
 
         if input then
             if input[1] then
-                local getplayer = GetPlayerFromServerID(input[1])
-                local ped = GetPlayerPed(getplayer)
-                local myCoords = GetEntityCoords(PlayerPedId())
-                local dist = #(GetEntityCoords(ped) - myCoords)
-                if dist < 3.0 then
-                    RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
-                        cb(success)
-                    end, tonumber(input[1]), data.item.name, data.amount, data.slot, data.info)
-                else
-                    lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
-                    cb(false)
+                local player, distance = RSGCore.Functions.GetClosestPlayer(GetEntityCoords(PlayerPedId()))
+                if player ~= -1 then
+                    local playerId = GetPlayerServerId(player)
+                    if distance < 3.0 and playerId == tonumber(input[1]) then
+                        RSGCore.Functions.TriggerCallback('rsg-inventory:server:giveItem', function(success)
+                            cb(success)
+                        end, tonumber(input[1]), data.item.name, data.amount, data.slot, data.info)
+                    else
+                        lib.notify({ title = 'Error', description = Lang:t('notify.nonb'), type = 'error', duration = 7000 })
+                        cb(false)
+                    end
                 end
             else
                 cb(false)
