@@ -1,14 +1,11 @@
-RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
+lib.callback.register('rsg-inventory:openDrop', function(source, dropId)
+    local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
-    local playerPed = GetPlayerPed(src)
-    local playerCoords = GetEntityCoords(playerPed)
+    local ped = GetPlayerPed(source)
+    local playerCoords = GetEntityCoords(ped)
     local drop = Drops[dropId]
-    if not drop then return end
-    if drop.isOpen then return end
-    local distance = #(playerCoords - drop.coords)
-    if distance > 2.5 then return end
+    if not drop or drop.isOpen then return end
+    if #(playerCoords - drop.coords) > 2.5 then return end
     Inventory.CheckItemsDecay(drop.items)
     local formattedInventory = {
         name = dropId,
@@ -18,9 +15,12 @@ RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
         inventory = drop.items
     }
     drop.isOpen = true
-    TriggerClientEvent('rsg-inventory:client:openInventory', source, Player.PlayerData.items, formattedInventory)
+    return {playerItems = Player.PlayerData.items, dropInventory = formattedInventory}
 end)
-
-RegisterNetEvent('rsg-inventory:server:updateDrop', function(dropId, coords)
-    Drops[dropId].coords = coords
+lib.callback.register('rsg-inventory:updateDrop', function(_, dropId, coords)
+    if Drops[dropId] then
+        Drops[dropId].coords = coords
+        return true
+    end
+    return false
 end)

@@ -15,7 +15,7 @@ RegisterNetEvent('rsg-inventory:client:removeDropTarget', function(dropId)
     local start = GetGameTimer()
     repeat
         Wait(10)
-        if GetGameTimer() - start > 5000 then return end -- timeout na 5s
+        if GetGameTimer() - start > 5000 then return end 
     until NetworkDoesNetworkIdExist(dropId)
 
     local bag = NetworkGetEntityFromNetworkId(dropId)
@@ -48,7 +48,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
     exports.ox_target:addEntity(bag, {
         {
             icon = 'fas fa-backpack',
-            label = locale('o_bag'),
+            label = locale('menu.o_bag'),
             distance = 2.5,
             onSelect = function()
                 TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
@@ -57,15 +57,15 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
         },
         {
             icon = 'fas fa-hand-pointer',
-            label = locale('menu_pickup_bag'),
+            label = locale('menu.menu_pickup_bag'),
             distance = 2.5,
             onSelect = function()
                 local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
 
                 if weapon ~= `WEAPON_UNARMED` then
                     return lib.notify({
-                        title = locale('error'),
-                        description = locale('error_gun_and_bag'),
+                        title = locale('menu.error'),
+                        description = locale('menu.error_gun_and_bag'),
                         type = 'error',
                         duration = 5500
                     })
@@ -73,8 +73,8 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
 
                 if LocalPlayer.state.holdingDrop then
                     return lib.notify({
-                        title = locale('error'),
-                        description = locale('error_already_holding_bag'),
+                        title = locale('menu.error'),
+                        description = locale('menu.error_already_holding_bag'),
                         type = 'error',
                         duration = 5500
                     })
