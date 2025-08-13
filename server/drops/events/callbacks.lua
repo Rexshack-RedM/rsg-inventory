@@ -1,7 +1,6 @@
-RSGCore.Functions.CreateCallback('rsg-inventory:server:GetCurrentDrops', function(_, cb)
-    cb(Drops)
+lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
+    return Drops
 end)
-
 RSGCore.Functions.CreateCallback('rsg-inventory:server:createDrop', function(source, cb, item)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
