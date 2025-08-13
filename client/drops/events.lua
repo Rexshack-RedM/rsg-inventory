@@ -4,68 +4,112 @@ AddEventHandler('onResourceStart', function(resourceName)
     end
 end)
 
+
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     Drops.ResetPlayerState()
     Drops.GetDrops()
 end)
 
+
 RegisterNetEvent('rsg-inventory:client:removeDropTarget', function(dropId)
-    repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
+    local start = GetGameTimer()
+    repeat
+        Wait(10)
+        if GetGameTimer() - start > 5000 then return end -- timeout na 5s
+    until NetworkDoesNetworkIdExist(dropId)
+
     local bag = NetworkGetEntityFromNetworkId(dropId)
-    repeat Wait(10) until DoesEntityExist(bag)
-    exports['rsg-target']:RemoveTargetEntity(bag)
+    start = GetGameTimer()
+    repeat
+        Wait(10)
+        if GetGameTimer() - start > 5000 then return end
+    until DoesEntityExist(bag)
+
+    exports.ox_target:removeEntity(bag)
 end)
 
+
 RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
-    repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
+    local start = GetGameTimer()
+    repeat
+        Wait(10)
+        if GetGameTimer() - start > 5000 then return end
+    until NetworkDoesNetworkIdExist(dropId)
+
     local bag = NetworkGetEntityFromNetworkId(dropId)
-    repeat Wait(10) until DoesEntityExist(bag)
+    start = GetGameTimer()
+    repeat
+        Wait(10)
+        if GetGameTimer() - start > 5000 then return end
+    until DoesEntityExist(bag)
+
     local newDropId = Helpers.CreateDropId(dropId)
 
-    exports['rsg-target']:AddTargetEntity(bag, {
-        options = {
-            {
-                icon = 'fas fa-backpack',
-                label = Lang:t('menu.o_bag'),
-                action = function()
-                    TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
-                    LocalPlayer.state.currentDrop = newDropId
-                end,
-            },
-            {
-                icon = 'fas fa-hand-pointer',
-                label = 'Pick up bag',
-                action = function()
-                    local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
-
-                    if weapon ~= `WEAPON_UNARMED` then
-                        return lib.notify({ title = 'Error!', description = 'You can not be holding a Gun and a Bag!', type = 'error', duration = 5500 })
-                    end
-                    if LocalPlayer.state.holdingDrop then
-                        return lib.notify({ title = 'Error!', description = 'Your already holding a bag, Go Drop it!', type = 'error', duration = 5500 })
-                    end
-
-                    Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
-                    Wait(1000)
-                    local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), Config.ItemDropObjectBone)
-                    AttachEntityToEntity(
-                        bag,
-                        PlayerPedId(),
-                        boneIndex,
-                        Config.ItemDropObjectOffset[1].x,
-                        Config.ItemDropObjectOffset[1].y,
-                        Config.ItemDropObjectOffset[1].z,
-                        Config.ItemDropObjectOffset[2].x,
-                        Config.ItemDropObjectOffset[2].y,
-                        Config.ItemDropObjectOffset[2].z,
-                        true, true, false, true, 1, true
-                    )
-                    LocalPlayer.state.dropBagObject = bag
-                    LocalPlayer.state.holdingDrop = true
-                    LocalPlayer.state.heldDrop = newDropId
-                end,
-            }
+    exports.ox_target:addEntity(bag, {
+        {
+            icon = 'fas fa-backpack',
+            label = locale('o_bag'),
+            distance = 2.5,
+            onSelect = function()
+                TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
+                LocalPlayer.state.currentDrop = newDropId
+            end
         },
-        distance = 2.5,
+        {
+            icon = 'fas fa-hand-pointer',
+            label = locale('menu_pickup_bag'),
+            distance = 2.5,
+            onSelect = function()
+                local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
+
+                if weapon ~= `WEAPON_UNARMED` then
+                    return lib.notify({
+                        title = locale('error'),
+                        description = locale('error_gun_and_bag'),
+                        type = 'error',
+                        duration = 5500
+                    })
+                end
+
+                if LocalPlayer.state.holdingDrop then
+                    return lib.notify({
+                        title = locale('error'),
+                        description = locale('error_already_holding_bag'),
+                        type = 'error',
+                        duration = 5500
+                    })
+                end
+
+               
+                Citizen.InvokeNative(
+                    0x524B54361229154F, 
+                    PlayerPedId(), 
+                    GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 
+                    0, 1, 
+                    GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), 
+                    -1.0, 0
+                )
+
+                Wait(1000)
+
+                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), Config.ItemDropObjectBone)
+                AttachEntityToEntity(
+                    bag,
+                    PlayerPedId(),
+                    boneIndex,
+                    Config.ItemDropObjectOffset[1].x,
+                    Config.ItemDropObjectOffset[1].y,
+                    Config.ItemDropObjectOffset[1].z,
+                    Config.ItemDropObjectOffset[2].x,
+                    Config.ItemDropObjectOffset[2].y,
+                    Config.ItemDropObjectOffset[2].z,
+                    true, true, false, true, 1, true
+                )
+
+                LocalPlayer.state.dropBagObject = bag
+                LocalPlayer.state.holdingDrop = true
+                LocalPlayer.state.heldDrop = newDropId
+            end
+        }
     })
 end)

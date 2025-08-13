@@ -1,0 +1,53 @@
+{
+  "progress": {
+    "snowballs": "Sneeuwballen aan het verzamelen..."
+  },
+  "notify": {
+    "failed": "Mislukt",
+    "canceled": "Geannuleerd",
+    "vlocked": "Voertuig vergrendeld",
+    "notowned": "Dit item is niet van jou",
+    "missitem": "Je hebt dit item niet",
+    "nonb": "Niemand in de buurt",
+    "noaccess": "Geen toegang",
+    "nosell": "Dit item kan niet worden verkocht",
+    "itemexist": "Item bestaat niet",
+    "notencash": "Je hebt niet genoeg contant geld",
+    "noitem": "Je hebt de vereiste items niet",
+    "gsitem": "Je kunt jezelf geen item geven",
+    "tftgitem": "Je staat te ver weg om items te geven",
+    "infound": "Het item dat je wilt geven is niet gevonden",
+    "iifound": "Onjuist item gevonden, probeer opnieuw",
+    "gitemrec": "Je hebt ontvangen: ",
+    "gitemfrom": " van ",
+    "gitemyg": "Je hebt gegeven: ",
+    "gitinvfull": "De inventaris van de andere speler is vol",
+    "giymif": "Jouw inventaris is vol",
+    "gitydhei": "Je hebt niet genoeg van dit item",
+    "gitydhitt": "Je hebt niet genoeg items om over te dragen",
+    "navt": "Geen geldig type",
+    "anfoc": "Argumenten niet correct ingevuld",
+    "yhg": "Je hebt gegeven: ",
+    "cgitem": "Kan item niet geven",
+    "idne": "Item bestaat niet",
+    "pdne": "Speler is niet online"
+  },
+  "inf_mapping": {
+    "opn_inv": "Open inventaris",
+    "tog_slots": "Schakel sneltoets-slots",
+    "use_item": "Gebruik het item in slot "
+  },
+  "menu": {
+    "vending": "Verkoopautomaat",
+    "bin": "Open container",
+    "craft": "Vervaardigen",
+    "o_bag": "Open tas",
+    "menu_pickup_bag": "Pak tas op",
+    "error": "Foutmelding",
+    "error_gun_and_bag": "Je kunt geen geweer en een tas tegelijk vasthouden",
+    "error_already_holding_bag": "Je draagt al een tas, leg deze eerst weg"
+  },
+  "interaction": {
+    "craft": "~g~E~w~ - Vervaardigen"
+  }
+}
