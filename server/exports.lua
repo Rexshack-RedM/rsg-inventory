@@ -1,5 +1,5 @@
 Inventory = Inventory or {}
-local config = lib.load("config.config")
+local config = require 'shared.config'
 Inventory.LoadInventory = function(source, citizenid)
     local inventory = MySQL.prepare.await('SELECT inventory FROM players WHERE citizenid = ?', { citizenid })
     inventory = json.decode(inventory)

@@ -46,7 +46,7 @@ files {
     'html/index.html',
     'html/main.css',
     'html/app.js',
-    "config/*.lua", --- for lib.load
+    "shared/*.lua", --- for lib.load
     'locales/*.json',
     'html/images/*.png',
     'html/assets/*.*',

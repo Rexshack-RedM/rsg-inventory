@@ -1,5 +1,5 @@
 Inventory = Inventory or {}
-local config = lib.load("config.config")
+local config = require 'shared.config'
 Inventory.InitializeInventory = function(inventoryId, data)
     Inventories[inventoryId] = {
         items = {},

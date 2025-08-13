@@ -4,7 +4,7 @@ Inventories = {}
 Drops = {}
 RegisteredShops = {}
 ShopsStockCache = {}
-local config = lib.load("config.config")
+local config = require 'shared.config'
 CreateThread(function()
     MySQL.query('SELECT * FROM inventories', {}, function(result)
         if result and #result > 0 then

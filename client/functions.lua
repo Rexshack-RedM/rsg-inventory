@@ -1,5 +1,5 @@
 Inventory = {}
-local config = lib.load("config.config")
+local config = require 'shared.config'
 
 function Inventory.CanPlayerUseInventory()
     local playerData = RSGCore.Functions.GetPlayerData()

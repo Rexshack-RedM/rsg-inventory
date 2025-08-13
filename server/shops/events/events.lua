@@ -1,4 +1,4 @@
-local config = lib.load("config.config")
+local config = require 'shared.config'
 
 RegisterNetEvent('rsg-inventory:server:openVending', function(data)
     local src = source

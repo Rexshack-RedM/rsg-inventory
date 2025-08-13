@@ -1,4 +1,4 @@
-local config = lib.load("config.config")
+local config = require 'shared.config'
 
 lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
     return Drops

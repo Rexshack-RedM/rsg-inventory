@@ -1,6 +1,6 @@
 
 local RSGCore = exports['rsg-core']:GetCoreObject()
-local config = lib.load("config.config")
+local config = require 'shared.config'
 
 
 CreateThread(function()

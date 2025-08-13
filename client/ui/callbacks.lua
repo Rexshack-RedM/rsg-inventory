@@ -1,5 +1,5 @@
 -- ===== Helpers =====
-local config = lib.load("config.config")
+local config = require 'shared.config'
 
 local function GetPlayerFromServerID(serverId)
     for _, pid in ipairs(GetActivePlayers()) do

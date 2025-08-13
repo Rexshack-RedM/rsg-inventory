@@ -16,7 +16,7 @@
         toggle = bool
     })
 end) ]]
-local config = lib.load("config.config")
+local config = require 'shared.config'
 
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
     local token = exports['rsg-core']:GenerateCSRFToken()

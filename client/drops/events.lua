@@ -1,4 +1,4 @@
-local config = lib.load("config.config")
+local config = require 'shared.config'
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         Drops.ResetPlayerState()
