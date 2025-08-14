@@ -1,15 +1,14 @@
-
-
+local config = require 'shared.config'
 local items = RSGCore.Shared.Items
 
 
-lib.addCommand('giveitem', {
-    help = 'Give an item to a player (Admin Only)',
+lib.addCommand(Config.CommandNames.GiveItem, {
+    help = locale('info.giveitem_help'),
     restricted = 'group.admin',
     params = {
-        { name = 'target', type = 'playerId', help = 'Target player ID' },
-        { name = 'item', type = 'string', help = 'Item name (not label)' },
-        { name = 'amount', type = 'number', help = 'Amount to give', optional = true },
+        { name = 'target', type = 'playerId', help = locale('info.param_target') },
+        { name = 'item', type = 'string', help = locale('info.param_item') },
+        { name = 'amount', type = 'number', help = locale('info.param_amount'), optional = true },
     }
 }, function(source, args)
     local player = RSGCore.Functions.GetPlayer(args.target)
@@ -20,7 +19,7 @@ lib.addCommand('giveitem', {
     local itemName = tostring(args.item):lower()
     local itemData = items[itemName]
     if not itemData then
-        return TriggerClientEvent('ox_lib:notify', source, { title = locale('info.idne'), type = 'error', duration = 5000 })
+        return TriggerClientEvent('ox_lib:notify', source, { title = locale('error.idne'), type = 'error', duration = 5000 })
     end
 
     local amount = tonumber(args.amount) or 1
@@ -61,13 +60,13 @@ lib.addCommand('giveitem', {
             TriggerClientEvent('rsg-inventory:client:updateInventory', args.target)
         end
     else
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.cgitem'), type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.cgitem'), type = 'error', duration = 5000 })
     end
 end)
 
 
-lib.addCommand('randomitems', {
-    help = 'Receive 10 random non-weapon items',
+lib.addCommand(Config.CommandNames.RandomItems, {
+    help = locale('info.randomitems_help'),
     restricted = 'group.god'
 }, function(source)
     local player = RSGCore.Functions.GetPlayer(source)
@@ -105,22 +104,23 @@ lib.addCommand('randomitems', {
 end)
 
 
-lib.addCommand('clearinv', {
-    help = 'Clear a player\'s inventory (Admin Only)',
+lib.addCommand(Config.CommandNames.ClearInv, {
+    help = locale('info.clearinv_help'),
     restricted = 'group.admin',
     params = {
-        { name = 'target', type = 'playerId', help = 'Player ID', optional = true }
+        { name = 'target', type = 'playerId', help = locale('info.param_target'), optional = true }
     }
 }, function(source, args)
     Inventory.ClearInventory(args.target or source)
 end)
 
 
-RegisterCommand('closeInv', function(source)
+RegisterCommand(Config.CommandNames.CloseInv, function(source)
     Inventory.CloseInventory(source)
 end, false)
 
-RegisterCommand('hotbar', function(source)
+
+RegisterCommand(Config.CommandNames.Hotbar, function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end
@@ -133,7 +133,8 @@ RegisterCommand('hotbar', function(source)
     TriggerClientEvent('rsg-inventory:client:hotbar', source, hotbarItems)
 end, false)
 
-RegisterCommand('inventory', function(source)
+-- Inventory
+RegisterCommand(Config.CommandNames.Inventory, function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end

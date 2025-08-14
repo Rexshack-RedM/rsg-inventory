@@ -1,4 +1,3 @@
-local config = require 'shared.config'
 
 lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
     return Drops
@@ -24,7 +23,7 @@ lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
     
     TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
 
-    
+    local config = require 'shared.config'
     local bag = CreateObjectNoOffset(config.ItemDropObject, playerCoords.x + 0.5, playerCoords.y + 0.5, playerCoords.z, true, true, false)
 
     local timeout = 100 

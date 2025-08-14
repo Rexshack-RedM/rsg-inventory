@@ -13,16 +13,22 @@
     "not_enough_items": "Niet genoeg items om te verkopen!",
     "worthless_item": "Dit is waardeloos! Probeer een grotere hoeveelheid te verkopen.",
     "shop_fully_stocked": "Dit item is volledig op voorraad, de winkel koopt er geen meer!",
-    "quality_too_low": "De kwaliteit van dit item is te laag!"
+    "quality_too_low": "De kwaliteit van dit item is te laag!",
+    "idne": "Item bestaat niet",
+    "cgitem": "Kan item niet geven"
   },
   "info": {
     "Pickup_bag": "Pak tas op",
     "o_bag": "Open tas",
     "vending": "Verkoopautomaat",
-    "idne": "Item bestaat niet",
     "Prompt": "Kon drop-positie niet updaten op de server",
-    "cgitem": "Kan item niet geven",
     "yhg": "Je hebt gegeven: ",
-    "no_price_or_not_for_sale": "Dit item heeft geen prijs of is niet te koop"
+    "no_price_or_not_for_sale": "Dit item heeft geen prijs of is niet te koop",
+    "giveitem_help": "Geef een item aan een speler (alleen Admin)",
+    "randomitems_help": "Ontvang 10 willekeurige niet-wapen items",
+    "clearinv_help": "Leeg de inventory van een speler (alleen Admin)",
+    "param_target": "Doel speler ID",
+    "param_item": "Item naam (niet het label)",
+    "param_amount": "Aantal om te geven"
   }
 }

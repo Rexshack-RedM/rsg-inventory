@@ -1,5 +1,5 @@
 -- ===== Helpers =====
-local config = require 'shared.config'
+
 
 local function GetPlayerFromServerID(serverId)
     for _, pid in ipairs(GetActivePlayers()) do
@@ -107,7 +107,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
             duration = 7000
         })
     end
-
+   local config = require 'shared.config'
     if config.GiveItemType == "nearby" then
         local pid, dist = GetClosestPlayerWithin(3.0)
         if pid ~= -1 and dist < 3.0 then

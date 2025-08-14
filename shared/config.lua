@@ -46,6 +46,14 @@ return {
         { name = 'bread', price = 0.1, amount = 50 },
     },
 
-    GiveItemType = "nearby"
-}
+    GiveItemType = "nearby",
 
+    CommandNames = {
+        GiveItem   = 'giveitem',
+        RandomItems = 'randomitems',
+        ClearInv   = 'clearinv',
+        CloseInv   = 'closeInv',
+        Hotbar     = 'hotbar',
+        Inventory  = 'inventory'
+    }
+}

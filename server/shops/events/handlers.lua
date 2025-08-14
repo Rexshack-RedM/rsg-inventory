@@ -1,4 +1,3 @@
-local config = require 'shared.config'
 
 AddEventHandler('txAdmin:events:serverShuttingDown', function()
     Shops.SaveItemsInStock()
@@ -16,6 +15,7 @@ AddEventHandler('onResourceStart', function(resourceName)
     Shops.LoadItemsInStock()
 end)
 
+local config = require 'shared.config'
 lib.cron.new(config.ShopsRestockCycle, function() 
     for name, shopData in pairs(RegisteredShops) do 
         for slot, item in pairs(shopData.items) do 
