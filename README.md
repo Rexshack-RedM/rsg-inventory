@@ -1,4 +1,19 @@
-# ![RSG Logo](assets/rsg-logo.jpeg)  
+<!-- Core Logo -->
+<p align="center">
+  <img src="https://cdn.discordapp.com/attachments/1109201552171864067/1405559611301298187/rsg.jpg?ex=689f44e5&is=689df365&hm=2440e05acbf52945fb1b18956c21eab8ad9ac984d5eeef6a7bcc1a414b44ba72&" 
+       alt="RSG Core Logo" 
+       width="800">
+</p>
+
+<!-- Inventory Preview -->
+<p align="center">
+  <img src="https://cdn.discordapp.com/attachments/1109201552171864067/1405559539289559181/image.png?ex=689f44d4&is=689df354&hm=d50b6f578874f5e20e4d8f9858d13bba61eb8a246a08b9d6fc8c0ea83f52b68f&" 
+       alt="Inventory Preview" 
+       width="800">
+</p>
+
+---
+
 # 🎯 RSG‑Inventory  
 **Converted from qb‑inventory — fully optimized for RedM Roleplay with RSG Core & ox_lib.**
 
@@ -55,4 +70,3 @@ return {
 - [**The Icon Library Project**](https://github.com/TankieTwitch/FREE-RedM-Image-Library) 🖼 — free RedM item icons
 
 ---
-
