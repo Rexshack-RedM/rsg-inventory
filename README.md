@@ -5,13 +5,6 @@
        width="800">
 </p>
 
-<!-- Inventory Preview -->
-<p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1109201552171864067/1405559539289559181/image.png?ex=689f44d4&is=689df354&hm=d50b6f578874f5e20e4d8f9858d13bba61eb8a246a08b9d6fc8c0ea83f52b68f&" 
-       alt="Inventory Preview" 
-       width="800">
-</p>
-
 ---
 
 # 🎯 RSG‑Inventory  
@@ -40,6 +33,15 @@ Make sure these resources are running before starting **rsg-inventory**:
 - 🎒 **Item Drops** — Physical objects in the world
 - ⚖ **Configurable Limits** — Weight, slots, stash, and drop sizes
 - 🚫 **Hotbar Spam Protection** — Adjustable timers and notifications
+
+---
+
+## 📸 Inventory Preview
+<p align="center">
+  <img src="https://cdn.discordapp.com/attachments/1109201552171864067/1405559539289559181/image.png?ex=689f44d4&is=689df354&hm=d50b6f578874f5e20e4d8f9858d13bba61eb8a246a08b9d6fc8c0ea83f52b68f&" 
+       alt="Inventory Preview" 
+       width="400">
+</p>
 
 ---
 
