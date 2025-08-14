@@ -294,24 +294,48 @@ exports('GetItemCount', Inventory.GetItemCount)
 --- @return string|nil - Returns a string indicating the reason why the item cannot be added (e.g., 'weight' or 'slots'), or nil if it can be added.
 Inventory.CanAddItem = function(source, item, amount)
     local Player = RSGCore.Functions.GetPlayer(source)
-    if not Player then return false end
-    local itemData = RSGCore.Shared.Items[item:lower()]
-    if not itemData then return false end
-    local weight = itemData.weight * amount
-    local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
-    if totalWeight > Player.PlayerData.weight then
-        return false, 'weight'
-    end
-    local slotsUsed = 0
-    for _, v in pairs(Player.PlayerData.items) do
-        if v then
-            slotsUsed = slotsUsed + 1
+    if Player then
+        local itemData = RSGCore.Shared.Items[item:lower()]
+        if not itemData then return false end
+
+        local weight = itemData.weight * amount
+        local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
+
+        if totalWeight > config.MaxWeight then
+            return false, 'weight'
         end
+
+        local slotsUsed = 0
+        for _, v in pairs(Player.PlayerData.items) do
+            if v then
+                slotsUsed = slotsUsed + 1
+            end
+        end
+        
+        if slotsUsed >= config.MaxSlots then
+            return false, 'slots'
+        end
+
+        return true
+
+    elseif Inventories[source] then
+        local inventory = Inventories[source].items
+        local inventoryWeight = Inventories[source].maxweight or 250000
+        local itemData = RSGCore.Shared.Items[item:lower()]
+        
+        if not itemData then return false end
+        
+        local weight = itemData.weight * amount
+        local totalWeight = Inventory.GetTotalWeight(inventory) + weight
+        
+        if totalWeight > inventoryWeight then
+            return false, 'weight'
+        end
+
+        return true
+    else
+        return true
     end
-    if slotsUsed >= Player.PlayerData.slots then
-        return false, 'slots'
-    end
-    return true
 end
 
 exports('CanAddItem', Inventory.CanAddItem)

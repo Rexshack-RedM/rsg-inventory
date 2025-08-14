@@ -95,25 +95,80 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         if fromId ~= toId then isMove = true end
 
         if toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality then
-            if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
-                Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item')
+            if toId ~= fromId then
+                if Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'item empilhado') then
+                    Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'item empilhado', isMove)
+                end
+            else
+                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'item empilhado', isMove) then
+                    Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'item empilhado')
+                end
             end
         elseif not toItem and toAmount < fromAmount then
-            if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
-                Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item')
+            if fromId ~= toId then
+                if Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item') then
+                    Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove)
+                end
+            else
+                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
+                    Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item')
+                end
             end
         else
             if toItem then
                 local fromItemAmount = fromItem.amount
                 local toItemAmount = toItem.amount
 
-                if Inventory.RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item', isMove) and Inventory.RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item', isMove) then
-                    Inventory.AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item')
-                    Inventory.AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item')
+                if toId ~= fromId then
+                    local addSuccessFrom = false
+                    local addSuccessTo = false
+                    
+                    if Inventory.CanAddItem(toId, fromItem.name, fromItemAmount) then
+                        addSuccessFrom = true
+                    end
+
+                    if Inventory.CanAddItem(fromId, toItem.name, toItemAmount) then
+                        addSuccessTo = true
+                    end
+                    
+                    if not addSuccessFrom or not addSuccessTo then
+                        Inventory.CloseInventory(src, toId)
+                    end
+
+                    if addSuccessFrom and addSuccessTo then
+                        if Inventory.RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item', isMove) and Inventory.RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item', isMove) then
+                            Inventory.AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item')
+                            Inventory.AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item')
+                        end
+                    end
+                else
+                    if Inventory.RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item', isMove) and Inventory.RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item', isMove) then
+                        Inventory.AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item')
+                        Inventory.AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item')
+                    end
                 end
             else
-                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item', isMove) then
-                    Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item', isMove)
+                if toId ~= fromId then
+                    local fromItemAmount = fromItem.amount
+                    local addSuccessFrom = false
+                    
+                    if Inventory.CanAddItem(toId, fromItem.name, fromItemAmount) then
+                        addSuccessFrom = true
+                    end
+
+                    if not addSuccessFrom then
+                        Inventory.CloseInventory(src, toId)
+                    end
+
+                    if addSuccessFrom then
+                        if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item', isMove) then
+                            Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item')
+                        end
+                    end
+                else
+                    if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item', isMove) then
+                        Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item')
+                    end
                 end
             end
         end
