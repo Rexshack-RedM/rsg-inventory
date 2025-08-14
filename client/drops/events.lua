@@ -13,7 +13,7 @@ RegisterNetEvent('rsg-inventory:client:removeDropTarget', function(dropId)
     repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
     local bag = NetworkGetEntityFromNetworkId(dropId)
     repeat Wait(10) until DoesEntityExist(bag)
-    exports.ox_target:removeLocalEntity(bag) 
+    exports.ox_target:removeLocalEntity(bag)
 end)
 
 RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
@@ -29,18 +29,9 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
             label = locale('info.o_bag'), 
             distance = 2.5,
             onSelect = function()
-                local result = lib.callback.await('rsg-inventory:openDrop', false, newDropId)
-                if not result then
-                    return lib.notify({
-                        title = locale('error.error'),
-                        description = locale('error.cannot_open_drop'),
-                        type = 'error',
-                        duration = 4000
-                    })
-                end
-                LocalPlayer.state.currentDrop = newDropId
-                TriggerEvent('rsg-inventory:client:openDropInventory', result.playerItems, result.dropInventory)
-            end
+                    TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
+                    LocalPlayer.state.currentDrop = newDropId
+                end,
         },
         {
             name = 'pickup_drop_' .. newDropId,

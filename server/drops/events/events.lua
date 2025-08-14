@@ -1,11 +1,13 @@
-lib.callback.register('rsg-inventory:openDrop', function(source, dropId)
-    local Player = RSGCore.Functions.GetPlayer(source)
+
+RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
     if not Player then return end
 
-    local ped = GetPlayerPed(source)
+    local ped = GetPlayerPed(src)
     local playerCoords = GetEntityCoords(ped)
-
     local drop = Drops[dropId]
+
     if not drop or drop.isOpen then return end
     if #(playerCoords - drop.coords) > 2.5 then return end
 
@@ -20,16 +22,11 @@ lib.callback.register('rsg-inventory:openDrop', function(source, dropId)
     }
 
     drop.isOpen = true
-
-    return {
-        playerItems   = Player.PlayerData.items,
-        dropInventory = formattedInventory
-    }
+    TriggerClientEvent('rsg-inventory:client:openInventory', src, Player.PlayerData.items, formattedInventory)
 end)
 
-lib.callback.register('rsg-inventory:updateDrop', function(source, dropId, coords)
+RegisterNetEvent('rsg-inventory:server:updateDrop', function(dropId, coords)
     local drop = Drops[dropId]
-    if not drop then return false end
+    if not drop then return end
     drop.coords = coords
-    return true
 end)
