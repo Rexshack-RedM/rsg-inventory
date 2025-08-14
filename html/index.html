@@ -126,10 +126,10 @@
                                 </p>
                             </div>
                             <div v-if="isShopInventory && getItemInSlot(slot, 'other') && getItemInSlot(slot, 'other').price" class="item-price">
-                                <p>${{ getItemInSlot(slot, 'other').price }}</p>
+                                <p>${{ Number(getItemInSlot(slot, 'other').price).toFixed(2) }}</p>
                             </div>
                             <div v-if="isShopInventory && getItemInSlot(slot, 'other') && getItemInSlot(slot, 'other').buyPrice" class="item-sell-price">
-                                <p>Sell: ${{ getItemInSlot(slot, 'other').buyPrice }}</p>
+                                <p>Sell: ${{ Number(getItemInSlot(slot, 'other').buyPrice).toFixed(2) }}</p>
                             </div>
                             <div class="item-slot-durability" v-if="getItemInSlot(slot, 'other') && 'quality' in getItemInSlot(slot, 'other').info">
                                 <div
