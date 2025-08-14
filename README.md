@@ -64,7 +64,7 @@ return {
 
 ## 📂 Installation
 1. **Download** this resource and place it in your `resources` folder  
-2. **Install** and start `ox_lib` and `rsg-core`  
+2. **Install** and start `ox_lib` and `rsg-core` and  `rsg-shops` 
 3. Add `ensure rsg-inventory` to your `server.cfg`  
 4. Edit `shared/config.lua` to fit your server’s needs
 
