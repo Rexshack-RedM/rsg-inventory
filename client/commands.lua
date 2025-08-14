@@ -7,7 +7,7 @@ RegisterCommand(config.CommandNames.openInv, function()
     if PlayerData.metadata.isdead then
         lib.notify({
             title = 'rsg-inventory',
-            description = locale('error.localeopeninverror'),
+            description = locale('error.openinverror'),
             type = 'error'
         })
         return
