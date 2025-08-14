@@ -1,55 +1,32 @@
-local config = require 'shared.config'
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         Drops.ResetPlayerState()
     end
 end)
 
-
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     Drops.ResetPlayerState()
     Drops.GetDrops()
 end)
 
-
 RegisterNetEvent('rsg-inventory:client:removeDropTarget', function(dropId)
-    local start = GetGameTimer()
-    repeat
-        Wait(10)
-        if GetGameTimer() - start > 5000 then return end 
-    until NetworkDoesNetworkIdExist(dropId)
-
+    repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
     local bag = NetworkGetEntityFromNetworkId(dropId)
-    start = GetGameTimer()
-    repeat
-        Wait(10)
-        if GetGameTimer() - start > 5000 then return end
-    until DoesEntityExist(bag)
-
-    exports.ox_target:removeEntity(bag)
+    repeat Wait(10) until DoesEntityExist(bag)
+    exports.ox_target:removeLocalEntity(bag) 
 end)
 
-
 RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
-    local start = GetGameTimer()
-    repeat
-        Wait(10)
-        if GetGameTimer() - start > 5000 then return end
-    until NetworkDoesNetworkIdExist(dropId)
-
+    repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
     local bag = NetworkGetEntityFromNetworkId(dropId)
-    start = GetGameTimer()
-    repeat
-        Wait(10)
-        if GetGameTimer() - start > 5000 then return end
-    until DoesEntityExist(bag)
-
+    repeat Wait(10) until DoesEntityExist(bag)
     local newDropId = Helpers.CreateDropId(dropId)
 
-    exports.ox_target:addEntity(bag, {
+    exports.ox_target:addLocalEntity(bag, {
         {
+            name = 'open_drop_' .. newDropId,
             icon = 'fas fa-backpack',
-            label = locale('info.o_bag'),
+            label = Lang:t('menu.o_bag'),
             distance = 2.5,
             onSelect = function()
                 TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
@@ -57,8 +34,9 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
             end
         },
         {
+            name = 'pickup_drop_' .. newDropId,
             icon = 'fas fa-hand-pointer',
-            label = locale('info.menu_pickup_bag'),
+            label = 'Pick up bag',
             distance = 2.5,
             onSelect = function()
                 local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
@@ -71,7 +49,6 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                         duration = 5500
                     })
                 end
-
                 if LocalPlayer.state.holdingDrop then
                     return lib.notify({
                         title = locale('error.error'),
@@ -81,18 +58,10 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                     })
                 end
 
-               
-                Citizen.InvokeNative(
-                    0x524B54361229154F, 
-                    PlayerPedId(), 
-                    GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 
-                    0, 1, 
-                    GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), 
-                    -1.0, 0
-                )
-
+                -- animatie oppakken
+                Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
                 Wait(1000)
-
+                local config = require 'shared.config'
                 local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), config.ItemDropObjectBone)
                 AttachEntityToEntity(
                     bag,
@@ -106,7 +75,6 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                     config.ItemDropObjectOffset[2].z,
                     true, true, false, true, 1, true
                 )
-
                 LocalPlayer.state.dropBagObject = bag
                 LocalPlayer.state.holdingDrop = true
                 LocalPlayer.state.heldDrop = newDropId
