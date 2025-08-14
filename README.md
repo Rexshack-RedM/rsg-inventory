@@ -10,7 +10,7 @@
 # 🎯 RSG‑Inventory  
 **Converted from qb‑inventory — fully optimized for RedM Roleplay with RSG Core & ox_lib.**
 
-![Version](https://img.shields.io/badge/version-1.0.0-red)  
+![Version](https://img.shields.io/badge/version-2.6.3-red)  
 ![Platform](https://img.shields.io/badge/platform-RedM-darkred)  
 ![License](https://img.shields.io/badge/license-MIT-green)
 
