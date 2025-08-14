@@ -16,7 +16,11 @@
     "quality_too_low": "The quality of this item is too low!",
     "idne": "Item does not exist",
     "no_player_nearby": "No player nearby!",
-    "cgitem": "Cannot give item"
+    "cgitem": "Cannot give item",
+   "openinverror": "You are dead, you cannot open your inventory.",
+   "cuffopeninv": "You are trying to open your inventory while handcuffed… nice try!",
+   "hotbarerror": "You are dead, you cannot use the hotbar.",
+   "hotbarerror1": "You cannot use the hotbar while handcuffed."
   },
   "info": {
     "enter_amount": "Enter amount",

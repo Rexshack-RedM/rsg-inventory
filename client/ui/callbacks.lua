@@ -1,6 +1,3 @@
--- ===== Helpers =====
-
-
 local function GetPlayerFromServerID(serverId)
     for _, pid in ipairs(GetActivePlayers()) do
         if GetPlayerServerId(pid) == serverId then

@@ -16,7 +16,11 @@
     "quality_too_low": "Calitatea acestui obiect este prea scăzută!",
     "idne": "Obiectul nu există",
     "no_player_nearby": "Nu este niciun jucător în apropiere!",
-    "cgitem": "Nu se poate da obiectul"
+    "cgitem": "Nu se poate da obiectul",
+    "openinverror": "Ești mort, nu poți deschide inventarul.",
+  "cuffopeninv": "Încerci să deschizi inventarul cu cătușe… bine încercat!",
+  "hotbarerror": "Ești mort, nu poți folosi bara rapidă.",
+  "hotbarerror1": "Nu poți folosi bara rapidă cu cătușe."
   },
   "info": {
     "enter_amount": "Introdu cantitatea",

@@ -16,7 +16,11 @@
     "quality_too_low": "Die Qualität dieses Artikels ist zu niedrig!",
     "idne": "Artikel existiert nicht",
     "no_player_nearby": "Kein Spieler in der Nähe!",
-    "cgitem": "Kann Artikel nicht geben"
+    "cgitem": "Kann Artikel nicht geben",
+     "openinverror": "Du bist tot, du kannst dein Inventar nicht öffnen.",
+  "cuffopeninv": "Du versuchst, dein Inventar mit Handschellen zu öffnen… guter Versuch!",
+  "hotbarerror": "Du bist tot, du kannst die Hotbar nicht benutzen.",
+  "hotbarerror1": "Mit Handschellen kannst du die Hotbar nicht benutzen."
   },
   "info": {
     "enter_amount": "Menge eingeben",

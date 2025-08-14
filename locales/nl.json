@@ -16,7 +16,12 @@
     "quality_too_low": "De kwaliteit van dit item is te laag!",
     "idne": "Item bestaat niet",
     "no_player_nearby": "Er staat geen speler bij je!",
-    "cgitem": "Kan item niet geven"
+    "cgitem": "Kan item niet geven",
+    "openinverror": "Je bent dood, je kan je inventory niet openen.",
+    "cuffopeninv": "Je probeert je inventory te openen met handboeien om... knap geprobeerd!",
+    "hotbarerror": "Je bent dood, je kan de hotbar niet gebruiken.",
+    "hotbarerror1": " Met handboeien om kan je de hotbar niet gebruiken.."
+
   },
   "info": {
      "enter_amount": "Voer aantal in",
