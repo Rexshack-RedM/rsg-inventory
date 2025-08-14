@@ -1,4 +1,3 @@
-
 RSGCore = exports['rsg-core']:GetCoreObject()
 local config = require 'shared.config'
 
@@ -17,7 +16,6 @@ CreateThread(function()
         end,
     })
 end)
-
 
 CreateThread(function()
     local commands = {

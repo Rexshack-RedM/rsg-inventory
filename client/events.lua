@@ -11,7 +11,7 @@ RegisterNetEvent('RSGCore:Client:UpdateObject', function()
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
-    if IsPedInAnyVehicle(cache.ped, false) or IsPedOnMount(cache.ped) then
+    if IsPedInAnyVehicle(cache.ped, false) or IsPedOnMount(cache.ped) then 
         return
     end
 

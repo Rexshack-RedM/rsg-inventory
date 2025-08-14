@@ -1,10 +1,10 @@
 lib.callback.register('rsg-inventory:server:giveItem', function(source, target, item, amount, slot, info)
     local player = RSGCore.Functions.GetPlayer(source)
-    if not player or player.PlayerData.metadata['isdead'] or player.PlayerData.metadata['inlaststand'] or player.PlayerData.metadata['ishandcuffed'] then
+    if not player or player.PlayerData.metadata.isdead or player.PlayerData.metadata.inlaststand or player.PlayerData.metadata.ishandcuffed then
         return false
     end
     local Target = RSGCore.Functions.GetPlayer(target)
-    if not Target or Target.PlayerData.metadata['isdead'] or Target.PlayerData.metadata['inlaststand'] or Target.PlayerData.metadata['ishandcuffed'] then
+    if not Target or Target.PlayerData.metadata.isdead or Target.PlayerData.metadata.inlaststand or Target.PlayerData.metadata.ishandcuffed then
         return false
     end
     if #(GetEntityCoords(GetPlayerPed(source)) - GetEntityCoords(GetPlayerPed(target))) > 5.0 then
