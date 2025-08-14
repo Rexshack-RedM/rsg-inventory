@@ -28,8 +28,7 @@ RegisterCommand(config.CommandNames.toggleHotbar, function()
 
     if PlayerData.metadata.isdead then
         lib.notify({
-            title = 'Hotbar',
-             description = 
+            title = 'Hotbar', 
             description = locale('error.hotbarerror'),
             type = 'error'
         })
