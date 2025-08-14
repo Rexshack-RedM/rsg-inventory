@@ -1,42 +1,77 @@
+-- server/inventory_shops.lua
+
+RegisteredShops = RegisteredShops or {}
 Shops = Shops or {}
 
---- @param shopData table The data of the shop to create.
+local function cloneItems(list)
+    local out = {}
+    for i = 1, #list do
+        out[i] = table.clone and table.clone(list[i]) or { table.unpack(list[i]) }
+    end
+    return out
+end
+
+--- @param shopData table The data of the shop to create or update.
 Shops.CreateShop = function(shopData)
+    if not shopData then return end
+    local overwrite = shopData.overwrite or shopData.replace or false
+
     if shopData.name then
-        if RegisteredShops[shopData.name] then return end
+        if RegisteredShops[shopData.name] and not overwrite then
+            return
+        end
 
         RegisteredShops[shopData.name] = {
             name = shopData.name,
             label = shopData.label,
             coords = shopData.coords,
-            slots = #shopData.items,
-            items = Shops.SetupShopItems(shopData.items, shopData),
+            slots = #(shopData.items or {}),
+            items = Shops.SetupShopItems(cloneItems(shopData.items or {}), shopData),
             persistentStock = shopData.persistentStock,
         }
-    else
-        for key, data in pairs(shopData) do
-            if type(data) == 'table' then
-                if data.name then
-                    local shopName = type(key) == 'number' and data.name or key
-                    if RegisteredShops[shopData.name] then goto continue end
-                    RegisteredShops[shopName] = {
-                        name = shopName,
-                        label = data.label,
-                        coords = data.coords,
-                        slots = #data.items,
-                        items = Shops.SetupShopItems(data.items, data)
-                    }
-                else
-                    Shops.CreateShop(data)
+        return
+    end
+
+    for key, data in pairs(shopData) do
+        if type(data) == 'table' then
+            if data.name then
+                local shopName = type(key) == 'number' and data.name or key
+                if RegisteredShops[shopName] and not (data.overwrite or data.replace) then
+                    goto continue
                 end
+                RegisteredShops[shopName] = {
+                    name = shopName,
+                    label = data.label,
+                    coords = data.coords,
+                    slots = #(data.items or {}),
+                    items = Shops.SetupShopItems(cloneItems(data.items or {}), data),
+                    persistentStock = data.persistentStock,
+                }
+            else
+                Shops.CreateShop(data)
             end
-            
-            ::continue::
         end
+        ::continue::
     end
 end
-
 exports('CreateShop', Shops.CreateShop)
+
+--- @param shopName string Name of the shop
+--- @param items table New items list
+--- @param opts table Optional settings to update
+Shops.UpdateShop = function(shopName, items, opts)
+    local shop = RegisteredShops[shopName]
+    if not shop then return false end
+    shop.items = Shops.SetupShopItems(cloneItems(items or {}), { name = shopName })
+    shop.slots = #(shop.items or {})
+    if opts then
+        if opts.label ~= nil then shop.label = opts.label end
+        if opts.coords ~= nil then shop.coords = opts.coords end
+        if opts.persistentStock ~= nil then shop.persistentStock = opts.persistentStock end
+    end
+    return true
+end
+exports('UpdateShop', Shops.UpdateShop)
 
 --- @param source number The player's server ID.
 --- @param name string The identifier of the inventory to open.
@@ -48,7 +83,11 @@ Shops.OpenShop = function(source, name)
     local playerPed = GetPlayerPed(source)
     local playerCoords = GetEntityCoords(playerPed)
     if RegisteredShops[name].coords then
-        local shopDistance = vector3(RegisteredShops[name].coords.x, RegisteredShops[name].coords.y, RegisteredShops[name].coords.z)
+        local shopDistance = vector3(
+            RegisteredShops[name].coords.x,
+            RegisteredShops[name].coords.y,
+            RegisteredShops[name].coords.z
+        )
         if shopDistance then
             local distance = #(playerCoords - shopDistance)
             if distance > 5.0 then return end
@@ -67,14 +106,12 @@ Shops.OpenShop = function(source, name)
     Inventory.CheckPlayerItemsDecay(player)
     TriggerClientEvent('rsg-inventory:client:openInventory', source, player.PlayerData.items, formattedInventory)
 end
-
 exports('OpenShop', Shops.OpenShop)
-
 
 --- @param shopName string Name of the shop
 --- @param percentage int Percentage of default amount to restock (for example 10% of default stock). Default 100
 Shops.RestockShop = function(shopName, percentage)    
-    shopData = RegisteredShops[shopName]
+    local shopData = RegisteredShops[shopName]
     if not shopData then return false end
 
     percentage = percentage or 100
@@ -87,5 +124,4 @@ Shops.RestockShop = function(shopName, percentage)
         end
     end
 end
-
 exports('RestockShop', Shops.RestockShop)
