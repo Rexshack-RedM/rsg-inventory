@@ -1,12 +1,16 @@
 lib.callback.register('rsg-inventory:openDrop', function(source, dropId)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
-    local ped          = GetPlayerPed(source)
+
+    local ped = GetPlayerPed(source)
     local playerCoords = GetEntityCoords(ped)
-    local drop         = Drops[dropId]
+
+    local drop = Drops[dropId]
     if not drop or drop.isOpen then return end
     if #(playerCoords - drop.coords) > 2.5 then return end
+
     Inventory.CheckItemsDecay(drop.items)
+
     local formattedInventory = {
         name      = dropId,
         label     = dropId,
@@ -14,18 +18,18 @@ lib.callback.register('rsg-inventory:openDrop', function(source, dropId)
         slots     = drop.slots,
         inventory = drop.items
     }
+
     drop.isOpen = true
+
     return {
         playerItems   = Player.PlayerData.items,
         dropInventory = formattedInventory
     }
 end)
-lib.callback.register('rsg-inventory:updateDrop', function(_, dropId, coords)
-    local drop = Drops[dropId]
-    if not drop then
-        return false
-    end
 
+lib.callback.register('rsg-inventory:updateDrop', function(source, dropId, coords)
+    local drop = Drops[dropId]
+    if not drop then return false end
     drop.coords = coords
     return true
 end)

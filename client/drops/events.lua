@@ -25,12 +25,21 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
     exports.ox_target:addLocalEntity(bag, {
         {
             name = 'open_drop_' .. newDropId,
-            icon = 'fas fa-backpack',
+            icon = 'fas fa-box',
             label = locale('info.o_bag'), 
             distance = 2.5,
             onSelect = function()
-                TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
+                local result = lib.callback.await('rsg-inventory:openDrop', false, newDropId)
+                if not result then
+                    return lib.notify({
+                        title = locale('error.error'),
+                        description = locale('error.cannot_open_drop'),
+                        type = 'error',
+                        duration = 4000
+                    })
+                end
                 LocalPlayer.state.currentDrop = newDropId
+                TriggerEvent('rsg-inventory:client:openDropInventory', result.playerItems, result.dropInventory)
             end
         },
         {
@@ -58,7 +67,6 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                     })
                 end
 
-                
                 Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
                 Wait(1000)
                 local config = require 'shared.config'
