@@ -1,5 +1,6 @@
 return {
     UseTarget = GetConvar('UseTarget', 'false') == 'true',
+
     MaxWeight = 120000,
     MaxSlots = 40,
 
@@ -46,6 +47,7 @@ return {
     },
 
     GiveItemType = "nearby",
+
     CommandNames = {
         GiveItem      = 'giveitem',
         RandomItems   = 'randomitems',
@@ -63,3 +65,4 @@ return {
         slot_4        = 'slot4',
         slot_5        = 'slot5',
     }
+}
