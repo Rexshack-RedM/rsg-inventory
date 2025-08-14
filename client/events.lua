@@ -11,7 +11,9 @@ RegisterNetEvent('RSGCore:Client:UpdateObject', function()
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
-    if IsPedInAnyVehicle(cache.ped, false) then return end
+    if IsPedInAnyVehicle(cache.ped, false) or IsPedOnMount(cache.ped) then
+        return
+    end
 
     local dict = 'mech_butcher'
     lib.requestAnimDict(dict)
