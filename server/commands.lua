@@ -2,7 +2,7 @@ local config = require 'shared.config'
 local items = RSGCore.Shared.Items
 
 
-lib.addCommand(Config.CommandNames.GiveItem, {
+lib.addCommand(config.CommandNames.GiveItem, {
     help = locale('info.giveitem_help'),
     restricted = 'group.admin',
     params = {
@@ -65,7 +65,7 @@ lib.addCommand(Config.CommandNames.GiveItem, {
 end)
 
 
-lib.addCommand(Config.CommandNames.RandomItems, {
+lib.addCommand(config.CommandNames.RandomItems, {
     help = locale('info.randomitems_help'),
     restricted = 'group.god'
 }, function(source)
@@ -104,7 +104,7 @@ lib.addCommand(Config.CommandNames.RandomItems, {
 end)
 
 
-lib.addCommand(Config.CommandNames.ClearInv, {
+lib.addCommand(config.CommandNames.ClearInv, {
     help = locale('info.clearinv_help'),
     restricted = 'group.admin',
     params = {
@@ -115,12 +115,12 @@ lib.addCommand(Config.CommandNames.ClearInv, {
 end)
 
 
-RegisterCommand(Config.CommandNames.CloseInv, function(source)
+RegisterCommand(config.CommandNames.CloseInv, function(source)
     Inventory.CloseInventory(source)
 end, false)
 
 
-RegisterCommand(Config.CommandNames.Hotbar, function(source)
+RegisterCommand(config.CommandNames.Hotbar, function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end
@@ -134,7 +134,7 @@ RegisterCommand(Config.CommandNames.Hotbar, function(source)
 end, false)
 
 -- Inventory
-RegisterCommand(Config.CommandNames.Inventory, function(source)
+RegisterCommand(config.CommandNames.Inventory, function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end
