@@ -1,6 +1,5 @@
 return {
     UseTarget = GetConvar('UseTarget', 'false') == 'true',
-
     MaxWeight = 120000,
     MaxSlots = 40,
 
@@ -47,16 +46,20 @@ return {
     },
 
     GiveItemType = "nearby",
-
     CommandNames = {
-        GiveItem   = 'giveitem',
-        RandomItems = 'randomitems',
-        ClearInv   = 'clearinv',
-        CloseInv   = 'closeinv',
-        Hotbar     = 'hotbar',
-        Inventory  = 'inventory',
-        openInv    = 'openinv',
-        toggleHotbar = 'toggleHotbar',
-        slot_       =  'slot_',
+        GiveItem      = 'giveitem',
+        RandomItems   = 'randomitems',
+        ClearInv      = 'clearinv',
+        CloseInv      = 'closeinv',
+        Hotbar        = 'hotbar',
+        Inventory     = 'inventory',
+
+        -- Commands used in client/commands.lua
+        openInv       = 'openinv',
+        toggleHotbar  = 'togglehotbar',
+        slot_1        = 'slot1',
+        slot_2        = 'slot2',
+        slot_3        = 'slot3',
+        slot_4        = 'slot4',
+        slot_5        = 'slot5',
     }
-}
