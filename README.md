@@ -1,4 +1,4 @@
-<!-- Core Logo -->
+
 <p align="center">
   <img src="https://cdn.discordapp.com/attachments/1109201552171864067/1405559611301298187/rsg.jpg?ex=689f44e5&is=689df365&hm=2440e05acbf52945fb1b18956c21eab8ad9ac984d5eeef6a7bcc1a414b44ba72&" 
        alt="RSG Core Logo" 
@@ -14,25 +14,28 @@
 ![Platform](https://img.shields.io/badge/platform-RedM-darkred)  
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-> A robust, modular inventory system for your RedM server, featuring stashes, shops, weapon attachments, and more.
+> A robust, modular inventory system for your RedM server.
 
 ---
 
 ## 🛠️ Dependencies
 Make sure these resources are running before starting **rsg-inventory**:
-- [**ox_lib**](https://github.com/overextended/ox_lib) ⚙️
-- [**rsg-core**](https://github.com/) 🤠
+
+- [**ox_lib**](https://github.com/Rexshack-RedM/ox_lib) ⚙️  
+- [**ox_target**](https://github.com/Rexshack-RedM/ox_target) 👁️  
+- [**rsg-core**](https://github.com/Rexshack-RedM/rsg-core) 🤠  
+- [**rsg-weapons**](https://github.com/Rexshack-RedM/rsg-weapons) 🔫
 
 ---
 
 ## ✨ Features
-- 🗄 **Stashes** — Personal and/or shared
-- 🐎 **Vehicle Trunk & Glovebox** — Includes optional horse saddlebag support
-- 🔧 **Weapon Attachments** — Add or remove with ease
-- 🏪 **Shops & Vending Machines** — Fully configurable
-- 🎒 **Item Drops** — Physical objects in the world
-- ⚖ **Configurable Limits** — Weight, slots, stash, and drop sizes
-- 🚫 **Hotbar Spam Protection** — Adjustable timers and notifications
+- 🗄 **Stashes** — Personal and/or shared  
+- 🐎 **Vehicle Trunk & Glovebox** — Includes optional horse saddlebag support  
+- 🔧 **Weapon Attachments** — Add or remove with ease  
+- 🏪 **Shops** — Works great with [**rsg-shops**](https://github.com/Rexshack-RedM/rsg-shops) 🥐  
+- 🎒 **Item Drops** — Physical objects in the world  
+- ⚖ **Configurable Limits** — Weight, slots, stash, and drop sizes  
+- 🚫 **Hotbar Spam Protection** — Adjustable timers and notifications  
 
 ---
 
