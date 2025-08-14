@@ -16,7 +16,7 @@ Drops.GetDrops = function()
     for k, v in pairs(drops) do
         local bag = NetworkGetEntityFromNetworkId(v.entityId)
         if DoesEntityExist(bag) then
-            exports['ox_target']:addLocalEntity(bag, {
+             exports.ox_target:addLocalEntity(bag, {
                 {
                     name = 'open_drop_' .. k,
                     icon = 'fas fa-backpack',
