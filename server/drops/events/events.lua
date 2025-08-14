@@ -28,4 +28,4 @@ lib.callback.register('rsg-inventory:updateDrop', function(_, dropId, coords)
 
     drop.coords = coords
     return true
-end
+end)

@@ -87,7 +87,7 @@ Inventory.GetFirstSlotByItemWithQuality = function(items, itemName, quality)
     return nil
 end
 
---- Checks and applies item decay over time.
+
 --- @param item table The item table.
 --- @param itemInfo table|nil Optional item definition from RSGCore.Shared.Items.
 --- @param currentTime number|nil Optional timestamp (defaults to os.time()).
@@ -116,7 +116,7 @@ Inventory.CheckItemDecay = function(item, itemInfo, currentTime)
     return true, item.info.quality, itemInfo.delete == true
 end
 
---- Applies decay to all items in an inventory.
+
 --- @param items table<number, table> Inventory items (indexed by slot).
 --- @return boolean needsUpdate Returns true if any item was updated or deleted.
 --- @return table removedItems Returns removed items.
@@ -139,7 +139,7 @@ Inventory.CheckItemsDecay = function(items)
     return needsUpdate, removedItems
 end
 
---- Applies decay to all items in a player's inventory and updates their data.
+
 --- @param player table The player object.
 Inventory.CheckPlayerItemsDecay = function(player)
     local needsUpdate, removedItems = Inventory.CheckItemsDecay(player.PlayerData.items)
@@ -152,7 +152,7 @@ Inventory.CheckPlayerItemsDecay = function(player)
     end
 end
 
---- Applies decay to single item in a player's inventory and updates their data.
+
 --- @param player table The player object.
 --- @param item table item object.
 Inventory.CheckPlayerItemDecay = function(player, item) 

@@ -1,5 +1,5 @@
 
-local RSGCore = exports['rsg-core']:GetCoreObject()
+RSGCore = exports['rsg-core']:GetCoreObject()
 local config = require 'shared.config'
 
 
