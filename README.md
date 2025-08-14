@@ -31,7 +31,6 @@ Make sure these resources are running before starting **rsg-inventory**:
 ## ✨ Features
 - 🗄 **Stashes** — Personal and/or shared  
 - 🐎 **Vehicle Trunk & Glovebox** — Includes optional horse saddlebag support  
-- 🔧 **Weapon Attachments** — Add or remove with ease  
 - 🏪 **Shops** — Works great with [**rsg-shops**](https://github.com/Rexshack-RedM/rsg-shops) 🥐  
 - 🎒 **Item Drops** — Physical objects in the world  
 - ⚖ **Configurable Limits** — Weight, slots, stash, and drop sizes  
