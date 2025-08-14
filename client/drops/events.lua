@@ -26,7 +26,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
         {
             name = 'open_drop_' .. newDropId,
             icon = 'fas fa-backpack',
-            label = Lang:t('menu.o_bag'),
+            label = locale('info.o_bag'), 
             distance = 2.5,
             onSelect = function()
                 TriggerServerEvent('rsg-inventory:server:openDrop', newDropId)
@@ -36,7 +36,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
         {
             name = 'pickup_drop_' .. newDropId,
             icon = 'fas fa-hand-pointer',
-            label = 'Pick up bag',
+            label = locale('info.Pickup_bag'), 
             distance = 2.5,
             onSelect = function()
                 local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
