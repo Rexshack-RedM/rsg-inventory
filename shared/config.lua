@@ -57,5 +57,6 @@ return {
         Inventory  = 'inventory',
         openInv    = 'openInv',
         toggleHotbar = 'toggleHotbar',
+        slot_       =  'slot_',
     }
 }

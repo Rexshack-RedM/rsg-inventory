@@ -1,10 +1,13 @@
+
+-- globals
 RSGCore = exports['rsg-core']:GetCoreObject()
 math = lib.math
+--
 Inventories = {}
 Drops = {}
 RegisteredShops = {}
 ShopsStockCache = {}
-local config = require 'shared.config'
+
 CreateThread(function()
     MySQL.query('SELECT * FROM inventories', {}, function(result)
         if result and #result > 0 then
@@ -21,6 +24,7 @@ CreateThread(function()
     end)
 end)
 
+local config = require 'shared.config'
 CreateThread(function()
     while true do
         for k, v in pairs(Drops) do

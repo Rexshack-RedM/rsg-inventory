@@ -15,7 +15,7 @@ RegisterCommand(config.CommandNames.toggleHotbar, function()
 end, false)
 
 for i = 1, 5 do
-    RegisterCommand('slot_' .. i, function()
+    RegisterCommand(config.CommandNames.slot_ .. i, function()
         Inventory.UseHotbarItem(i)
     end, false)
 end
