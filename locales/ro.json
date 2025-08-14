@@ -20,7 +20,9 @@
     "openinverror": "Ești mort, nu poți deschide inventarul.",
   "cuffopeninv": "Încerci să deschizi inventarul cu cătușe… bine încercat!",
   "hotbarerror": "Ești mort, nu poți folosi bara rapidă.",
-  "hotbarerror1": "Nu poți folosi bara rapidă cu cătușe."
+  "hotbarerror1": "Nu poți folosi bara rapidă cu cătușe.",
+  "bagcannotplace": "Geanta nu poate fi plasată aici.",
+"bagplace": "Geanta a fost plasată."
   },
   "info": {
     "enter_amount": "Introdu cantitatea",

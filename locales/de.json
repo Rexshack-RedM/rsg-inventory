@@ -20,7 +20,9 @@
      "openinverror": "Du bist tot, du kannst dein Inventar nicht öffnen.",
   "cuffopeninv": "Du versuchst, dein Inventar mit Handschellen zu öffnen… guter Versuch!",
   "hotbarerror": "Du bist tot, du kannst die Hotbar nicht benutzen.",
-  "hotbarerror1": "Mit Handschellen kannst du die Hotbar nicht benutzen."
+  "hotbarerror1": "Mit Handschellen kannst du die Hotbar nicht benutzen.",
+  "bagcannotplace": "Die Tasche kann hier nicht abgestellt werden.",
+"bagplace": "Die Tasche wurde abgestellt."
   },
   "info": {
     "enter_amount": "Menge eingeben",

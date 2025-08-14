@@ -20,8 +20,9 @@
     "openinverror": "Je bent dood, je kan je inventory niet openen.",
     "cuffopeninv": "Je probeert je inventory te openen met handboeien om... knap geprobeerd!",
     "hotbarerror": "Je bent dood, je kan de hotbar niet gebruiken.",
-    "hotbarerror1": " Met handboeien om kan je de hotbar niet gebruiken.."
-
+    "hotbarerror1": " Met handboeien om kan je de hotbar niet gebruiken..",
+    "bagcannotplace": "De tas kan hier niet worden neergezet.",
+    "bagplace": "De tas is neergezet."
   },
   "info": {
      "enter_amount": "Voer aantal in",

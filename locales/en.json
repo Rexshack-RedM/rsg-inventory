@@ -20,7 +20,9 @@
    "openinverror": "You are dead, you cannot open your inventory.",
    "cuffopeninv": "You are trying to open your inventory while handcuffed… nice try!",
    "hotbarerror": "You are dead, you cannot use the hotbar.",
-   "hotbarerror1": "You cannot use the hotbar while handcuffed."
+   "hotbarerror1": "You cannot use the hotbar while handcuffed.",
+   "bagcannotplace": "The bag cannot be placed here.",
+  "bagplace": "The bag has been placed."
   },
   "info": {
     "enter_amount": "Enter amount",
