@@ -16,7 +16,7 @@
         toggle = bool
     })
 end) ]]
-local config = require 'shared.config'
+
 
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
     local token = exports['rsg-core']:GenerateCSRFToken()
@@ -89,7 +89,7 @@ end)
 RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     local token = exports['rsg-core']:GenerateCSRFToken()
     local Player = RSGCore.Functions.GetPlayerData()
-
+    local config = require 'shared.config'
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'open',
