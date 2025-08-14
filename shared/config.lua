@@ -52,10 +52,10 @@ return {
         GiveItem   = 'giveitem',
         RandomItems = 'randomitems',
         ClearInv   = 'clearinv',
-        CloseInv   = 'closeInv',
+        CloseInv   = 'closeinv',
         Hotbar     = 'hotbar',
         Inventory  = 'inventory',
-        openInv    = 'openInv',
+        openInv    = 'openinv',
         toggleHotbar = 'toggleHotbar',
         slot_       =  'slot_',
     }
