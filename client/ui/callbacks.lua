@@ -26,7 +26,7 @@ local function GetNearbyPlayers(maxDistance)
                     local sid = GetPlayerServerId(pid)
                     options[#options+1] = {
                         value = sid,
-                        label = locale('player_with_distance', sid, dist)
+                       label = "Player : " .. GetPlayerServerId(player),
                     }
                 end
             end
@@ -102,7 +102,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
     local function notifyNoPlayer()
         lib.notify({
             title = locale('error.error'),
-            description = locale('no_player_nearby'),
+            description = locale('error.no_player_nearby'),
             type = 'error',
             duration = 7000
         })
@@ -122,8 +122,8 @@ RegisterNUICallback('GiveItem', function(data, cb)
         end
 
     elseif config.GiveItemType == "id" then
-        local getplayerid = lib.inputDialog(locale('enter_player_id'), {
-            { type = 'number', label = locale('number_input'), icon = 'hashtag' },
+        local getplayerid = lib.inputDialog(locale('info.enter_player_id'), {
+            { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
         })
         if not getplayerid or not getplayerid[1] then
             cb(false)
@@ -142,8 +142,8 @@ RegisterNUICallback('GiveItem', function(data, cb)
         end
 
     elseif config.GiveItemType == "nearby_menu" then
-        local input = lib.inputDialog(locale('select_player_nearby'), {
-            { type = 'select', label = locale('nearby_players_label'), options = GetNearbyPlayers(3.0) },
+        local input = lib.inputDialog(locale('info.select_player_nearby'), {
+            { type = 'select', label = locale('info.nearby_players_label'), options = GetNearbyPlayers(3.0) },
         })
         if not input or not input[1] then
             cb(false)
@@ -172,8 +172,8 @@ RegisterNUICallback('GiveItem', function(data, cb)
 end)
 
 RegisterNUICallback('GiveItemAmount', function(_, cb)
-    local input = lib.inputDialog(locale('enter_amount'), {
-        { type = 'number', label = locale('number_input'), icon = 'hashtag' },
+    local input = lib.inputDialog(locale('info.enter_amount'), {
+        { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
     })
     if input and input[1] then
         cb(math.abs(tonumber(input[1])))

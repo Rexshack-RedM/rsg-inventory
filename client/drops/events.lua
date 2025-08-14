@@ -58,7 +58,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                     })
                 end
 
-                -- animatie oppakken
+                
                 Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
                 Wait(1000)
                 local config = require 'shared.config'

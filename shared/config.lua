@@ -54,6 +54,8 @@ return {
         ClearInv   = 'clearinv',
         CloseInv   = 'closeInv',
         Hotbar     = 'hotbar',
-        Inventory  = 'inventory'
+        Inventory  = 'inventory',
+        openInv    = 'openInv',
+        toggleHotbar = 'toggleHotbar',
     }
 }

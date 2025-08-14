@@ -15,9 +15,15 @@
     "shop_fully_stocked": "Dit item is volledig op voorraad, de winkel koopt er geen meer!",
     "quality_too_low": "De kwaliteit van dit item is te laag!",
     "idne": "Item bestaat niet",
+    "no_player_nearby": "Er staat geen speler bij je!",
     "cgitem": "Kan item niet geven"
   },
   "info": {
+     "enter_amount": "Voer aantal in",
+    "nearby_players_label": "Spelers in de buurt",
+     "select_player_nearby": "Kies een speler",
+     "number_input": "Aantal",
+     "enter_player_id": "Voeg Speler ID",
     "Pickup_bag": "Pak tas op",
     "o_bag": "Open tas",
     "vending": "Verkoopautomaat",

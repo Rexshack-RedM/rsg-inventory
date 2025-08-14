@@ -1,4 +1,5 @@
-RegisterCommand('openInv', function()
+local config = require 'shared.config'
+RegisterCommand(config.CommandNames.openInv, function()
     local PlayerData = RSGCore.Functions.GetPlayerData()
     if IsNuiFocused() or IsPauseMenuActive() then return end
     if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
@@ -6,7 +7,7 @@ RegisterCommand('openInv', function()
     end
 end, false)
 
-RegisterCommand('toggleHotbar', function()
+RegisterCommand(config.CommandNames.toggleHotbar, function()
     local PlayerData = RSGCore.Functions.GetPlayerData()
     if not PlayerData.metadata["isdead"] and not PlayerData.metadata["ishandcuffed"] then
         ExecuteCommand('hotbar')
