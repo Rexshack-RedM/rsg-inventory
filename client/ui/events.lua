@@ -1,23 +1,3 @@
---[[ RegisterNetEvent('rsg-inventory:client:requiredItems', function(items, bool)
-    local itemTable = {}
-    if bool then
-        for k in pairs(items) do
-            itemTable[#itemTable + 1] = {
-                item = items[k].name,
-                label = RSGCore.Shared.Items[items[k].name]['label'],
-                image = items[k].image,
-            }
-        end
-    end
-
-    SendNUIMessage({
-        action = 'requiredItem',
-        items = itemTable,
-        toggle = bool
-    })
-end) ]]
-
-
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
     local token = exports['rsg-core']:GenerateCSRFToken()
     LocalPlayer.state.hotbarShown = not LocalPlayer.state.hotbarShown

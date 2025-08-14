@@ -133,7 +133,7 @@ RegisterCommand(config.CommandNames.Hotbar, function(source)
     TriggerClientEvent('rsg-inventory:client:hotbar', source, hotbarItems)
 end, false)
 
--- Inventory
+
 RegisterCommand(config.CommandNames.Inventory, function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
