@@ -1,28 +1,34 @@
 {
   "error": {
-    "error_already_holding_bag": "Ții deja o geantă, las-o jos mai întâi",
+    "error_already_holding_bag": "Deja porți o geantă, las-o jos mai întâi",
     "error_gun_and_bag": "Nu poți ține o armă și o geantă în același timp",
     "error": "Eroare",
-    "error.fullbag": "Ții deja o geantă, las-o jos!",
+    "error.fullbag": "Deja porți o geantă, las-o jos!",
     "pdne": "Jucătorul nu este online",
-    "SpamProtection": "Apeși butoanele prea repede! Așteaptă puțin înainte de a încerca din nou.",
-    "not_enough_money": "Nu ai destui bani",
-    "cannot_carry": "Nu poți transporta asta",
-    "cannot_purchase_more_than_stock": "Nu poți cumpăra mai mult decât este în stoc",
-    "shop_does_not_buy": "Acest magazin nu cumpără acest articol!",
-    "not_enough_items": "Nu ai suficiente articole pentru a vinde!",
-    "worthless_item": "Acest lucru este fără valoare! Încearcă să vinzi o cantitate mai mare.",
-    "shop_fully_stocked": "Acest articol este complet în stoc, magazinul nu mai cumpără!",
-    "quality_too_low": "Calitatea acestui articol este prea scăzută!"
+    "SpamProtection": "Apeși butoanele prea repede! Așteaptă înainte să încerci din nou.",
+    "not_enough_money": "Nu ai suficienți bani",
+    "cannot_carry": "Nu poți transporta acest obiect",
+    "cannot_purchase_more_than_stock": "Nu poți cumpăra mai mult decât stocul disponibil",
+    "shop_does_not_buy": "Acest magazin nu cumpără acest obiect!",
+    "not_enough_items": "Nu ai suficiente obiecte pentru vânzare!",
+    "worthless_item": "Acest obiect nu are valoare! Încearcă să vinzi o cantitate mai mare.",
+    "shop_fully_stocked": "Acest obiect este complet în stoc, magazinul nu mai cumpără!",
+    "quality_too_low": "Calitatea acestui obiect este prea scăzută!",
+    "idne": "Obiectul nu există",
+    "cgitem": "Nu pot oferi obiectul"
   },
   "info": {
-    "menu_pickup_bag": "Ridică geanta",
+    "Pickup_bag": "Ridică geanta",
     "o_bag": "Deschide geanta",
     "vending": "Automat de vânzare",
-    "idne": "Articolul nu există",
-    "Prompt": "Nu s-a putut actualiza poziția de drop pe server",
-    "cgitem": "Nu pot da articolul",
+    "Prompt": "Nu s-a putut actualiza poziția drop-ului pe server",
     "yhg": "Ai oferit: ",
-    "no_price_or_not_for_sale": "Acest articol nu are preț sau nu este de vânzare"
+    "no_price_or_not_for_sale": "Acest obiect nu are preț sau nu este de vânzare",
+    "giveitem_help": "Oferă un obiect unui jucător (doar Admin)",
+    "randomitems_help": "Primește 10 obiecte aleatorii fără a fi arme",
+    "clearinv_help": "Golește inventarul unui jucător (doar Admin)",
+    "param_target": "ID-ul jucătorului țintă",
+    "param_item": "Numele obiectului (nu eticheta)",
+    "param_amount": "Cantitatea de oferit"
   }
 }

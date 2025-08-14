@@ -1,0 +1,34 @@
+{
+  "error": {
+    "error_already_holding_bag": "Du trägst bereits eine Tasche, lege sie zuerst ab",
+    "error_gun_and_bag": "Du kannst nicht gleichzeitig eine Waffe und eine Tasche halten",
+    "error": "Fehler",
+    "error.fullbag": "Du trägst bereits eine Tasche, lass sie fallen!",
+    "pdne": "Spieler ist nicht online",
+    "SpamProtection": "Du drückst die Tasten zu schnell! Bitte warte, bevor du es erneut versuchst.",
+    "not_enough_money": "Du hast nicht genug Geld",
+    "cannot_carry": "Du kannst dies nicht tragen",
+    "cannot_purchase_more_than_stock": "Kann nicht mehr kaufen als auf Lager ist",
+    "shop_does_not_buy": "Dieses Geschäft kauft diesen Artikel nicht!",
+    "not_enough_items": "Nicht genug Artikel zum Verkaufen!",
+    "worthless_item": "Dieser Artikel ist wertlos! Versuche, eine größere Menge zu verkaufen.",
+    "shop_fully_stocked": "Dieser Artikel ist vollständig auf Lager, das Geschäft kauft keine weiteren!",
+    "quality_too_low": "Die Qualität dieses Artikels ist zu niedrig!",
+    "idne": "Artikel existiert nicht",
+    "cgitem": "Artikel kann nicht gegeben werden"
+  },
+  "info": {
+    "Pickup_bag": "Tasche aufheben",
+    "o_bag": "Tasche öffnen",
+    "vending": "Verkaufsautomat",
+    "Prompt": "Drop-Position konnte auf dem Server nicht aktualisiert werden",
+    "yhg": "Du hast gegeben: ",
+    "no_price_or_not_for_sale": "Dieser Artikel hat keinen Preis oder ist nicht zum Verkauf",
+    "giveitem_help": "Gib einem Spieler einen Artikel (nur Admin)",
+    "randomitems_help": "Erhalte 10 zufällige, nicht-waffenbezogene Artikel",
+    "clearinv_help": "Inventar eines Spielers leeren (nur Admin)",
+    "param_target": "Ziel-Spieler-ID",
+    "param_item": "Artikelname (nicht das Label)",
+    "param_amount": "Menge zum Geben"
+  }
+}

@@ -3,26 +3,32 @@
     "error_already_holding_bag": "You are already carrying a bag, put it down first",
     "error_gun_and_bag": "You cannot hold a gun and a bag at the same time",
     "error": "Error",
-    "error.fullbag": "You are already carrying a bag, drop it!",
+    "error.fullbag": "You are already holding a bag, drop it!",
     "pdne": "Player is not online",
     "SpamProtection": "You are pressing the buttons too quickly! Please wait before trying again.",
     "not_enough_money": "You do not have enough money",
     "cannot_carry": "You cannot carry this",
-    "cannot_purchase_more_than_stock": "Cannot buy more than what is currently in stock",
+    "cannot_purchase_more_than_stock": "Cannot purchase more than the current stock",
     "shop_does_not_buy": "This shop does not buy this item!",
     "not_enough_items": "Not enough items to sell!",
     "worthless_item": "This is worthless! Try selling a larger quantity.",
     "shop_fully_stocked": "This item is fully stocked, the shop will not buy more!",
-    "quality_too_low": "The quality of this item is too low!"
+    "quality_too_low": "The quality of this item is too low!",
+    "idne": "Item does not exist",
+    "cgitem": "Cannot give item"
   },
   "info": {
-    "menu_pickup_bag": "Pick up bag",
+    "Pickup_bag": "Pick up bag",
     "o_bag": "Open bag",
     "vending": "Vending machine",
-    "idne": "Item does not exist",
     "Prompt": "Could not update drop position on the server",
-    "cgitem": "Cannot give item",
     "yhg": "You have given: ",
-    "no_price_or_not_for_sale": "This item has no price or is not for sale"
+    "no_price_or_not_for_sale": "This item has no price or is not for sale",
+    "giveitem_help": "Give an item to a player (Admin only)",
+    "randomitems_help": "Receive 10 random non-weapon items",
+    "clearinv_help": "Clear a player's inventory (Admin only)",
+    "param_target": "Target player ID",
+    "param_item": "Item name (not the label)",
+    "param_amount": "Amount to give"
   }
 }
