@@ -122,12 +122,20 @@ lib.addCommand(config.CommandNames.ClearInv, {
         { name = 'target', type = 'playerId', help = locale('info.param_target'), optional = true }
     }
 }, function(source, args)
-    Inventory.ClearInventory(args.target or source)
+    local target = args.target or source
+    Inventory.ClearInventory(target)
+    if target == source then
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.inventory_cleared'), type = 'success', duration = 5000 })
+    else
+        TriggerClientEvent('ox_lib:notify', target, { title = locale('info.inventory_cleared'), type = 'success', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.inventory_cleared_for') .. GetPlayerName(target), type = 'success', duration = 5000 })
+    end
 end)
 
 -- /closeinv command
 RegisterCommand(config.CommandNames.CloseInv, function(source)
     Inventory.CloseInventory(source)
+    TriggerClientEvent('ox_lib:notify', source, { title = locale('info.inventory_closed'), type = 'success', duration = 5000 })
 end, false)
 
 -- serversidehotbar
