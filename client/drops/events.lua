@@ -56,7 +56,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 if weapon ~= `WEAPON_UNARMED` then
                     return lib.notify({
                         title       = locale('error.error'),
-                        description = locale('error.menu.error_gun_and_bag'),
+                        description = locale('error.error_gun_and_bag'),
                         type        = 'error',
                         duration    = 5500
                     })
