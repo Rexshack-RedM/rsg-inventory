@@ -1,3 +1,6 @@
+--- Returns the local player ID for a given server ID
+---@param serverId number The server ID of the player
+---@return number|nil The local player ID if found, nil otherwise
 local function GetPlayerFromServerID(serverId)
     for _, pid in ipairs(GetActivePlayers()) do
         if GetPlayerServerId(pid) == serverId then
@@ -7,6 +10,9 @@ local function GetPlayerFromServerID(serverId)
     return nil
 end
 
+--- Returns a list of nearby players within a maximum distance
+---@param maxDistance number? Maximum distance to check (default 3.0)
+---@return table A list of nearby players with `value` = serverId and `label` = display name
 local function GetNearbyPlayers(maxDistance)
     local options = {}
     local myPed = cache.ped
@@ -23,7 +29,7 @@ local function GetNearbyPlayers(maxDistance)
                     local sid = GetPlayerServerId(pid)
                     options[#options+1] = {
                         value = sid,
-                       label = "Player : " .. GetPlayerServerId(player),
+                        label = "Player : " .. sid,
                     }
                 end
             end
@@ -32,6 +38,10 @@ local function GetNearbyPlayers(maxDistance)
     return options
 end
 
+--- Finds the closest player within a maximum distance
+---@param maxDistance number? Maximum distance to check (default 3.0)
+---@return number closestPid Local player ID of closest player, -1 if none found
+---@return number closestDist Distance to closest player
 local function GetClosestPlayerWithin(maxDistance)
     local myCoords = GetEntityCoords(cache.ped)
     local myId = cache.playerId or PlayerId()
@@ -52,12 +62,13 @@ local function GetClosestPlayerWithin(maxDistance)
     return closestPid, closestDist
 end
 
-
+--- NUI callback to attempt a purchase
 RegisterNUICallback('AttemptPurchase', function(data, cb)
     local ok = lib.callback.await('rsg-inventory:server:attemptPurchase', false, data)
     cb(ok)
 end)
 
+--- NUI callback to close the inventory
 RegisterNUICallback('CloseInventory', function(data, cb)
     SetNuiFocus(false, false)
     if data and data.name then
@@ -72,6 +83,7 @@ RegisterNUICallback('CloseInventory', function(data, cb)
     cb('ok')
 end)
 
+--- NUI callback to use an item
 RegisterNUICallback('UseItem', function(data, cb)
     if data and data.item then
         TriggerServerEvent('rsg-inventory:server:useItem', data.item)
@@ -79,6 +91,7 @@ RegisterNUICallback('UseItem', function(data, cb)
     cb('ok')
 end)
 
+--- NUI callback to move items between inventories
 RegisterNUICallback('SetInventoryData', function(data, cb)
     if data then
         TriggerServerEvent('rsg-inventory:server:SetInventoryData',
@@ -90,12 +103,14 @@ RegisterNUICallback('SetInventoryData', function(data, cb)
     cb('ok')
 end)
 
+--- NUI callback to give an item to another player
 RegisterNUICallback('GiveItem', function(data, cb)
     if not data or not data.item or not data.item.name then
         cb(false)
         return
     end
 
+    --- Notify the player that no nearby player was found
     local function notifyNoPlayer()
         lib.notify({
             title = locale('error.error'),
@@ -104,7 +119,9 @@ RegisterNUICallback('GiveItem', function(data, cb)
             duration = 7000
         })
     end
-   local config = require 'shared.config'
+
+    local config = require 'shared.config'
+
     if config.GiveItemType == "nearby" then
         local pid, dist = GetClosestPlayerWithin(3.0)
         if pid ~= -1 and dist < 3.0 then
@@ -168,6 +185,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
     end
 end)
 
+--- NUI callback to request the amount of an item to give
 RegisterNUICallback('GiveItemAmount', function(_, cb)
     local input = lib.inputDialog(locale('info.enter_amount'), {
         { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
