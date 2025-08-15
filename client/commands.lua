@@ -14,6 +14,7 @@ end
 
 
 local function openErrorNotify()
+    local metadata   = PlayerData.metadata
     if metadata.isdead then
         lib.notify({
             title       = 'rsg-inventory',
