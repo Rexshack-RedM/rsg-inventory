@@ -120,7 +120,7 @@ RegisterCommand(config.CommandNames.CloseInv, function(source)
 end, false)
 
 
-RegisterCommand(config.CommandNames.Hotbar, function(source)
+RegisterCommand('serversidehotbar', function(source)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end

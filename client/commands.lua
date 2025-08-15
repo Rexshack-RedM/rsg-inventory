@@ -1,76 +1,50 @@
-local config = require 'shared.config'
+local config     = require 'shared.config'
+local RSGCore = exports['rsg-core']:GetCoreObject()
+local PlayerData = RSGCore.Functions.GetPlayerData()
 
 
-local function getPlayerMeta()
-    local pd = RSGCore and RSGCore.Functions and RSGCore.Functions.GetPlayerData()
-    return pd and pd.metadata or nil
+
+---Returns whether or not the player is allowed to open the inventory/hotbar.
+---@return boolean
+local function canOpen()
+    local metadata   = PlayerData.metadata
+    return (not IsNuiFocused() and not IsPauseMenuActive()) 
+        and (not metadata.isdead and not metadata.ishandcuffed)
 end
-do
-    local cmd = config.CommandNames and config.CommandNames.openInv
-    if cmd then
-        RegisterCommand(cmd, function()
-            if IsNuiFocused() or IsPauseMenuActive() then return end
 
-            local meta = getPlayerMeta()
-            if not meta then return end
 
-            if meta.isdead then
-                lib.notify({
-                    title = 'rsg-inventory',
-                    description = locale('error.openinverror'),
-                    type = 'error'
-                })
-                return
-            end
-
-            if meta.ishandcuffed then
-                lib.notify({
-                    title = 'rsg-inventory',
-                    description = locale('error.cuffopeninv'),
-                    type = 'error'
-                })
-                return
-            end
-
-            ExecuteCommand('inventory')
-        end, false)
-    else
-        print('[rsg-inventory] Missing CommandNames.openInv in config')
+local function openErrorNotify()
+    if metadata.isdead then
+        lib.notify({
+            title       = 'rsg-inventory',
+            description = locale('error.openinverror'),
+            type        = 'error'
+        })
+    elseif metadata.ishandcuffed then
+        lib.notify({
+            title       = 'rsg-inventory',
+            description = locale('error.cuffopeninv'),
+            type        = 'error'
+        })
     end
 end
-do
-    local cmd = config.CommandNames and config.CommandNames.toggleHotbar
-    if cmd then
-        RegisterCommand(cmd, function()
-            if IsNuiFocused() or IsPauseMenuActive() then return end
 
-            local meta = getPlayerMeta()
-            if not meta then return end
-
-            if meta.isdead then
-                lib.notify({
-                    title = 'Hotbar',
-                    description = locale('error.hotbarerror'),
-                    type = 'error'
-                })
-                return
-            end
-
-            if meta.ishandcuffed then
-                lib.notify({
-                    title = 'Hotbar',
-                    description = locale('error.hotbarerror1'),
-                    type = 'error'
-                })
-                return
-            end
-
-            ExecuteCommand('hotbar')
-        end, false)
+RegisterCommand(config.CommandNames.openInv, function()
+    if canOpen() then
+        ExecuteCommand(config.CommandNames.Inventory)
     else
-        print('[rsg-inventory] Missing CommandNames.toggleHotbar in config')
+        openErrorNotify()
     end
-end
+end, false)
+
+RegisterCommand(config.CommandNames.Hotbar, function()
+    if canOpen() then
+        ExecuteCommand('serversidehotbar')
+    else
+        openErrorNotify()
+    end
+end, false)
+
 for i = 1, 5 do
     RegisterCommand('slot_' .. i, function()
         Inventory.UseHotbarItem(i)

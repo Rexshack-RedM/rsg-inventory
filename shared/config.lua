@@ -55,8 +55,6 @@ return {
         CloseInv      = 'closeinv',
         Hotbar        = 'hotbar',
         Inventory     = 'inventory',
-
-        -- Commands used in client/commands.lua
         openInv       = 'openinv',
     }
 }
