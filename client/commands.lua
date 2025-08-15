@@ -7,14 +7,14 @@ local PlayerData = RSGCore.Functions.GetPlayerData()
 ---Returns whether or not the player is allowed to open the inventory/hotbar.
 ---@return boolean
 local function canOpen()
-    local metadata   = PlayerData.metadata
+    local metadata = PlayerData.metadata
     return (not IsNuiFocused() and not IsPauseMenuActive()) 
         and (not metadata.isdead and not metadata.ishandcuffed)
 end
 
 
 local function openErrorNotify()
-    local metadata   = PlayerData.metadata
+    local metadata = PlayerData.metadata
     if metadata.isdead then
         lib.notify({
             title       = 'rsg-inventory',
