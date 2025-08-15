@@ -74,10 +74,10 @@ lib.addCommand(config.CommandNames.GiveItem, {
         )
         info.quality = 100
     end
-
-    if addItemToInventory(args.target, itemData, amount, info, 'give item command') then
-        -- Notify giver with item name and amount
-        notify(source, ('info.yhg'):format(itemName, amount), 'success')
+ if addItemToInventory(args.target, itemData, amount, info, 'give item command') then
+    local message = string.format(locale('info.yhg'), itemData.name, amount)
+    -- Notify giver with item name and amount
+    notify(source, message, 'success')
     end
 end)
 
