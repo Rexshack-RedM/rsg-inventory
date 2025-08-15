@@ -58,11 +58,5 @@ return {
 
         -- Commands used in client/commands.lua
         openInv       = 'openinv',
-        toggleHotbar  = 'togglehotbar',
-        slot_1        = 'slot1',
-        slot_2        = 'slot2',
-        slot_3        = 'slot3',
-        slot_4        = 'slot4',
-        slot_5        = 'slot5',
     }
 }

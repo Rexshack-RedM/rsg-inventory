@@ -72,17 +72,7 @@ do
     end
 end
 for i = 1, 5 do
-    local key = "slot_" .. i
-    local cmdName = config.CommandNames and config.CommandNames[key]
-    if cmdName then
-        RegisterCommand(cmdName, function()
-            if Inventory and Inventory.UseHotbarItem then
-                Inventory.UseHotbarItem(i)
-            else
-                print(string.format('[rsg-inventory] Inventory.UseHotbarItem missing (slot %d)', i))
-            end
-        end, false)
-    else
-        print(string.format('[rsg-inventory] Missing CommandNames.%s in config', key))
-    end
+    RegisterCommand('slot_' .. i, function()
+        Inventory.UseHotbarItem(i)
+    end, false)
 end
