@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 -- Player Disconnect Handler
 AddEventHandler('playerDropped', function()
     for _, inv in pairs(Inventories) do
@@ -19,11 +20,6 @@ AddEventHandler('txAdmin:events:serverShuttingDown', function()
     end
 end)
 
--- Core Object Update
-RegisterNetEvent('RSGCore:Server:UpdateObject', function()
-    if source ~= '' then return end
-    RSGCore = exports['rsg-core']:GetCoreObject()
-end)
 
 -- Player Loaded Event
 AddEventHandler('RSGCore:Server:PlayerLoaded', function(Player)

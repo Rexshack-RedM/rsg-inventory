@@ -1,6 +1,5 @@
 
 -- globals
-RSGCore = exports['rsg-core']:GetCoreObject()
 math = lib.math
 --
 Inventories = {}

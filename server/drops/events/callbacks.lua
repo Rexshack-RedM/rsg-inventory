@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 -- Callback to get all current item drops
 lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
     return Drops -- return the table containing all active drops

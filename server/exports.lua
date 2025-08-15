@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 Inventory = Inventory or {}
 local config = require 'shared.config'
 Inventory.LoadInventory = function(source, citizenid)

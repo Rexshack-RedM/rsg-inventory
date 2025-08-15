@@ -10,12 +10,6 @@ RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
     LocalPlayer.state:set('inv_busy', true, true)
 end)
 
--- Updates the local RSGCore object reference
--- Useful if the core object gets refreshed or reloaded during runtime
-RegisterNetEvent('RSGCore:Client:UpdateObject', function()
-    RSGCore = exports['rsg-core']:GetCoreObject()
-end)
-
 -- Plays the "give item" animation on the player
 -- Only works if the player is not in a vehicle or on a mount
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()

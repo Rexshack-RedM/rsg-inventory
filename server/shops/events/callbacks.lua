@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 -- Helper function for notifications
 local function notifyPlayer(source, messageKey, type)
     TriggerClientEvent('ox_lib:notify', source, { title = locale(messageKey), type = type or 'error', duration = 5000 })

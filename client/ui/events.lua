@@ -1,4 +1,5 @@
 -- Toggle the hotbar UI with given items
+local RSGCore = exports['rsg-core']:GetCoreObject()
 -- @param items: table of items to display on the hotbar
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
     local token = exports['rsg-core']:GenerateCSRFToken() -- CSRF token for NUI security

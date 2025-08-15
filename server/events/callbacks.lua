@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 -- Register a server callback for giving an item from one player to another
 lib.callback.register('rsg-inventory:server:giveItem', function(source, target, item, amount, slot, info)
     -- Get the player object for the source (the giver)

@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 local config = require 'shared.config'
 
 RegisterNetEvent('rsg-inventory:server:openVending', function(data)

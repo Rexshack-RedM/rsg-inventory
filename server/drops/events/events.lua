@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 -- Open drops
 RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
     local src = source

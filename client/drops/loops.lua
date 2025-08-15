@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 --- Thread to handle player dropping a loot bag using a prompt.
 --- This continuously checks if the player is holding a bag and handles placing it on the ground.
 CreateThread(function()

@@ -1,5 +1,4 @@
--- Get the core object for RSGCore and the shared config
-RSGCore = exports['rsg-core']:GetCoreObject()
+local RSGCore = exports['rsg-core']:GetCoreObject()
 local config = require 'shared.config'
 
 -- Thread to using ox_target
