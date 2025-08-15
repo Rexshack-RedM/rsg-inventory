@@ -48,6 +48,7 @@ lib.addCommand(config.CommandNames.GiveItem, {
     local amount = tonumber(args.amount) or 1
     local info = {}
 
+    -- Specific info for ID cards
     if itemData.name == 'id_card' then
         local char = player.PlayerData.charinfo
         info = {
@@ -58,6 +59,8 @@ lib.addCommand(config.CommandNames.GiveItem, {
             gender = char.gender,
             nationality = char.nationality
         }
+
+    -- Specific info for weapons
     elseif itemData.type == 'weapon' then
         amount = 1
         info.serie = string.format(
@@ -73,7 +76,8 @@ lib.addCommand(config.CommandNames.GiveItem, {
     end
 
     if addItemToInventory(args.target, itemData, amount, info, 'give item command') then
-        notify(source, 'info.yhg', 'success')
+        -- Notify giver with item name and amount
+        notify(source, ('info.yhg'):format(itemName, amount), 'success')
     end
 end)
 

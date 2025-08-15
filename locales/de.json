@@ -34,7 +34,7 @@
     "o_bag": "Tasche öffnen",
     "vending": "Verkaufsautomat",
     "Prompt": "Drop-Position konnte nicht auf dem Server aktualisiert werden",
-    "yhg": "Du hast gegeben: ",
+    "yhg": "Du hast gegeben: %s x%s",
     "no_price_or_not_for_sale": "Dieser Gegenstand hat keinen Preis oder ist nicht zum Verkauf",
     "giveitem_help": "Gib einem Spieler einen Gegenstand (nur Admin)",
     "randomitems_help": "Erhalte 10 zufällige Nicht-Waffen-Gegenstände",

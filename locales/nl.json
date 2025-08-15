@@ -34,7 +34,7 @@
     "o_bag": "Open tas",
     "vending": "Verkoopautomaat",
     "Prompt": "Kon drop-positie niet updaten op de server",
-    "yhg": "Je hebt gegeven: ",
+    "yhg": "Je hebt gegeven: %s x%s",
     "no_price_or_not_for_sale": "Dit item heeft geen prijs of is niet te koop",
     "giveitem_help": "Geef een item aan een speler (alleen Admin)",
     "randomitems_help": "Ontvang 10 willekeurige niet-wapen items",

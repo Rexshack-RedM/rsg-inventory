@@ -34,7 +34,7 @@
     "o_bag": "Deschide rucsacul",
     "vending": "Automat de vânzare",
     "Prompt": "Nu s-a putut actualiza poziția drop pe server",
-    "yhg": "Ai dat: ",
+    "yhg": "Ai dat: %s x%s",
     "no_price_or_not_for_sale": "Acest obiect nu are preț sau nu este de vânzare",
     "giveitem_help": "Dă un obiect unui jucător (doar Admin)",
     "randomitems_help": "Primește 10 obiecte aleatorii fără arme",

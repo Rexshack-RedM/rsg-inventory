@@ -34,7 +34,7 @@
     "o_bag": "Open bag",
     "vending": "Vending machine",
     "Prompt": "Could not update drop position on the server",
-    "yhg": "You have given: ",
+    "yhg": "You have given: %s x%s",
     "no_price_or_not_for_sale": "This item has no price or is not for sale",
     "giveitem_help": "Give an item to a player (Admin only)",
     "randomitems_help": "Receive 10 random non-weapon items",
