@@ -1,6 +1,12 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local config = require 'shared.config'
 
+
+lib.callback.register('rsg-inventory:client:isInMelee', function()
+    local ped = cache.ped
+    return IsPedInMeleeCombat(ped)
+end)
+
 -- Thread to using ox_target
 CreateThread(function()
     local models = config.VendingObjects
