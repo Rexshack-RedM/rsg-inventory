@@ -1,9 +1,4 @@
-
-<p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1109201552171864067/1405559611301298187/rsg.jpg?ex=689f44e5&is=689df365&hm=2440e05acbf52945fb1b18956c21eab8ad9ac984d5eeef6a7bcc1a414b44ba72&" 
-       alt="RSG Core Logo" 
-       width="200">
-</p>
+<img width="2048" height="497" alt="rsg_banner" src="https://github.com/user-attachments/assets/174924c5-1e53-4fa2-b2c1-9ee114d0364c" />
 
 ---
 
