@@ -49,35 +49,47 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(item)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     if not Player then return false end
-
-    -- Get the item from the player's slot
     local itemData = Inventory.GetItemBySlot(src, item.slot)
     if not itemData then return end
     local itemInfo = RSGCore.Shared.Items[itemData.name]
+    local allowedDuringMelee = {
+        weapon = true,
+        weapon_thrown = true,
+        -- equipment = true  you can add more 
+    }
 
-    -- Handle weapon type items
+    local inMelee = lib.callback.await('rsg-inventory:client:isInMelee', src)
+    if inMelee and not allowedDuringMelee[itemData.type] then
+        TriggerClientEvent('lib:notify', src, {
+            title = 'Inventory',
+            description = locale('error.error'),
+            type = 'error'
+        })
+        return
+    end
     if itemData.type == 'weapon' then
-        local result = MySQL.Sync.fetchAll('SELECT * FROM player_weapons WHERE serial = @serial and citizenid = @citizenid', 
-            { serial = itemData.info.serie, citizenid = Player.PlayerData.citizenid })
+        local result = MySQL.Sync.fetchAll(
+            'SELECT * FROM player_weapons WHERE serial = @serial and citizenid = @citizenid',
+            { serial = itemData.info.serie, citizenid = Player.PlayerData.citizenid }
+        )
         if not result[1] then
-            MySQL.Sync.execute("INSERT INTO player_weapons (serial, citizenid) values (@serial, @citizenid)", 
-                { serial = itemData.info.serie, citizenid = Player.PlayerData.citizenid })
+            MySQL.Sync.execute(
+                'INSERT INTO player_weapons (serial, citizenid) VALUES (@serial, @citizenid)',
+                { serial = itemData.info.serie, citizenid = Player.PlayerData.citizenid }
+            )
             Wait(1000)
         end
         TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
 
-    -- Handle thrown weapons
     elseif itemData.type == 'weapon_thrown' then
         TriggerClientEvent('rsg-weapons:client:UseThrownWeapon', src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
 
-    -- Handle equipment items
     elseif itemData.type == 'equipment' then
         TriggerClientEvent('rsg-weapons:client:UseEquipment', src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
 
-    -- Handle regular items
     else
         Inventory.UseItem(itemData.name, src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
