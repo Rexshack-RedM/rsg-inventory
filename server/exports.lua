@@ -1,5 +1,6 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 Inventory = Inventory or {}
-
+local config = require 'shared.config'
 Inventory.LoadInventory = function(source, citizenid)
     local inventory = MySQL.prepare.await('SELECT inventory FROM players WHERE citizenid = ?', { citizenid })
     inventory = json.decode(inventory)
@@ -294,24 +295,48 @@ exports('GetItemCount', Inventory.GetItemCount)
 --- @return string|nil - Returns a string indicating the reason why the item cannot be added (e.g., 'weight' or 'slots'), or nil if it can be added.
 Inventory.CanAddItem = function(source, item, amount)
     local Player = RSGCore.Functions.GetPlayer(source)
-    if not Player then return false end
-    local itemData = RSGCore.Shared.Items[item:lower()]
-    if not itemData then return false end
-    local weight = itemData.weight * amount
-    local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
-    if totalWeight > Player.PlayerData.weight then
-        return false, 'weight'
-    end
-    local slotsUsed = 0
-    for _, v in pairs(Player.PlayerData.items) do
-        if v then
-            slotsUsed = slotsUsed + 1
+    if Player then
+        local itemData = RSGCore.Shared.Items[item:lower()]
+        if not itemData then return false end
+
+        local weight = itemData.weight * amount
+        local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
+
+        if totalWeight > config.MaxWeight then
+            return false, 'weight'
         end
+
+        local slotsUsed = 0
+        for _, v in pairs(Player.PlayerData.items) do
+            if v then
+                slotsUsed = slotsUsed + 1
+            end
+        end
+        
+        if slotsUsed >= config.MaxSlots then
+            return false, 'slots'
+        end
+
+        return true
+
+    elseif Inventories[source] then
+        local inventory = Inventories[source].items
+        local inventoryWeight = Inventories[source].maxweight or 250000
+        local itemData = RSGCore.Shared.Items[item:lower()]
+        
+        if not itemData then return false end
+        
+        local weight = itemData.weight * amount
+        local totalWeight = Inventory.GetTotalWeight(inventory) + weight
+        
+        if totalWeight > inventoryWeight then
+            return false, 'weight'
+        end
+
+        return true
+    else
+        return true
     end
-    if slotsUsed >= Player.PlayerData.slots then
-        return false, 'slots'
-    end
-    return true
 end
 
 exports('CanAddItem', Inventory.CanAddItem)
@@ -488,8 +513,8 @@ Inventory.OpenInventory = function (source, identifier, data)
     else
         Inventory.CheckItemsDecay(inventory.items)
     end
-    inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or Config.StashSize.maxweight
-    inventory.slots = (data and data.slots) or (inventory and inventory.slots) or Config.StashSize.slots
+    inventory.maxweight = (data and data.maxweight) or (inventory and inventory.maxweight) or config.StashSize.maxweight
+    inventory.slots = (data and data.slots) or (inventory and inventory.slots) or config.StashSize.slots
     inventory.label = (data and data.label) or (inventory and inventory.label) or identifier
     inventory.isOpen = source
 

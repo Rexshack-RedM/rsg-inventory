@@ -1,3 +1,4 @@
+local RSGCore = exports['rsg-core']:GetCoreObject()
 Shops = Shops or {}
 
 Shops.SetupShopItems = function(shopItems, shopData)

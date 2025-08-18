@@ -1,6 +1,7 @@
-RSGCore = exports['rsg-core']:GetCoreObject()
-math = lib.math
 
+-- globals
+math = lib.math
+--
 Inventories = {}
 Drops = {}
 RegisteredShops = {}
@@ -22,15 +23,16 @@ CreateThread(function()
     end)
 end)
 
+local config = require 'shared.config'
 CreateThread(function()
     while true do
         for k, v in pairs(Drops) do
-            if v and (v.createdTime + (Config.CleanupDropTime * 60) < os.time()) and not Drops[k].isOpen then
+            if v and (v.createdTime + (config.CleanupDropTime * 60) < os.time()) and not Drops[k].isOpen then
                 local entity = NetworkGetEntityFromNetworkId(v.entityId)
                 if DoesEntityExist(entity) then DeleteEntity(entity) end
                 Drops[k] = nil
             end
         end
-        Wait(Config.CleanupDropInterval * 60000)
+        Wait(config.CleanupDropInterval * 60000)
     end
 end)

@@ -1,126 +1,100 @@
-RSGCore.Functions.CreateCallback('rsg-inventory:server:attemptPurchase', function(source, cb, data)
-    local itemInfo = data.item
-    local amount = math.round(data.amount)
-    local shop = string.gsub(data.shop, '^shop%-', '')
-    local price = itemInfo.price
-    local sinvtype = data.sourceinvtype
-    local targetSlot = data.targetslot
+local RSGCore = exports['rsg-core']:GetCoreObject()
+-- Helper function for notifications
+local function notifyPlayer(source, messageKey, type)
+    TriggerClientEvent('ox_lib:notify', source, { title = locale(messageKey), type = type or 'error', duration = 5000 })
+end
 
-    if itemInfo.unique and amount > 1 then
-        amount = 1
-    end
+lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, data)
+    local itemInfo      = data.item
+    local amount        = math.round(data.amount)
+    local shopName      = string.gsub(data.shop, '^shop%-', '')
+    local sourceInvType = data.sourceinvtype
+    local targetSlot    = data.targetslot
+    local price         = itemInfo.price and math.round(itemInfo.price * amount, 2) or nil
 
-    if price then
-        price = math.round(itemInfo.price * amount, 2)
-    end
+    -- Unique items can only be purchased in quantity 1
+    if itemInfo.unique and amount > 1 then amount = 1 end
+
     local Player = RSGCore.Functions.GetPlayer(source)
+    if not Player then return false end
 
-    if not Player then
-        cb(false)
-        return
-    end
+    local shopInfo = RegisteredShops[shopName]
+    if not shopInfo then return false end
 
-    local shopInfo = RegisteredShops[shop]
-    if not shopInfo then
-        cb(false)
-        return
-    end
-
-    local playerPed = GetPlayerPed(source)
-    local playerCoords = GetEntityCoords(playerPed)
+    -- Distance check if shop has coordinates
     if shopInfo.coords then
-        local shopCoords = vector3(shopInfo.coords.x, shopInfo.coords.y, shopInfo.coords.z)
-        if #(playerCoords - shopCoords) > 10 then
-            cb(false)
-            return
-        end
+        local playerCoords = GetEntityCoords(GetPlayerPed(source))
+        local shopCoords   = vector3(shopInfo.coords.x, shopInfo.coords.y, shopInfo.coords.z)
+        if #(playerCoords - shopCoords) > 10.0 then return false end
     end
 
-    if sinvtype == 'player' then
-        for slot, item in ipairs(shopInfo.items) do 
-            if itemInfo.name == item.name and item.buyPrice ~= nil then 
-
-                if itemInfo.info.quality and itemInfo.info.quality < (item.minQuality or 1) then
-                    TriggerClientEvent('ox_lib:notify', source, {title = 'The quality of this item is too low!', type = 'error', duration = 5000 })
-                    cb(false)
-                    return
+    -- Selling items to shop
+    if sourceInvType == 'player' then
+        for _, shopItem in ipairs(shopInfo.items) do
+            if itemInfo.name == shopItem.name and shopItem.buyPrice then
+                -- Quality check
+                if itemInfo.info.quality and itemInfo.info.quality < (shopItem.minQuality or 1) then
+                    notifyPlayer(source, 'error.quality_too_low') return false
                 end
 
-                if item.maxStock and item.maxStock < (item.amount + amount) then
-                    TriggerClientEvent('ox_lib:notify', source, {title = 'This item is fully stocked, shop wont buy more!', type = 'error', duration = 5000 })
-                    cb(false)
-                    return
+                -- Max stock check
+                if shopItem.maxStock and shopItem.maxStock < (shopItem.amount + amount) then
+                    notifyPlayer(source, 'error.shop_fully_stocked') return false
                 end
 
-                if Inventory.HasItem(source, itemInfo.name, amount) then
-                    if item.amount then 
-                        item.amount = item.amount + amount
-                    end
-
-                    local buyprice = (item.buyPrice * amount)
-                    if itemInfo.info.quality and itemInfo.info.quality then 
-                        buyprice = buyprice * (itemInfo.info.quality / 100)
-                    end
-
-                    buyprice = math.round(buyprice, 2)
-                    
-                    if buyprice < 0.01 then 
-                        TriggerClientEvent('ox_lib:notify', source, {title = 'This is worthless! Try selling a larger quantity.', type = 'error', duration = 5000 })
-                        cb(false)
-                        return
-                    end
-
-                    Inventory.RemoveItem(source, itemInfo.name, amount, itemInfo.slot, 'shop-sell')
-                    Player.Functions.AddMoney('cash', buyprice, 'shop-sell')
-                    TriggerClientEvent('rsg-inventory:client:updateInventory', source)
-                    cb(true)
-                    return
-                else
-                    TriggerClientEvent('ox_lib:notify', source, {title = 'Not enough items to sell!', type = 'error', duration = 5000 })
-                    cb(false)
-                    return
+                -- Player has enough items
+                if not Inventory.HasItem(source, itemInfo.name, amount) then
+                    notifyPlayer(source, 'error.not_enough_items') return false
                 end
+
+                -- Update shop stock and calculate buy price
+                if shopItem.amount then shopItem.amount = shopItem.amount + amount end
+                local buyPrice = shopItem.buyPrice * amount
+                if itemInfo.info.quality then
+                    buyPrice = buyPrice * (itemInfo.info.quality / 100)
+                end
+                buyPrice = math.round(buyPrice, 2)
+
+                if buyPrice < 0.01 then
+                    notifyPlayer(source, 'error.worthless_item') return false
+                end
+
+                Inventory.RemoveItem(source, itemInfo.name, amount, itemInfo.slot, 'shop-sell')
+                Player.Functions.AddMoney('cash', buyPrice, 'shop-sell')
+                TriggerClientEvent('rsg-inventory:client:updateInventory', source)
+                return true
             end
         end
 
-        TriggerClientEvent('ox_lib:notify', source, {title = 'This shop do not buy this item!', type = 'error', duration = 5000 })
-        cb(false)
-        return
+        notifyPlayer(source, 'error.shop_does_not_buy') return false
     end
 
-    if shopInfo.items[itemInfo.slot].name ~= itemInfo.name then -- Check if item name passed is the same as the item in that slot
-        cb(false)
-        return
-    end
+    -- Buying items from shop
+    local shopSlot = shopInfo.items[itemInfo.slot]
+    if not shopSlot or shopSlot.name ~= itemInfo.name then return false end
 
-    if shopInfo.items[itemInfo.slot].amount and amount > shopInfo.items[itemInfo.slot].amount then
-        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot purchase larger quantity than currently in stock', type = 'error', duration = 5000 })
-        cb(false)
-        return
+    if shopSlot.amount and amount > shopSlot.amount then
+        notifyPlayer(source, 'error.cannot_purchase_more_than_stock') return false
     end
 
     if not Inventory.CanAddItem(source, itemInfo.name, amount) then
-        TriggerClientEvent('ox_lib:notify', source, {title = 'Cannot carry this', type = 'error', duration = 5000 })
-        cb(false)
-        return
+        notifyPlayer(source, 'error.cannot_carry') return false
     end
 
-    if price then
-        if Player.PlayerData.money.cash >= price then
-            if shopInfo.items[itemInfo.slot].amount then 
-                shopInfo.items[itemInfo.slot].amount = shopInfo.items[itemInfo.slot].amount - amount
-            end
-
-            Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-            Inventory.AddItem(source, itemInfo.name, amount, targetSlot, itemInfo.info, 'shop-purchase')
-            TriggerClientEvent('rsg-inventory:client:updateInventory', source)
-            cb(true)
-        else
-            TriggerClientEvent('ox_lib:notify', source, {title = 'You do not have enough money', type = 'error', duration = 5000 })
-            cb(false)
-        end
-    else
-        TriggerClientEvent('ox_lib:notify', source, {title = 'Item has no price or is not for sale', type = 'error', duration = 5000 })
-        cb(false)
+    if not price then
+        notifyPlayer(source, 'info.no_price_or_not_for_sale') return false
     end
+
+    if Player.PlayerData.money.cash < price then
+        notifyPlayer(source, 'error.not_enough_money') return false
+    end
+
+    if shopSlot.amount then
+        shopSlot.amount = shopSlot.amount - amount
+    end
+
+    Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
+    Inventory.AddItem(source, itemInfo.name, amount, targetSlot, itemInfo.info, 'shop-purchase')
+    TriggerClientEvent('rsg-inventory:client:updateInventory', source)
+    return true
 end)

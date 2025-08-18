@@ -1,9 +1,15 @@
 Shops = Shops or {}
 
---- @param shopData table The data of the shop to create.
+--- @param shopData table The data of the shop to create or update.
 Shops.CreateShop = function(shopData)
     if shopData.name then
-        if RegisteredShops[shopData.name] then return end
+        if RegisteredShops[shopData.name] then
+            local old = RegisteredShops[shopData.name]
+            old.items = Shops.SetupShopItems(shopData.items, shopData)
+            old.slots = #shopData.items
+            old.persistentStock = shopData.persistentStock ~= nil and shopData.persistentStock or old.persistentStock
+            return
+        end
 
         RegisteredShops[shopData.name] = {
             name = shopData.name,
@@ -18,19 +24,26 @@ Shops.CreateShop = function(shopData)
             if type(data) == 'table' then
                 if data.name then
                     local shopName = type(key) == 'number' and data.name or key
-                    if RegisteredShops[shopData.name] then goto continue end
+                    if RegisteredShops[shopName] then
+                        local old = RegisteredShops[shopName]
+                        old.items = Shops.SetupShopItems(data.items, data)
+                        old.slots = #data.items
+                        old.persistentStock = data.persistentStock ~= nil and data.persistentStock or old.persistentStock
+                        goto continue
+                    end
+
                     RegisteredShops[shopName] = {
                         name = shopName,
                         label = data.label,
                         coords = data.coords,
                         slots = #data.items,
-                        items = Shops.SetupShopItems(data.items, data)
+                        items = Shops.SetupShopItems(data.items, data),
+                        persistentStock = data.persistentStock,
                     }
                 else
                     Shops.CreateShop(data)
                 end
             end
-            
             ::continue::
         end
     end
@@ -42,6 +55,7 @@ exports('CreateShop', Shops.CreateShop)
 --- @param name string The identifier of the inventory to open.
 Shops.OpenShop = function(source, name)
     if not name then return end
+    local RSGCore = exports['rsg-core']:GetCoreObject()
     local player = RSGCore.Functions.GetPlayer(source)
     if not player then return end
     if not RegisteredShops[name] then return end
@@ -70,7 +84,6 @@ end
 
 exports('OpenShop', Shops.OpenShop)
 
---- restock shop items by multiplier of item restock value (configured in rsg-shops)
 --- @param shopName string Name of the shop
 --- @param percentage int Percentage of default amount to restock (for example 10% of default stock). Default 100
 Shops.RestockShop = function(shopName, percentage)    
