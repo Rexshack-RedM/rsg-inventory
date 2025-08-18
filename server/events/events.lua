@@ -2,6 +2,8 @@
     Server Event: Close a player's inventory
     Handles regular inventories, other player inventories, shops, and dropped items.
 --]]
+local RSGCore = exports['rsg-core']:GetCoreObject()
+
 RegisterNetEvent('rsg-inventory:server:closeInventory', function(inventory)
     local src = source
     local RSGPlayer = RSGCore.Functions.GetPlayer(src)
