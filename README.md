@@ -1,4 +1,4 @@
-<img width="2048" height="497" alt="rsg_banner" src="https://github.com/user-attachments/assets/174924c5-1e53-4fa2-b2c1-9ee114d0364c" />
+<img width="2948" height="497" alt="rsg_banner" src="https://github.com/user-attachments/assets/27a52756-9ec0-440e-961f-520d1271ba7a" />
 
 ---
 
