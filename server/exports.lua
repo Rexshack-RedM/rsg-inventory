@@ -660,6 +660,17 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         '**Reason:** ' .. addReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
+    -- Auto-convert money items after adding (ONLY if not already converting)
+    if player and (item == 'dollar' or item == 'cent' or item == 'blood_dollar' or item == 'blood_cent') and reason ~= 'money-conversion' then
+        -- Wait a bit for inventory to settle, then trigger conversion
+        Wait(100)
+        -- Call the conversion function directly
+        if item == 'dollar' or item == 'cent' then
+            exports['rsg-core']:ConvertMoneyItems(identifier, 'cash')
+        elseif item == 'blood_dollar' or item == 'blood_cent' then
+            exports['rsg-core']:ConvertMoneyItems(identifier, 'bloodmoney')
+        end
+    end
     return true
 end
 
@@ -781,7 +792,17 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         '**Reason:** ' .. removeReason .. '\n' ..
         '**Resource:** ' .. resourceName
     )
-
+        -- Auto-convert money items after adding (ONLY if not already converting)
+    if player and (item == 'dollar' or item == 'cent' or item == 'blood_dollar' or item == 'blood_cent') and reason ~= 'money-conversion' then
+        -- Wait a bit for inventory to settle, then trigger conversion
+        Wait(100)
+        -- Call the conversion function directly
+        if item == 'dollar' or item == 'cent' then
+            exports['rsg-core']:ConvertMoneyItems(identifier, 'cash')
+        elseif item == 'blood_dollar' or item == 'blood_cent' then
+            exports['rsg-core']:ConvertMoneyItems(identifier, 'bloodmoney')
+        end
+    end
     return true
 end
 
