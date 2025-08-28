@@ -26,6 +26,7 @@ RegisterNetEvent('rsg-inventory:client:updateInventory', function()
     SendNUIMessage({
         action = 'update',
         inventory = playerData.items,
+        cash = playerData.money.cash,
         token = token,
     })
 end)
@@ -42,7 +43,7 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
             type = type,
             amount = amount
         })
-        
+
         -- Update server hotbar if items were added or removed
         if type == 'remove' or type == 'add' then
             TriggerServerEvent('rsg-inventory:server:updateHotbar')
@@ -86,17 +87,17 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     local token = exports['rsg-core']:GenerateCSRFToken()
     local Player = RSGCore.Functions.GetPlayerData()
     local config = require 'shared.config'
-
     SetNuiFocus(true, true) -- focus mouse and keyboard on NUI
 
     SendNUIMessage({
-        action = 'open',
-        inventory = items,
-        slots = Player.slots,          -- max inventory slots
-        maxweight = Player.weight,     -- max inventory weight
-        playerId = Player.source or Player.id or Player.citizenid, -- unique player identifier
-        other = other,                 -- context, e.g., trunk inventory
-        token = token,
-        closeKey = config.Keybinds.Close,
+        action              = 'open',
+        inventory           = items,
+        slots               = Player.slots,          -- max inventory slots
+        maxweight           = Player.weight,     -- max inventory weight
+        playerId            = Player.source or Player.id or Player.citizenid, -- unique player identifier
+        other               = other,                 -- context, e.g., trunk inventory
+        token               = token,
+        closeKey            = config.Keybinds.Close,
+        cash                = Player.money.cash,         -- player's money
     })
 end)

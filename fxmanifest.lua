@@ -6,7 +6,7 @@ lua54 'yes'
 
 description 'rsg-inventory'
 
-version '2.6.4'
+version '2.6.5'
 
 
 shared_scripts {
@@ -52,4 +52,4 @@ files {
     'locales/*.json',
     'html/images/*.png',
     'html/assets/*.*',
-}  
+}
