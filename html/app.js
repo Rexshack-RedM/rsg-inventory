@@ -14,14 +14,17 @@ const InventoryContainer = Vue.createApp({
         },
         playerMoney() {
             let totalMoney = 0;
-            Object.values(this.playerInventory).forEach((item) => {
-                if (item && item.name === 'dollar' && item.amount !== undefined) {
-                    totalMoney += item.amount * 100;
-                } else if (item && item.name === 'cent' && item.amount !== undefined) {
-                    totalMoney += item.amount;
-                }
-            });
-            return totalMoney;
+            if (this.enableMoneyItems) {
+                Object.values(this.playerInventory).forEach((item) => {
+                    if (item && item.name === 'dollar' && item.amount !== undefined) {
+                        totalMoney += item.amount * 100;
+                    } else if (item && item.name === 'cent' && item.amount !== undefined) {
+                        totalMoney += item.amount;
+                    }
+                });
+                return totalMoney;
+            }
+            return this.cash * 100;
         },
         otherInventoryWeight() {
             const weight = Object.values(this.otherInventory).reduce((total, item) => {
@@ -129,6 +132,8 @@ const InventoryContainer = Vue.createApp({
                 mouseDownX: 0,
                 mouseDownY: 0,
                 scrollBoundElements: [],
+                cash: 0,
+                enableMoneyItems: false,
             };
         },
         validateToken(csrfToken) {
@@ -158,6 +163,14 @@ const InventoryContainer = Vue.createApp({
             this.playerId = data.playerId || null;
             this.playerInventory = {};
             this.otherInventory = {};
+
+            if (data.cash !== undefined) {
+                this.cash = data.cash;
+            }
+
+            if (data.enableMoneyItems !== undefined) {
+                this.enableMoneyItems = data.enableMoneyItems;
+            }
 
             if (data.inventory) {
                 if (Array.isArray(data.inventory)) {
@@ -838,7 +851,7 @@ const InventoryContainer = Vue.createApp({
             }
         },
         attachGridScrollListeners() {
-    
+
             if (this.scrollBoundElements && this.scrollBoundElements.length) {
                 this.scrollBoundElements.forEach((el) => {
                     el.removeEventListener('scroll', this.hideItemInfo);
@@ -846,7 +859,7 @@ const InventoryContainer = Vue.createApp({
                 });
             }
             this.scrollBoundElements = [];
-    
+
             const grids = document.querySelectorAll('.item-grid');
             grids.forEach((el) => {
                 el.addEventListener('scroll', this.hideItemInfo, { passive: true });
@@ -1080,16 +1093,16 @@ const InventoryContainer = Vue.createApp({
                 return "";
             }
             let content = `<div class="custom-tooltip"><div class="tooltip-header">${item.label}</div><hr class="tooltip-divider">`;
-        
-            const description = item.info?.description?.replace(/\n/g, "<br>") 
-                || item.description?.replace(/\n/g, "<br>") 
+
+            const description = item.info?.description?.replace(/\n/g, "<br>")
+                || item.description?.replace(/\n/g, "<br>")
                 || "No description available.";
-        
+
             const renderInfo = (obj, indent = 0) => {
                 let html = "";
                 for (const [key, value] of Object.entries(obj)) {
                     if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components") continue;
-        
+
                     const padding = "&nbsp;".repeat(indent * 4);
 
                     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
@@ -1101,15 +1114,15 @@ const InventoryContainer = Vue.createApp({
                 }
                 return html;
             };
-            
+
             if (item.info && Object.keys(item.info).length > 0) {
                 content += renderInfo(item.info);
             }
-        
+
             content += `<div class="tooltip-description">${description}</div>`;
             content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight != null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
             content += `</div>`;
-        
+
             return content;
         },
         formatKey(key) {
