@@ -11,6 +11,7 @@ version '2.6.5'
 
 shared_scripts {
     '@ox_lib/init.lua',
+    '@rsg-core/config.lua',
     'shared/helpers.lua',
 }
 

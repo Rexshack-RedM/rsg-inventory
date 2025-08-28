@@ -1099,13 +1099,16 @@ const InventoryContainer = Vue.createApp({
                 return html;
             };
 
+
             if (item.info && Object.keys(item.info).length > 0) {
                 content += renderInfo(item.info);
             }
 
+
             content += `<div class="tooltip-description">${description}</div>`;
             content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight != null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
             content += `</div>`;
+
 
             return content;
         },
