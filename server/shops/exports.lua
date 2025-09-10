@@ -65,7 +65,7 @@ Shops.OpenShop = function(source, name)
         local shopDistance = vector3(RegisteredShops[name].coords.x, RegisteredShops[name].coords.y, RegisteredShops[name].coords.z)
         if shopDistance then
             local distance = #(playerCoords - shopDistance)
-            if distance > 5.0 then return end
+            if distance > Inventory.MAX_DIST then return end
         end
     end
     local formattedInventory = {

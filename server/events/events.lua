@@ -146,17 +146,31 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
             Inventory.CheckWeapon(src, fromItem) 
         end
 
-        local fromId = Inventory.GetIdentifier(fromInventory, src)
-        local toId = Inventory.GetIdentifier(toInventory, src)
+        local fromId, fromType = Inventory.GetIdentifier(fromInventory, src)
+        local toId, toType = Inventory.GetIdentifier(toInventory, src)
         if fromId ~= toId then isMove = true end
 
-        -- Prevent transferring items between players on long distance (except admins)
-        if fromInventory:find('otherplayer-') or toInventory:find('otherplayer-') then
-            if not RSGCore.Functions.HasPermission(src, 'admin') then
-                local dist = #(GetEntityCoords(GetPlayerPed(fromId)) - GetEntityCoords(GetPlayerPed(toId)))
-                if dist >= 3.0 then
-                    return
-                end
+        -- Prevent interaction of source player with inventories on long distance (except admin)
+        if not RSGCore.Functions.HasPermission(src, 'admin') then
+            local srcCoords = GetEntityCoords(GetPlayerPed(src))
+            local maxDist = Inventory.MAX_DIST
+            local isInventoryTooFar = function(inventoryCoords)
+                return inventoryCoords and #(srcCoords - inventoryCoords) > maxDist
+            end
+            
+            local fromTooFar = isInventoryTooFar(Inventory.GetCoords(fromInventory, src))
+            local toTooFar = isInventoryTooFar(Inventory.GetCoords(toInventory, src))
+            
+            if fromTooFar or toTooFar then
+                Inventory.CloseInventory(src, fromId)
+                Inventory.CloseInventory(src, toId)
+                local message = fromTooFar and 'Source inventory is too far from you.' or 'Target inventory is too far from you.'
+                TriggerClientEvent('ox_lib:notify', src, {
+                    title = message,
+                    type = 'error',
+                    duration = 5000
+                })
+                return
             end
         end
 

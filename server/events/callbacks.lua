@@ -16,7 +16,7 @@ lib.callback.register('rsg-inventory:server:giveItem', function(source, target, 
     end
 
     -- Check if the distance between source and target is within 5 units
-    if #(GetEntityCoords(GetPlayerPed(source)) - GetEntityCoords(GetPlayerPed(target))) > 5.0 then
+    if #(GetEntityCoords(GetPlayerPed(source)) - GetEntityCoords(GetPlayerPed(target))) > Inventory.MAX_DIST then
         return false
     end
 

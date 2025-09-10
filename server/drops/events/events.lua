@@ -52,7 +52,7 @@ lib.callback.register('rsg-inventory:updateDrop', function(source, dropId, coord
     -- Check if player is close enough to update the drop
     local ped = GetPlayerPed(source)
     local pCoords = GetEntityCoords(ped)
-    if #(pCoords - newCoords) > 5.0 then
+    if #(pCoords - newCoords) > Inventory.MAX_DIST then
         return false, 'error distance'
     end
 
