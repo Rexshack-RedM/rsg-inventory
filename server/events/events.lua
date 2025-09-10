@@ -150,6 +150,16 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         local toId = Inventory.GetIdentifier(toInventory, src)
         if fromId ~= toId then isMove = true end
 
+        -- Prevent transferring items between players on long distance (except admins)
+        if fromInventory == 'player' and toInventory == 'player' and fromId ~= toId then
+            if not RSGCore.Functions.HasPermission(src, 'admin') then
+                local dist = #(GetEntityCoords(GetPlayerPed(fromId)) - GetEntityCoords(GetPlayerPed(toId)))
+                if dist > 2.0 then
+                    return
+                end
+            end
+        end
+
         -- Stack items if same type & quality
         if toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality then
             if toId ~= fromId then
