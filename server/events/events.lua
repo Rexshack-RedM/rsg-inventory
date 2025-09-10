@@ -154,7 +154,7 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         if fromInventory == 'player' and toInventory == 'player' and fromId ~= toId then
             if not RSGCore.Functions.HasPermission(src, 'admin') then
                 local dist = #(GetEntityCoords(GetPlayerPed(fromId)) - GetEntityCoords(GetPlayerPed(toId)))
-                if dist > 2.0 then
+                if dist >= 3.0 then
                     return
                 end
             end
