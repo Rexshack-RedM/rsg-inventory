@@ -10,7 +10,6 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
     local shopName      = string.gsub(data.shop, '^shop%-', '')
     local sourceInvType = data.sourceinvtype
     local targetSlot    = data.targetslot
-    local price         = itemInfo.price and math.round(itemInfo.price * amount, 2) or nil
 
     -- Unique items can only be purchased in quantity 1
     if itemInfo.unique and amount > 1 then amount = 1 end
@@ -81,10 +80,11 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
         notifyPlayer(source, 'error.cannot_carry') return false
     end
 
-    if not price then
+    if not shopSlot.price then
         notifyPlayer(source, 'info.no_price_or_not_for_sale') return false
     end
 
+    local price = math.round(shopSlot.price * amount, 2)
     if Player.PlayerData.money.cash < price then
         notifyPlayer(source, 'error.not_enough_money') return false
     end
