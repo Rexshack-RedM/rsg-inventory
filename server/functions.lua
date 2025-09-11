@@ -1,8 +1,18 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 Inventory = Inventory or {}
 local config = require 'shared.config'
+
+Inventory.TYPES = {
+    PLAYER = 1,
+    OTHER_PLAYER = 2,
+    DROP = 3,
+    STASH = 4,
+}
+Inventory.MAX_DIST = 5.0
+
 Inventory.InitializeInventory = function(inventoryId, data)
     Inventories[inventoryId] = {
+        coords = data and data.coords,
         items = {},
         isOpen = false,
         label = data and data.label or inventoryId,
@@ -54,11 +64,13 @@ end
 
 Inventory.GetIdentifier = function(inventoryId, src)
     if inventoryId == 'player' then
-        return src
+        return src, Inventory.TYPES.PLAYER
     elseif inventoryId:find('otherplayer-') then
-        return tonumber(inventoryId:match('otherplayer%-(.+)'))
+        return tonumber(inventoryId:match('otherplayer%-(.+)')), Inventory.TYPES.OTHER_PLAYER
+    elseif inventoryId:find('drop-') then
+        return inventoryId, Inventory.TYPES.DROP
     else
-        return inventoryId
+        return inventoryId, Inventory.TYPES.STASH
     end
 end
 
@@ -168,4 +180,25 @@ Inventory.CheckPlayerItemDecay = function(player, item)
     end
 
     return player.PlayerData.items[item.slot]
+end
+
+
+--- @param inventoryId string
+--- @param src? any
+--- @return vector3|nil
+Inventory.GetCoords = function(inventoryId, src)
+    local _,inventoryType = Inventory.GetIdentifier(inventoryId)
+    if inventoryType == Inventory.TYPES.PLAYER then
+        local ped = GetPlayerPed(src)
+        return DoesEntityExist(ped) and GetEntityCoords(ped)
+    elseif inventoryType == Inventory.TYPES.OTHER_PLAYER then
+        local ped = GetPlayerPed(_)
+        return DoesEntityExist(ped) and GetEntityCoords(ped)
+    elseif inventoryType == Inventory.TYPES.DROP then
+        return Drops[inventoryId]?.coords
+    elseif inventoryType == Inventory.TYPES.STASH then
+        return Inventories[inventoryId]?.coords
+    else
+        warn(("Unexpected inventory type - '%s'"):format(inventoryType))
+    end
 end
