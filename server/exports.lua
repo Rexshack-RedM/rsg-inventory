@@ -542,6 +542,12 @@ exports('OpenInventory', Inventory.OpenInventory)
 --- @param reason string (optional) The reason for adding the item.
 --- @return boolean Returns true if the item was successfully added, false otherwise.
 Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
+    amount = tonumber(amount) or 1
+    if amount <= 0 then
+        print('AddItem: Invalid amount')
+        return false
+    end
+
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     if not itemInfo then
         print('AddItem: Invalid item')
@@ -571,8 +577,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     end
 
     Inventory.CheckItemsDecay(inventory)
-
-    amount = tonumber(amount) or 1
+    
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
         print('AddItem: Not enough weight available')
