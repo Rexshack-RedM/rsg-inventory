@@ -11,6 +11,9 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
     local sourceInvType = data.sourceinvtype
     local targetSlot    = data.targetslot
 
+    -- Prevent non-positive amount
+    if amount <= 0 then return false end
+
     -- Unique items can only be purchased in quantity 1
     if itemInfo.unique and amount > 1 then amount = 1 end
 
