@@ -3,8 +3,8 @@ return {
     UseTarget = GetConvar('UseTarget', 'false') == 'true',
 
     -- Maximum weight and slot capacity for player inventory
-    MaxWeight = 120000,
-    MaxSlots = 40,
+    MaxWeight = 500000,
+    MaxSlots = 120,
 
     -- Configuration for stash storage (e.g., chests, safes)
     StashSize = {
@@ -29,7 +29,7 @@ return {
     HotbarSpamProtectionNotify = false,    -- Whether to notify player on spam
 
     -- Cleanup settings for dropped items
-    CleanupDropTime = 15,     -- Time in minutes before item is cleaned up
+    CleanupDropTime = 10,     -- Time in minutes before item is cleaned up
     CleanupDropInterval = 1,  -- Interval in minutes to check for cleanup
 
     -- Object model and bone used for dropped item visuals
@@ -45,10 +45,10 @@ return {
 
     -- List of objects that act as vending machines
     VendingObjects = {
-        `s_inv_whiskey02x`,
-        `p_whiskeycrate01x`,
-        `p_bal_whiskeycrate01`,
-        `p_whiskeybarrel01x`,
+        's_inv_whiskey02x',
+        'p_whiskeycrate01x',
+        'p_bal_whiskeycrate01',
+        'p_whiskeybarrel01x',
     },
 
     -- Items available in vending machines
