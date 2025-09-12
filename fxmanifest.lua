@@ -6,7 +6,7 @@ lua54 'yes'
 
 description 'rsg-inventory'
 
-version '2.6.6'
+version '2.6.7'
 
 
 shared_scripts {
