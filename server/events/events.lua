@@ -25,7 +25,7 @@ RegisterNetEvent('rsg-inventory:server:closeInventory', function(inventory)
     -- Handle dropped item inventories
     if Drops[inventory] then
         Drops[inventory].isOpen = false
-        if next(Drops[inventory].items) == nil and not Drops[inventory].isOpen then 
+        if #Drops[inventory].items == 0 and not Drops[inventory].isOpen then 
             TriggerClientEvent('rsg-inventory:client:removeDropTarget', -1, Drops[inventory].entityId)
             Wait(500)
             local entity = NetworkGetEntityFromNetworkId(Drops[inventory].entityId)
