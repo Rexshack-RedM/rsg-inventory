@@ -41,7 +41,7 @@ lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
     local timeout = 100 
     while not DoesEntityExist(bag) and timeout > 0 do
         Wait(50)
-        timeout -= 1
+        timeout = timeout - 1
     end
 
     if not DoesEntityExist(bag) then return false end -- fail if object still doesn't exist

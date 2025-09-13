@@ -379,7 +379,7 @@ Inventory.ClearInventory = function(source, filterItems)
         TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'ClearInventory', 'red', logMessage)
         local ped = GetPlayerPed(source)
         local weapon = GetSelectedPedWeapon(ped)
-        if weapon ~= `WEAPON_UNARMED` then
+        if weapon ~= 'WEAPON_UNARMED' then
             RemoveWeaponFromPed(ped, weapon)
         end
         if Player(source).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', source) end

@@ -195,9 +195,9 @@ Inventory.GetCoords = function(inventoryId, src)
         local ped = GetPlayerPed(_)
         return DoesEntityExist(ped) and GetEntityCoords(ped)
     elseif inventoryType == Inventory.TYPES.DROP then
-        return Drops[inventoryId]?.coords
+        return Drops[inventoryId] and Drops[inventoryId].coords or nil
     elseif inventoryType == Inventory.TYPES.STASH then
-        return Inventories[inventoryId]?.coords
+        return Inventories[inventoryId] and Inventories[inventoryId].coords or nil
     else
         warn(("Unexpected inventory type - '%s'"):format(inventoryType))
     end

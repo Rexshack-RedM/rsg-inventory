@@ -33,7 +33,7 @@ return {
     CleanupDropInterval = 1,  -- Interval in minutes to check for cleanup
 
     -- Object model and bone used for dropped item visuals
-    ItemDropObject = `p_bag01x`,                  -- Object to represent dropped item
+    ItemDropObject = 'p_bag01x',                  -- Object to represent dropped item
     ItemDropObjectBone = "SKEL_R_Finger00",       -- Bone to attach object to
     ItemDropObjectOffset = {
         vector3(0.380000, -0.04000, -0.0300000),  -- Position offset

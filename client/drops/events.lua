@@ -53,7 +53,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
 
                 -- Prevent picking up while holding weapon or another drop
-                if weapon ~= `WEAPON_UNARMED` then
+                if weapon ~= "WEAPON_UNARMED" then
                     return lib.notify({
                         title       = locale('error.error'),
                         description = locale('error.error_gun_and_bag'),
