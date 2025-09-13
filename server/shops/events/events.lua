@@ -7,12 +7,15 @@ RegisterNetEvent('rsg-inventory:server:openVending', function(data)
     if not Player then return end
 
     local key = string.format("%s_%s_%s", data.coords.x, data.coords.y, data.coords.z)
-    Inventory.CreateShop({
-        name = 'vending-'..key,
-        label = locale('info.vending'),
-        coords = data.coords,
-        slots = #config.VendingItems,
-        items = config.VendingItems
-    })
-    Shops.OpenShop(src, 'vending-'..key)
+    local shopName = 'vending-'..key 
+    if not Shops.DoesShopExist(shopName) then
+        Shops.CreateShop({
+            name = shopName,
+            label = locale('info.vending'),
+            coords = data.coords,
+            slots = #config.VendingItems,
+            items = config.VendingItems
+        })
+    end
+    Shops.OpenShop(src, shopName)
 end)
