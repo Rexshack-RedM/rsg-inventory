@@ -672,7 +672,7 @@ const InventoryContainer = Vue.createApp({
                     if (sourceInventoryType == 'player') {
                         for (const key in this.otherInventory) {
                             const item = this.otherInventory[key];
-                            if (item.name == sourceItem.name && item.amount) {
+                            if (item.name == sourceItem.name && item.amount !== undefined) {
                                 this.otherInventory[key].amount += amountToTransfer
                                 break
                             }
