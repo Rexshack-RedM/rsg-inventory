@@ -82,8 +82,8 @@
                     </div>
                     <div class="tooltip-divider"></div>
                     <div class="item-info-content">
-                                <p v-if="selectedItem.info?.description">{{ selectedItem.info.description }}</p>
-                                <p v-else-if="selectedItem.description">{{ selectedItem.description }}</p>
+                                <p v-if="selectedItem.info?.description" v-html="selectedItem.info.description"></p>
+                                <p v-else-if="selectedItem.description" v-html="selectedItem.description"></p>
                                 <div class="item-info-stats" v-if="selectedItem.info">
                                     <p v-if="selectedItem.info.quality">Quality: {{ selectedItem.info.quality }}%</p>
                                     <p v-if="selectedItem.info.weight">Weight: {{ (selectedItem.info.weight / 1000).toFixed(2) }}kg</p>
@@ -196,7 +196,7 @@
                             <h4>{{ notificationText }}</h4>
                         </div>
                         <div class="item-box-description" v-if="notificationDescription">
-                            <p>{{ notificationDescription }}</p>
+                            <p v-html="notificationDescription"></p>
                         </div>
                     </div>
                 </div>
