@@ -481,6 +481,19 @@ end
 
 exports('ClearStash', Inventory.ClearStash)
 
+-- Save a given stash
+--- @param identifier string
+Inventory.SaveStash = function(identifier)
+    if not identifier then return end
+    local inventory = Inventories[identifier]
+    if not inventory then return end
+    local items = json.encode(inventory.items)
+    MySQL.prepare("INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?",
+        { identifier, items, items })
+end
+
+exports("SaveStash", Inventory.SaveStash)
+
 --- @param source number The player's server ID.
 --- @param identifier string|nil The identifier of the inventory to open.
 --- @param data table|nil Additional data for initializing the inventory.
