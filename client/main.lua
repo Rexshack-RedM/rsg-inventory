@@ -13,27 +13,41 @@ CreateThread(function()
     if not models or #models == 0 then return end -- exit if no vending models defined
 
     exports.ox_target:addModel(models, {
-        label = locale('info.vending'),             -- label displayed in the target menu
-        icon = 'fa-solid fa-cash-register',        -- icon for the interaction
-        distance = 2.5,                             -- maximum distance to interact
-        onSelect = function(data)                   -- function triggered when player selects the vending machine
-            data.coords = GetEntityCoords(data.entity) -- get the coords of the vending machine entity
+        label = locale('info.vending'),                                  -- label displayed in the target menu
+        icon = 'fa-solid fa-cash-register',                              -- icon for the interaction
+        distance = 2.5,                                                  -- maximum distance to interact
+        onSelect = function(data)                                        -- function triggered when player selects the vending machine
+            data.coords = GetEntityCoords(data.entity)                   -- get the coords of the vending machine entity
             TriggerServerEvent('rsg-inventory:server:openVending', data) -- request the vending inventory from server
         end,
     })
 end)
 
+-- Utilitários de diagnóstico
+RegisterCommand('fixnui', function()
+    SetNuiFocus(false, false)
+    print('^2[rsg-inventory]^7 NUI focus liberado (SetNuiFocus false,false)')
+end, false)
+
+RegisterCommand('debuginv', function()
+    local rsg = exports['rsg-core']:GetCoreObject()
+    local meta = rsg and rsg.Functions.GetPlayerData() and rsg.Functions.GetPlayerData().metadata or {}
+    print(string.format('^3[rsg-inventory]^7 IsNuiFocused=%s Pause=%s Dead=%s Cuffed=%s',
+        tostring(IsNuiFocused()), tostring(IsPauseMenuActive()), tostring(meta and meta.isdead),
+        tostring(meta and meta.ishandcuffed)))
+end, false)
+
 -- Thread to handle keybinds for inventory and hotbar
 CreateThread(function()
     -- Mapping of keys to commands and whether the key is disabled (hold vs press)
     local commands = {
-        [config.Keybinds.Open]             = { command = "inventory", disabled = false }, -- open inventory
-        [config.Keybinds.Hotbar]           = { command = "hotbar",    disabled = false }, -- toggle hotbar
-        [RSGCore.Shared.Keybinds["1"]]     = { command = "slot_1",    disabled = true  }, -- use slot 1 (hold)
-        [RSGCore.Shared.Keybinds["2"]]     = { command = "slot_2",    disabled = true  }, -- use slot 2 (hold)
-        [RSGCore.Shared.Keybinds["3"]]     = { command = "slot_3",    disabled = true  }, -- use slot 3 (hold)
-        [RSGCore.Shared.Keybinds["4"]]     = { command = "slot_4",    disabled = true  }, -- use slot 4 (hold)
-        [RSGCore.Shared.Keybinds["5"]]     = { command = "slot_5",    disabled = true  }, -- use slot 5 (hold)
+        [config.Keybinds.Open]         = { command = "inventory", disabled = false }, -- open inventory
+        [config.Keybinds.Hotbar]       = { command = "hotbar", disabled = false },    -- toggle hotbar
+        [RSGCore.Shared.Keybinds["1"]] = { command = "slot_1", disabled = true },     -- use slot 1 (hold)
+        [RSGCore.Shared.Keybinds["2"]] = { command = "slot_2", disabled = true },     -- use slot 2 (hold)
+        [RSGCore.Shared.Keybinds["3"]] = { command = "slot_3", disabled = true },     -- use slot 3 (hold)
+        [RSGCore.Shared.Keybinds["4"]] = { command = "slot_4", disabled = true },     -- use slot 4 (hold)
+        [RSGCore.Shared.Keybinds["5"]] = { command = "slot_5", disabled = true },     -- use slot 5 (hold)
     }
 
     -- Main loop to check key inputs every frame
@@ -45,7 +59,7 @@ CreateThread(function()
                 DisableControlAction(0, control, true)
                 if IsDisabledControlPressed(0, control) then
                     if Inventory.CanPlayerUseInventory() then -- check if player can interact with inventory
-                        ExecuteCommand(meta.command)        -- execute the associated command
+                        ExecuteCommand(meta.command)          -- execute the associated command
                     end
                     break
                 end

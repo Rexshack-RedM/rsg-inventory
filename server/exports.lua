@@ -1,6 +1,6 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-Inventory = Inventory or {}
 local config = require 'shared.config'
+Inventory = Inventory or {}
 Inventory.LoadInventory = function(source, citizenid)
     local inventory = MySQL.prepare.await('SELECT inventory FROM players WHERE citizenid = ?', { citizenid })
     inventory = json.decode(inventory)
@@ -40,7 +40,8 @@ Inventory.LoadInventory = function(source, citizenid)
     end
 
     if #missingItems > 0 then
-        print(('The following items were removed for player %s as they no longer exist: %s'):format(GetPlayerName(source), table.concat(missingItems, ', ')))
+        print(('The following items were removed for player %s as they no longer exist: %s'):format(
+            GetPlayerName(source), table.concat(missingItems, ', ')))
     end
 
     return loadedInventory
@@ -73,7 +74,8 @@ Inventory.SaveInventory = function(source, offline)
                 }
             end
         end
-        MySQL.prepare('UPDATE players SET inventory = ? WHERE citizenid = ?', { json.encode(ItemsJson), PlayerData.citizenid })
+        MySQL.prepare('UPDATE players SET inventory = ? WHERE citizenid = ?',
+            { json.encode(ItemsJson), PlayerData.citizenid })
     else
         MySQL.prepare('UPDATE players SET inventory = ? WHERE citizenid = ?', { '[]', PlayerData.citizenid })
     end
@@ -89,7 +91,8 @@ Inventory.SetInventory = function(source, items)
     if not Player then return end
     Player.Functions.SetPlayerData('items', items)
     if not Player.Offline then
-        local logMessage = string.format('**%s (citizenid: %s | id: %s)** items set: %s', GetPlayerName(source), Player.PlayerData.citizenid, source, json.encode(items))
+        local logMessage = string.format('**%s (citizenid: %s | id: %s)** items set: %s', GetPlayerName(source),
+            Player.PlayerData.citizenid, source, json.encode(items))
         TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'SetInventory', 'blue', logMessage)
     end
 end
@@ -133,7 +136,9 @@ exports('GetItemWeight', Inventory.GetItemWeight)
 
 Inventory.UseItem = function(itemName, ...)
     local itemData = RSGCore.Functions.CanUseItem(itemName)
-    local callback = type(itemData) == 'table' and (rawget(itemData, '__cfx_functionReference') and itemData or itemData.cb or itemData.callback) or type(itemData) == 'function' and itemData
+    local callback = type(itemData) == 'table' and
+        (rawget(itemData, '__cfx_functionReference') and itemData or itemData.cb or itemData.callback) or
+        type(itemData) == 'function' and itemData
     if not callback then return end
     callback(...)
 end
@@ -312,23 +317,22 @@ Inventory.CanAddItem = function(source, item, amount)
                 slotsUsed = slotsUsed + 1
             end
         end
-        
+
         if slotsUsed >= config.MaxSlots then
             return false, 'slots'
         end
 
         return true
-
     elseif Inventories[source] then
         local inventory = Inventories[source].items
         local inventoryWeight = Inventories[source].maxweight or 250000
         local itemData = RSGCore.Shared.Items[item:lower()]
-        
+
         if not itemData then return false end
-        
+
         local weight = itemData.weight * amount
         local totalWeight = Inventory.GetTotalWeight(inventory) + weight
-        
+
         if totalWeight > inventoryWeight then
             return false, 'weight'
         end
@@ -375,11 +379,12 @@ Inventory.ClearInventory = function(source, filterItems)
     end
     player.Functions.SetPlayerData('items', savedItemData)
     if not player.Offline then
-        local logMessage = string.format('**%s (citizenid: %s | id: %s)** inventory cleared', GetPlayerName(source), player.PlayerData.citizenid, source)
+        local logMessage = string.format('**%s (citizenid: %s | id: %s)** inventory cleared', GetPlayerName(source),
+            player.PlayerData.citizenid, source)
         TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'ClearInventory', 'red', logMessage)
         local ped = GetPlayerPed(source)
         local weapon = GetSelectedPedWeapon(ped)
-        if weapon ~= 'WEAPON_UNARMED' then
+        if weapon ~= `WEAPON_UNARMED` then
             RemoveWeaponFromPed(ped, weapon)
         end
         if Player(source).state.inv_busy then TriggerClientEvent('rsg-inventory:client:updateInventory', source) end
@@ -484,7 +489,7 @@ exports('ClearStash', Inventory.ClearStash)
 --- @param source number The player's server ID.
 --- @param identifier string|nil The identifier of the inventory to open.
 --- @param data table|nil Additional data for initializing the inventory.
-Inventory.OpenInventory = function (source, identifier, data)
+Inventory.OpenInventory = function(source, identifier, data)
     if Player(source).state.inv_busy then return end
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
     if not RSGPlayer then return end
@@ -504,12 +509,13 @@ Inventory.OpenInventory = function (source, identifier, data)
     local inventory = Inventories[identifier]
 
     if inventory and inventory.isOpen then
-        TriggerClientEvent('ox_lib:notify', source, { title = 'This inventory is currently in use', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source,
+            { title = 'This inventory is currently in use', type = 'error', duration = 5000 })
         return
     end
 
-    if not inventory then 
-        inventory = Inventory.InitializeInventory(identifier, data) 
+    if not inventory then
+        inventory = Inventory.InitializeInventory(identifier, data)
     else
         Inventory.CheckItemsDecay(inventory.items)
     end
@@ -525,7 +531,7 @@ Inventory.OpenInventory = function (source, identifier, data)
         slots = inventory.slots,
         inventory = inventory.items
     }
-    
+
     Player(source).state.inv_busy = true
     Inventory.CheckPlayerItemsDecay(RSGPlayer)
     TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items, formattedInventory)
@@ -542,6 +548,12 @@ exports('OpenInventory', Inventory.OpenInventory)
 --- @param reason string (optional) The reason for adding the item.
 --- @return boolean Returns true if the item was successfully added, false otherwise.
 Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
+    amount = tonumber(amount) or 1
+    if amount <= 0 then
+        print('AddItem: Invalid amount')
+        return false
+    end
+
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     if not itemInfo then
         print('AddItem: Invalid item')
@@ -572,7 +584,6 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
 
     Inventory.CheckItemsDecay(inventory)
 
-    amount = tonumber(amount) or 1
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
         print('AddItem: Not enough weight available')
@@ -631,11 +642,11 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         if itemInfo.type == 'weapon' then
             if not inventory[slot].info.serie then
                 inventory[slot].info.serie = tostring(
-                    RSGCore.Shared.RandomInt(2) .. 
-                    RSGCore.Shared.RandomStr(3) .. 
-                    RSGCore.Shared.RandomInt(1) .. 
-                    RSGCore.Shared.RandomStr(2) .. 
-                    RSGCore.Shared.RandomInt(3) .. 
+                    RSGCore.Shared.RandomInt(2) ..
+                    RSGCore.Shared.RandomStr(3) ..
+                    RSGCore.Shared.RandomInt(1) ..
+                    RSGCore.Shared.RandomStr(2) ..
+                    RSGCore.Shared.RandomInt(3) ..
                     RSGCore.Shared.RandomStr(4)
                 )
             end
@@ -697,7 +708,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
     Inventory.CheckItemsDecay(inventory)
 
     amount = tonumber(amount) or 1
-    
+
     if slot then
         slot = tonumber(slot)
         local inventoryItem = nil
@@ -727,7 +738,6 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         else
             inventory[itemKey] = inventoryItem
         end
-
     else
         local totalRemoved = 0
 
@@ -762,7 +772,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
     end
 
-    if player then 
+    if player then
         player.Functions.SetPlayerData('items', inventory)
     end
 
@@ -797,8 +807,8 @@ exports('GetInventory', Inventory.GetInventory)
 --- Initialize or update inventory data
 --- @param identifier string - The identifier of the inventory.
 --- @param data table - The data of the inventory
-Inventory.CreateInventory = function (identifier, data)
-    if Inventories[identifier] then 
+Inventory.CreateInventory = function(identifier, data)
+    if Inventories[identifier] then
         if data.label then
             Inventories[identifier].label = data.label
         end

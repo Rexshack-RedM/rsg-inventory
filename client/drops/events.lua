@@ -53,7 +53,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
 
                 -- Prevent picking up while holding weapon or another drop
-                if weapon ~= "WEAPON_UNARMED" then
+                if weapon ~= `WEAPON_UNARMED` then
                     return lib.notify({
                         title       = locale('error.error'),
                         description = locale('error.error_gun_and_bag'),
@@ -71,13 +71,15 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 end
 
                 -- Play pickup animation
-                Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
+                Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0,
+                    1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
 
                 Wait(1000)
 
                 -- Attach bag to player's bone
-                local config    = require 'shared.config'
-                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), config.ItemDropObjectBone)
+                -- Config removido para evitar dependência circular
+                local ItemDropObjectBone = 'SKEL_L_Hand' -- valor padrão
+                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), ItemDropObjectBone)
 
                 AttachEntityToEntity(
                     bag,

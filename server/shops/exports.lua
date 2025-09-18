@@ -102,3 +102,13 @@ Shops.RestockShop = function(shopName, percentage)
 end
 
 exports('RestockShop', Shops.RestockShop)
+
+--- Check if a shop exists in the registry.
+--- @param shopName string Name of the shop
+--- @return boolean True if the shop exists, false otherwise
+function Shops.DoesShopExist(shopName)
+    if type(shopName) ~= "string" then return false end
+    return RegisteredShops and RegisteredShops[shopName] ~= nil
+end
+
+exports('DoesShopExist', Shops.DoesShopExist)

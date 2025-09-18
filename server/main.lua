@@ -1,4 +1,3 @@
-
 -- globals
 math = lib.math
 --

@@ -27,7 +27,7 @@ RegisterNUICallback('DropItem', function(item, cb)
     local timeout = 100
     while not NetworkDoesNetworkIdExist(dropId) and timeout > 0 do
         Wait(50)
-        timeout = timeout - 1
+        timeout -= 1
     end
 
     -- If the entity still doesn't exist after timeout, return false

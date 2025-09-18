@@ -5,9 +5,7 @@ ox_lib 'locale'
 lua54 'yes'
 
 description 'rsg-inventory'
-
-version '2.6.5'
-
+version '2.6.10'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -52,4 +50,10 @@ files {
     'locales/*.json',
     'html/images/*.png',
     'html/assets/*.*',
+}
+
+dependencies {
+    'rsg-core',
+    'rsg-horses',
+    'ox_lib',
 }

@@ -1,4 +1,4 @@
-local config  = require 'shared.config'
+local config = require 'shared.config'
 local RSGCore = exports['rsg-core']:GetCoreObject()
 
 -- Helper to always retrieve the latest player metadata from RSG Core

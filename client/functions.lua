@@ -39,8 +39,8 @@ function Inventory.UseHotbarItem(slot)
 
     LocalPlayer.state.hotbarLastUsed = currentTime
 
-    local playerData = RSGCore.Functions.GetPlayerData()
-    local itemData   = playerData.items and playerData.items[slot]
+    local playerData                 = RSGCore.Functions.GetPlayerData()
+    local itemData                   = playerData.items and playerData.items[slot]
     if not itemData then return end
 
     -- Weapon + holding drop check

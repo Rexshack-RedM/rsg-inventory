@@ -3,8 +3,8 @@ return {
     UseTarget = GetConvar('UseTarget', 'false') == 'true',
 
     -- Maximum weight and slot capacity for player inventory
-    MaxWeight = 500000,
-    MaxSlots = 120,
+    MaxWeight = 120000,
+    MaxSlots = 40,
 
     -- Configuration for stash storage (e.g., chests, safes)
     StashSize = {
@@ -25,19 +25,19 @@ return {
     },
 
     -- Anti-spam settings for hotbar usage
-    HotbarSpamProtectionTimeout = 500,     -- Timeout in milliseconds
-    HotbarSpamProtectionNotify = false,    -- Whether to notify player on spam
+    HotbarSpamProtectionTimeout = 500,  -- Timeout in milliseconds
+    HotbarSpamProtectionNotify = false, -- Whether to notify player on spam
 
     -- Cleanup settings for dropped items
-    CleanupDropTime = 10,     -- Time in minutes before item is cleaned up
-    CleanupDropInterval = 1,  -- Interval in minutes to check for cleanup
+    CleanupDropTime = 15,    -- Time in minutes before item is cleaned up
+    CleanupDropInterval = 1, -- Interval in minutes to check for cleanup
 
     -- Object model and bone used for dropped item visuals
-    ItemDropObject = 'p_bag01x',                  -- Object to represent dropped item
-    ItemDropObjectBone = "SKEL_R_Finger00",       -- Bone to attach object to
+    ItemDropObject = `p_bag01x`,                 -- Object to represent dropped item
+    ItemDropObjectBone = "SKEL_R_Finger00",      -- Bone to attach object to
     ItemDropObjectOffset = {
-        vector3(0.380000, -0.04000, -0.0300000),  -- Position offset
-        vector3(-5.000000, -95.000000, -90.000),  -- Rotation offset
+        vector3(0.380000, -0.04000, -0.0300000), -- Position offset
+        vector3(-5.000000, -95.000000, -90.000), -- Rotation offset
     },
 
     -- Cron expression for shop restocking (every hour)
@@ -45,10 +45,10 @@ return {
 
     -- List of objects that act as vending machines
     VendingObjects = {
-        's_inv_whiskey02x',
-        'p_whiskeycrate01x',
-        'p_bal_whiskeycrate01',
-        'p_whiskeybarrel01x',
+        `s_inv_whiskey02x`,
+        `p_whiskeycrate01x`,
+        `p_bal_whiskeycrate01`,
+        `p_whiskeybarrel01x`,
     },
 
     -- Items available in vending machines
@@ -62,12 +62,12 @@ return {
 
     -- Command names used in the resource
     CommandNames = {
-        GiveItem      = 'giveitem',     -- Give item to player
-        RandomItems   = 'randomitems',  -- Give random items
-        ClearInv      = 'clearinv',     -- Clear inventory
-        CloseInv      = 'closeinv',     -- Close inventory UI
-        Hotbar        = 'hotbar',       -- Open hotbar
-        Inventory     = 'inventory',    -- Open inventory
-        openInv       = 'openinv',      -- Alternate command to open inventory
+        GiveItem    = 'giveitem',    -- Give item to player
+        RandomItems = 'randomitems', -- Give random items
+        ClearInv    = 'clearinv',    -- Clear inventory
+        CloseInv    = 'closeinv',    -- Close inventory UI
+        Hotbar      = 'hotbar',      -- Open hotbar
+        Inventory   = 'inventory',   -- Open inventory
+        openInv     = 'openinv',     -- Alternate command to open inventory
     }
 }

@@ -27,7 +27,7 @@ local function GetNearbyPlayers(maxDistance)
                 local dist = #(GetEntityCoords(ped) - myCoords)
                 if dist <= maxDist then
                     local sid = GetPlayerServerId(pid)
-                    options[#options+1] = {
+                    options[#options + 1] = {
                         value = sid,
                         label = "Player : " .. sid,
                     }
@@ -134,7 +134,6 @@ RegisterNUICallback('GiveItem', function(data, cb)
             notifyNoPlayer()
             cb(false)
         end
-
     elseif config.GiveItemType == "id" then
         local getplayerid = lib.inputDialog(locale('info.enter_player_id'), {
             { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
@@ -154,7 +153,6 @@ RegisterNUICallback('GiveItem', function(data, cb)
             notifyNoPlayer()
             cb(false)
         end
-
     elseif config.GiveItemType == "nearby_menu" then
         local input = lib.inputDialog(locale('info.select_player_nearby'), {
             { type = 'select', label = locale('info.nearby_players_label'), options = GetNearbyPlayers(3.0) },
