@@ -7,7 +7,7 @@ RegisterNetEvent('rsg-inventory:server:openVending', function(data)
     if not Player then return end
 
     local key = string.format("%s_%s_%s", data.coords.x, data.coords.y, data.coords.z)
-    local shopName = 'vending-' .. key
+    local shopName = 'vending-'..key 
     if not Shops.DoesShopExist(shopName) then
         Shops.CreateShop({
             name = shopName,

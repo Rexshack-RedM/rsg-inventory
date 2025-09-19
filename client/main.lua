@@ -23,20 +23,6 @@ CreateThread(function()
     })
 end)
 
--- Utilitários de diagnóstico
-RegisterCommand('fixnui', function()
-    SetNuiFocus(false, false)
-    print('^2[rsg-inventory]^7 NUI focus liberado (SetNuiFocus false,false)')
-end, false)
-
-RegisterCommand('debuginv', function()
-    local rsg = exports['rsg-core']:GetCoreObject()
-    local meta = rsg and rsg.Functions.GetPlayerData() and rsg.Functions.GetPlayerData().metadata or {}
-    print(string.format('^3[rsg-inventory]^7 IsNuiFocused=%s Pause=%s Dead=%s Cuffed=%s',
-        tostring(IsNuiFocused()), tostring(IsPauseMenuActive()), tostring(meta and meta.isdead),
-        tostring(meta and meta.ishandcuffed)))
-end, false)
-
 -- Thread to handle keybinds for inventory and hotbar
 CreateThread(function()
     -- Mapping of keys to commands and whether the key is disabled (hold vs press)

@@ -71,15 +71,13 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 end
 
                 -- Play pickup animation
-                Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0,
-                    1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
+                Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
 
                 Wait(1000)
 
                 -- Attach bag to player's bone
-                -- Config removido para evitar dependência circular
-                local ItemDropObjectBone = 'SKEL_L_Hand' -- valor padrão
-                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), ItemDropObjectBone)
+                local config    = require 'shared.config'
+                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), config.ItemDropObjectBone)
 
                 AttachEntityToEntity(
                     bag,

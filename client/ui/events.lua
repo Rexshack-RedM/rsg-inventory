@@ -2,7 +2,7 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 -- @param items: table of items to display on the hotbar
 RegisterNetEvent('rsg-inventory:client:hotbar', function(items)
-    local token = exports['rsg-core']:GenerateCSRFToken()             -- CSRF token for NUI security
+    local token = exports['rsg-core']:GenerateCSRFToken() -- CSRF token for NUI security
     LocalPlayer.state.hotbarShown = not LocalPlayer.state.hotbarShown -- toggle state
     SendNUIMessage({
         action = 'toggleHotbar',
@@ -90,14 +90,14 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     SetNuiFocus(true, true) -- focus mouse and keyboard on NUI
 
     SendNUIMessage({
-        action    = 'open',
-        inventory = items,
-        slots     = Player.slots,                                   -- max inventory slots
-        maxweight = Player.weight,                                  -- max inventory weight
-        playerId  = Player.source or Player.id or Player.citizenid, -- unique player identifier
-        other     = other,                                          -- context, e.g., trunk inventory
-        token     = token,
-        closeKey  = config.Keybinds.Close,
-        cash      = Player.money.cash, -- player's money
+        action              = 'open',
+        inventory           = items,
+        slots               = Player.slots,          -- max inventory slots
+        maxweight           = Player.weight,     -- max inventory weight
+        playerId            = Player.source or Player.id or Player.citizenid, -- unique player identifier
+        other               = other,                 -- context, e.g., trunk inventory
+        token               = token,
+        closeKey            = config.Keybinds.Close,
+        cash                = Player.money.cash,         -- player's money
     })
 end)

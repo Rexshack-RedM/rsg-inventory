@@ -1,6 +1,6 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 Inventory = Inventory or {}
--- Config removido para evitar dependência circular
+local config = require 'shared.config'
 
 Inventory.TYPES = {
     PLAYER = 1,
@@ -16,8 +16,8 @@ Inventory.InitializeInventory = function(inventoryId, data)
         items = {},
         isOpen = false,
         label = data and data.label or inventoryId,
-        maxweight = data and data.maxweight or 100000, -- valor padrão
-        slots = data and data.slots or 50              -- valor padrão
+        maxweight = data and data.maxweight or config.StashSize.maxweight,
+        slots = data and data.slots or config.StashSize.slots
     }
     return Inventories[inventoryId]
 end
@@ -159,9 +159,8 @@ Inventory.CheckPlayerItemsDecay = function(player)
 
     if needsUpdate then
         player.Functions.SetPlayerData('items', player.PlayerData.items)
-        for _, item in pairs(removedItems) do
-            TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name],
-                'remove', item.amount)
+        for _, item in pairs(removedItems) do 
+            TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name], 'remove', item.amount)
         end
     end
 end
@@ -169,15 +168,14 @@ end
 
 --- @param player table The player object.
 --- @param item table item object.
-Inventory.CheckPlayerItemDecay = function(player, item)
+Inventory.CheckPlayerItemDecay = function(player, item) 
     local updated, quality, delete = Inventory.CheckItemDecay(item)
     if updated then
         if delete and quality <= 0 then
             player.PlayerData.items[item.slot] = nil
-            TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name],
-                'remove', item.amount)
+            TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name], 'remove', item.amount)
         end
-
+        
         player.Functions.SetPlayerData('items', player.PlayerData.items)
     end
 
@@ -189,7 +187,7 @@ end
 --- @param src? any
 --- @return vector3|nil
 Inventory.GetCoords = function(inventoryId, src)
-    local _, inventoryType = Inventory.GetIdentifier(inventoryId)
+    local _,inventoryType = Inventory.GetIdentifier(inventoryId)
     if inventoryType == Inventory.TYPES.PLAYER then
         local ped = GetPlayerPed(src)
         return DoesEntityExist(ped) and GetEntityCoords(ped)

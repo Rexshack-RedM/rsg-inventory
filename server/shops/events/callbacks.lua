@@ -36,20 +36,17 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
             if itemInfo.name == shopItem.name and shopItem.buyPrice then
                 -- Quality check
                 if itemInfo.info.quality and itemInfo.info.quality < (shopItem.minQuality or 1) then
-                    notifyPlayer(source, 'error.quality_too_low')
-                    return false
+                    notifyPlayer(source, 'error.quality_too_low') return false
                 end
 
                 -- Max stock check
                 if shopItem.maxStock and shopItem.maxStock < (shopItem.amount + amount) then
-                    notifyPlayer(source, 'error.shop_fully_stocked')
-                    return false
+                    notifyPlayer(source, 'error.shop_fully_stocked') return false
                 end
 
                 -- Player has enough items
                 if not Inventory.HasItem(source, itemInfo.name, amount) then
-                    notifyPlayer(source, 'error.not_enough_items')
-                    return false
+                    notifyPlayer(source, 'error.not_enough_items') return false
                 end
 
                 -- Update shop stock and calculate buy price
@@ -61,48 +58,45 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
                 buyPrice = math.round(buyPrice, 2)
 
                 if buyPrice < 0.01 then
-                    notifyPlayer(source, 'error.worthless_item')
-                    return false
+                    notifyPlayer(source, 'error.worthless_item') return false
                 end
 
                 Inventory.RemoveItem(source, itemInfo.name, amount, itemInfo.slot, 'shop-sell')
-                Player.Functions.AddMoney('bloodmoney', buyPrice, 'shop-sell')
+                Player.Functions.AddMoney('cash', buyPrice, 'shop-sell')
                 TriggerClientEvent('rsg-inventory:client:updateInventory', source)
                 return true
             end
         end
 
-        notifyPlayer(source, 'error.shop_does_not_buy')
-        return false
+        notifyPlayer(source, 'error.shop_does_not_buy') return false
     end
 
     -- Buying items from shop
     local shopSlot = shopInfo.items[itemInfo.slot]
     if not shopSlot or shopSlot.name ~= itemInfo.name then return false end
 
-    -- Infinite stock: ignore stock limit checks
+    if shopSlot.amount and amount > shopSlot.amount then
+        notifyPlayer(source, 'error.cannot_purchase_more_than_stock') return false
+    end
 
     if not Inventory.CanAddItem(source, itemInfo.name, amount) then
-        notifyPlayer(source, 'error.cannot_carry')
-        return false
+        notifyPlayer(source, 'error.cannot_carry') return false
     end
 
     if not shopSlot.price then
-        notifyPlayer(source, 'info.no_price_or_not_for_sale')
-        return false
+        notifyPlayer(source, 'info.no_price_or_not_for_sale') return false
     end
 
     local price = math.round(shopSlot.price * amount, 2)
-    local currentBlood = (Player.Functions.GetMoney and Player.Functions.GetMoney('bloodmoney')) or
-        (Player.PlayerData.money and Player.PlayerData.money.bloodmoney) or 0
-    if currentBlood < price then
-        notifyPlayer(source, 'error.not_enough_money')
-        return false
+    if Player.PlayerData.money.cash < price then
+        notifyPlayer(source, 'error.not_enough_money') return false
     end
 
-    -- Infinite stock: do not decrement item amount
+    if shopSlot.amount then
+        shopSlot.amount = shopSlot.amount - amount
+    end
 
-    Player.Functions.RemoveMoney('bloodmoney', price, 'shop-purchase')
+    Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
     Inventory.AddItem(source, itemInfo.name, amount, targetSlot, itemInfo.info, 'shop-purchase')
     TriggerClientEvent('rsg-inventory:client:updateInventory', source)
     return true

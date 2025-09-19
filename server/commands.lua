@@ -35,8 +35,8 @@ lib.addCommand(config.CommandNames.GiveItem, {
     restricted = 'group.admin',
     params = {
         { name = 'target', type = 'playerId', help = locale('info.param_target') },
-        { name = 'item',   type = 'string',   help = locale('info.param_item') },
-        { name = 'amount', type = 'number',   help = locale('info.param_amount'), optional = true },
+        { name = 'item', type = 'string', help = locale('info.param_item') },
+        { name = 'amount', type = 'number', help = locale('info.param_amount'), optional = true },
     }
 }, function(source, args)
     local player = getPlayer(args.target, true)
@@ -61,7 +61,7 @@ lib.addCommand(config.CommandNames.GiveItem, {
             nationality = char.nationality
         }
 
-        -- Specific info for weapons
+    -- Specific info for weapons
     elseif itemData.type == 'weapon' then
         amount = 1
         info.serie = string.format(
@@ -75,10 +75,10 @@ lib.addCommand(config.CommandNames.GiveItem, {
         )
         info.quality = 100
     end
-    if addItemToInventory(args.target, itemData, amount, info, 'give item command') then
-        local message = string.format(locale('info.yhg'), itemData.name, amount)
-        -- Notify giver with item name and amount
-        notify(source, message, 'success')
+ if addItemToInventory(args.target, itemData, amount, info, 'give item command') then
+    local message = string.format(locale('info.yhg'), itemData.name, amount)
+    -- Notify giver with item name and amount
+    notify(source, message, 'success')
     end
 end)
 
@@ -130,21 +130,17 @@ lib.addCommand(config.CommandNames.ClearInv, {
     local target = args.target or source
     Inventory.ClearInventory(target)
     if target == source then
-        TriggerClientEvent('ox_lib:notify', source,
-            { title = locale('info.inventory_cleared'), type = 'success', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.inventory_cleared'), type = 'success', duration = 5000 })
     else
-        TriggerClientEvent('ox_lib:notify', target,
-            { title = locale('info.inventory_cleared'), type = 'success', duration = 5000 })
-        TriggerClientEvent('ox_lib:notify', source,
-            { title = locale('info.inventory_cleared_for') .. GetPlayerName(target), type = 'success', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', target, { title = locale('info.inventory_cleared'), type = 'success', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('info.inventory_cleared_for') .. GetPlayerName(target), type = 'success', duration = 5000 })
     end
 end)
 
 -- /closeinv command
 RegisterCommand(config.CommandNames.CloseInv, function(source)
     Inventory.CloseInventory(source)
-    TriggerClientEvent('ox_lib:notify', source,
-        { title = locale('info.inventory_closed'), type = 'success', duration = 5000 })
+    TriggerClientEvent('ox_lib:notify', source, { title = locale('info.inventory_closed'), type = 'success', duration = 5000 })
 end, false)
 
 -- serversidehotbar
