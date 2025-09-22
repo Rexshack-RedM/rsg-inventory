@@ -981,6 +981,14 @@ const InventoryContainer = Vue.createApp({
                 this.notificationTimeout = null;
             }, 3000);
         },
+
+        isWeapon(item){
+			if (!item) return false;
+			if (item.type === 'weapon' || item.type === 'weapon_thrown') return true;
+			if (item.name && /^weapon_/i.test(item.name)) return true;
+			return false;
+		},
+        
         /* showRequiredItem(data) {
             if (data.toggle) {
                 this.requiredItems = data.items;
