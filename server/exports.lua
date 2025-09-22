@@ -637,7 +637,6 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
         duration = 5000
     })
     
-    print('ForceDropItem: Successfully created drop ' .. newDropId .. ' with entity ' .. networkId)
     return true
 end
 
