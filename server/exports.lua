@@ -554,7 +554,7 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     local ped = GetPlayerPed(source)
     local coords = GetEntityCoords(ped)
     
-    print('ForceDropItem: Starting drop creation for ' .. item .. ' x' .. amount)
+    log('ForceDropItem: Starting drop creation for ' .. item .. ' x' .. amount)
     
     -- Create the bag entity - using CreateObjectNoOffset like in createDrop callback
     local bag = CreateObjectNoOffset(config.ItemDropObject, coords.x + 0.5, coords.y + 0.5, coords.z, true, true, false)
