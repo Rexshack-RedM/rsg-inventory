@@ -572,7 +572,7 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     -- Create the item data with full properties
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     if not itemInfo then
-        print('ForceDropItem: Item not found in shared items: ' .. item)
+        logError('ForceDropItem: Item not found in shared items: ' .. item)
         DeleteEntity(bag)
         return false
     end
