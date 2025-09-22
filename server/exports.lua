@@ -1,5 +1,4 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
 Inventory = Inventory or {}
 local config = require 'shared.config'
 Inventory.LoadInventory = function(source, citizenid)
@@ -303,7 +302,7 @@ Inventory.CanAddItem = function(source, item, amount)
         local weight = itemData.weight * amount
         local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
 
-        if totalWeight > config.MaxWeight then
+        if totalWeight > Player.PlayerData.weight then
             return false, 'weight'
         end
 
@@ -314,7 +313,7 @@ Inventory.CanAddItem = function(source, item, amount)
             end
         end
         
-        if slotsUsed >= config.MaxSlots then
+        if slotsUsed >= Player.PlayerData.slots then
             return false, 'slots'
         end
 
@@ -547,6 +546,104 @@ end
 
 exports('OpenInventory', Inventory.OpenInventory)
 
+-- New function to force drop items when inventory is full
+Inventory.ForceDropItem = function(source, item, amount, info, reason)
+    local Player = RSGCore.Functions.GetPlayer(source)
+    if not Player then return false end
+    
+    local ped = GetPlayerPed(source)
+    local coords = GetEntityCoords(ped)
+    
+    print('ForceDropItem: Starting drop creation for ' .. item .. ' x' .. amount)
+    
+    -- Create the bag entity - using CreateObjectNoOffset like in createDrop callback
+    local bag = CreateObjectNoOffset(config.ItemDropObject, coords.x + 0.5, coords.y + 0.5, coords.z, true, true, false)
+    
+    -- Wait for entity to spawn
+    while not DoesEntityExist(bag) do Wait(0) end
+    
+    -- Get network ID
+    local networkId = NetworkGetNetworkIdFromEntity(bag)
+    
+    -- Create drop ID using the same helper as manual drops
+    local newDropId = 'drop-' .. networkId .. '-' .. os.time()
+    
+    print('ForceDropItem: Entity created with ID: ' .. bag .. ', NetworkID: ' .. networkId)
+    
+    -- Create the item data with full properties
+    local itemInfo = RSGCore.Shared.Items[item:lower()]
+    if not itemInfo then
+        print('ForceDropItem: Item not found in shared items: ' .. item)
+        DeleteEntity(bag)
+        return false
+    end
+    
+    local itemData = {
+        name = item,
+        amount = amount,
+        info = info or {},
+        slot = 1,
+        label = itemInfo.label,
+        description = itemInfo.description or '',
+        weight = itemInfo.weight,
+        type = itemInfo.type,
+        unique = itemInfo.unique,
+        useable = itemInfo.useable,
+        image = itemInfo.image,
+        shouldClose = itemInfo.shouldClose,
+        combinable = itemInfo.combinable
+    }
+    
+    -- Create itemsTable with metatable like in createDrop callback
+    local itemsTable = setmetatable({ itemData }, {
+        __len = function(t)
+            local length = 0
+            for _ in pairs(t) do length = length + 1 end
+            return length
+        end
+    })
+    
+    -- Create the drop data structure - exactly like in createDrop callback
+    if not Drops then Drops = {} end
+    if not Drops[newDropId] then
+        Drops[newDropId] = {
+            name = newDropId,
+            label = 'Drop',
+            items = itemsTable,
+            entityId = networkId,
+            createdTime = os.time(),
+            coords = coords,
+            maxweight = config.DropSize and config.DropSize.maxweight or 250000,
+            slots = config.DropSize and config.DropSize.slots or 50,
+            isOpen = false,
+            openedBy = nil
+        }
+        
+        -- Trigger the same event as manual drops
+        TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
+    else
+        table.insert(Drops[newDropId].items, itemData)
+    end
+    
+    -- Log the forced drop
+    local logMessage = string.format('**%s (citizenid: %s | id: %s)** item force dropped due to full inventory: %s x%s at %s',
+        GetPlayerName(source), Player.PlayerData.citizenid, source, item, amount, coords)
+    TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'Force Drop', 'orange', logMessage)
+    
+    -- Notify the player
+    TriggerClientEvent('ox_lib:notify', source, {
+        title = 'Inventory Full',
+        description = 'Item dropped on ground due to full inventory!',
+        type = 'warning',
+        duration = 5000
+    })
+    
+    print('ForceDropItem: Successfully created drop ' .. newDropId .. ' with entity ' .. networkId)
+    return true
+end
+
+exports('ForceDropItem', Inventory.ForceDropItem)
+
 --- Adds an item to the player's inventory or a specific inventory.
 --- @param identifier string The identifier of the player or inventory.
 --- @param item string The name of the item to add.
@@ -595,7 +692,12 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
         print('AddItem: Not enough weight available')
-        TriggerClientEvent('ox_lib:notify', player.PlayerData.source, { type = 'error', title = locale('error.not_enough_weight'), duration = 7000})
+        -- If this is a player and not a forced add, try to drop on ground
+        if player and reason and not reason:find('force') then
+            return Inventory.ForceDropItem(identifier, item, amount, info, reason)
+        elseif player and not reason then
+            return Inventory.ForceDropItem(identifier, item, amount, info, 'inventory full - weight')
+        end
         return false
     end
 
@@ -629,7 +731,12 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         slot = slot or Inventory.GetFirstFreeSlot(inventory, inventorySlots)
         if not slot then
             print('AddItem: No free slot available')
-            TriggerClientEvent('ox_lib:notify', player.PlayerData.source, { type = 'error', title = locale('error.inventory_full'), description = locale('error.no_free_slots'), duration = 7000})
+            -- If this is a player and not a forced add, try to drop on ground
+            if player and reason and not reason:find('force') then
+                return Inventory.ForceDropItem(identifier, item, amount, info, reason)
+            elseif player and not reason then
+                return Inventory.ForceDropItem(identifier, item, amount, info, 'inventory full - slots')
+            end
             return false
         end
 
@@ -809,6 +916,9 @@ end
 exports('RemoveItem', Inventory.RemoveItem)
 
 Inventory.GetInventory = function(identifier)
+    if not Inventories[identifier] then
+        return nil
+    end
     Inventory.CheckItemsDecay(Inventories[identifier].items)
     return Inventories[identifier]
 end
