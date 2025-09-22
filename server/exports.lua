@@ -1,4 +1,5 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+lib.locale()
 Inventory = Inventory or {}
 local config = require 'shared.config'
 Inventory.LoadInventory = function(source, citizenid)
@@ -594,6 +595,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
         print('AddItem: Not enough weight available')
+        TriggerClientEvent('ox_lib:notify', player.PlayerData.source, { type = 'error', title = locale('error.not_enough_weight'), duration = 7000})
         return false
     end
 
@@ -627,6 +629,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         slot = slot or Inventory.GetFirstFreeSlot(inventory, inventorySlots)
         if not slot then
             print('AddItem: No free slot available')
+            TriggerClientEvent('ox_lib:notify', player.PlayerData.source, { type = 'error', title = locale('error.inventory_full'), description = locale('error.no_free_slots'), duration = 7000})
             return false
         end
 

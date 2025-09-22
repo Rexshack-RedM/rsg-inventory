@@ -22,7 +22,10 @@
     "hotbarerror": "You are dead, you cannot use the hotbar.",
     "hotbarerror1": "You cannot use the hotbar with handcuffs on.",
     "bagcannotplace": "The bag cannot be placed here.",
-    "bagplace": "The bag has been placed."
+    "bagplace": "The bag has been placed.",
+    "inventory_full": "Inventory Full!",
+    "no_free_slots": "No free slot available",
+    "not_enough_weight": "Not enough weight available!"
   },
   "info": {
     "enter_amount": "Enter amount",
