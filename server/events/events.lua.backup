@@ -247,22 +247,3 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         end
     end
 end)
-RegisterNetEvent('rsg-inventory:server:openPlayerInventory', function(targetId)
-    local src = source
-    Inventory.OpenInventoryById(src, targetId)
-end)
-
-RegisterNetEvent('rsg-inventory:server:openStash', function(stashId)
-    local src = source
-    Inventory.OpenInventory(src, stashId)
-end)
-
-AddEventHandler('playerDropped', function()
-    local src = source
-    for dropId, drop in pairs(Drops) do
-        if drop.openedBy == src then
-            drop.isOpen = false
-            drop.openedBy = nil
-        end
-    end
-end)

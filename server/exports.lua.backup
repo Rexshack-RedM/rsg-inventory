@@ -510,6 +510,7 @@ Inventory.OpenInventory = function (source, identifier, data)
     end
 
     if type(identifier) ~= 'string' then
+        print('Inventory tried to open an invalid identifier')
         return
     end
 
@@ -553,10 +554,9 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     local ped = GetPlayerPed(source)
     local coords = GetEntityCoords(ped)
     
-    -- ForceDropItem creation started
+    log('ForceDropItem: Starting drop creation for ' .. item .. ' x' .. amount)
     
     -- Create the bag entity - using CreateObjectNoOffset like in createDrop callback
-    local config = require 'shared.config'
     local bag = CreateObjectNoOffset(config.ItemDropObject, coords.x + 0.5, coords.y + 0.5, coords.z, true, true, false)
     
     -- Wait for entity to spawn
@@ -566,13 +566,13 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     local networkId = NetworkGetNetworkIdFromEntity(bag)
     
     -- Create drop ID using the same helper as manual drops
-    local newDropId = Helpers.CreateDropId(networkId)
+    local newDropId = 'drop-' .. networkId .. '-' .. os.time()
     
     
     -- Create the item data with full properties
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     if not itemInfo then
-        -- Item not found in shared items
+        logError('ForceDropItem: Item not found in shared items: ' .. item)
         DeleteEntity(bag)
         return false
     end
@@ -603,6 +603,7 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     })
     
     -- Create the drop data structure - exactly like in createDrop callback
+    if not Drops then Drops = {} end
     if not Drops[newDropId] then
         Drops[newDropId] = {
             name = newDropId,
@@ -611,8 +612,8 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
             entityId = networkId,
             createdTime = os.time(),
             coords = coords,
-            maxweight = config.DropSize.maxweight,
-            slots = config.DropSize.slots,
+            maxweight = config.DropSize and config.DropSize.maxweight or 250000,
+            slots = config.DropSize and config.DropSize.slots or 50,
             isOpen = false,
             openedBy = nil
         }
@@ -652,11 +653,13 @@ exports('ForceDropItem', Inventory.ForceDropItem)
 Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     amount = tonumber(amount) or 1
     if amount <= 0 then
+        print('AddItem: Invalid amount')
         return false
     end
 
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     if not itemInfo then
+        print('AddItem: Invalid item')
         return false
     end
 
@@ -678,6 +681,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     end
 
     if not inventory then
+        print('AddItem: Inventory not found')
         return false
     end
 
@@ -685,6 +689,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
+        print('AddItem: Not enough weight available')
         -- If this is a player and not a forced add, try to drop on ground
         if player and reason and not reason:find('force') then
             return Inventory.ForceDropItem(identifier, item, amount, info, reason)
@@ -723,6 +728,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     if not updated then
         slot = slot or Inventory.GetFirstFreeSlot(inventory, inventorySlots)
         if not slot then
+            print('AddItem: No free slot available')
             -- If this is a player and not a forced add, try to drop on ground
             if player and reason and not reason:find('force') then
                 return Inventory.ForceDropItem(identifier, item, amount, info, reason)
@@ -794,6 +800,7 @@ exports('AddItem', Inventory.AddItem)
 --- @return boolean - Returns true if the item was successfully removed, false otherwise.
 Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
     if not RSGCore.Shared.Items[item:lower()] then
+        print('RemoveItem: Invalid item')
         return false
     end
 
@@ -809,6 +816,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
     end
 
     if not inventory then
+        print('RemoveItem: Inventory not found')
         return false
     end
 
@@ -830,10 +838,12 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         end
 
         if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
+            print('RemoveItem: Item not found in slot')
             return false
         end
 
         if inventoryItem.amount < amount then
+            print('RemoveItem: Not enough items in slot')
             return false
         end
 
@@ -867,6 +877,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         end
 
         if totalRemoved < amount then
+            print('RemoveItem: Not enough items in inventory')
             return false
         end
 
@@ -940,6 +951,7 @@ exports('CreateInventory', Inventory.CreateInventory)
 Inventory.DeleteInventory = function(identifier)
     if Inventories[identifier] then
         Inventories[identifier] = nil
+        print('[rsg-inventory] Deleted inventory: ' .. identifier)
         return true
     end
     return false

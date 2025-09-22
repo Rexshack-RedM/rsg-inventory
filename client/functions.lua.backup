@@ -55,11 +55,3 @@ function Inventory.UseHotbarItem(slot)
 
     TriggerServerEvent('rsg-inventory:server:useItem', itemData)
 end
-Inventory.CanPlayerUseInventory = function()
-    local canUse = false
-    RSGCore.Functions.GetPlayerData(function(playerData)
-        local metadata = playerData and playerData.metadata
-        canUse = metadata and not metadata["isdead"] and not metadata["ishandcuffed"]
-    end)
-    return canUse
-end

@@ -11,7 +11,7 @@ RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
 
     -- Get the drop by ID
     local drop = Drops[dropId]
-    if not drop then return end
+    if not drop or drop.isOpen then return end
 
     -- Check if player is close enough to the drop
     if #(playerCoords - drop.coords) > 2.5 then return end
