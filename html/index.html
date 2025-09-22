@@ -87,6 +87,7 @@
                                 <div class="item-info-stats" v-if="selectedItem.info">
                                     <p v-if="selectedItem.info.quality">Quality: {{ selectedItem.info.quality }}%</p>
                                     <p v-if="selectedItem.info.weight">Weight: {{ (selectedItem.info.weight / 1000).toFixed(2) }}kg</p>
+                                    <p v-if="isWeapon(selectedItem) && selectedItem.info.serie">Serial: {{ selectedItem.info.serie }}
                         </div>
                     </div>
                     <div class="tooltip-weight">
