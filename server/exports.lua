@@ -568,7 +568,6 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     -- Create drop ID using the same helper as manual drops
     local newDropId = 'drop-' .. networkId .. '-' .. os.time()
     
-    print('ForceDropItem: Entity created with ID: ' .. bag .. ', NetworkID: ' .. networkId)
     
     -- Create the item data with full properties
     local itemInfo = RSGCore.Shared.Items[item:lower()]
