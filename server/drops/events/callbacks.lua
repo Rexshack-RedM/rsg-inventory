@@ -63,7 +63,7 @@ lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
             coords = playerCoords,            -- coordinates of the drop
             maxweight = config.DropSize.maxweight, -- max weight the drop can hold
             slots = config.DropSize.slots,    -- number of item slots
-            isOpen = false                     -- whether the drop can be looted
+            isOpen = true                      -- whether the drop can be looted
         }
 
         -- Tell all clients to add this object as an interactable target
