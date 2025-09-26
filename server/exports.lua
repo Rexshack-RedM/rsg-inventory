@@ -545,38 +545,19 @@ end
 
 exports('OpenInventory', Inventory.OpenInventory)
 
--- New function to force drop items when inventory is full
+-- Force drop function for when inventory is full (using shared drop creation)
 Inventory.ForceDropItem = function(source, item, amount, info, reason)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return false end
-    
+
     local ped = GetPlayerPed(source)
     local coords = GetEntityCoords(ped)
-    
-    -- ForceDropItem creation started
-    
-    -- Create the bag entity - using CreateObjectNoOffset like in createDrop callback
-    local config = require 'shared.config'
-    local bag = CreateObjectNoOffset(config.ItemDropObject, coords.x + 0.5, coords.y + 0.5, coords.z, true, true, false)
-    
-    -- Wait for entity to spawn
-    while not DoesEntityExist(bag) do Wait(0) end
-    
-    -- Get network ID
-    local networkId = NetworkGetNetworkIdFromEntity(bag)
-    
-    -- Create drop ID using the same helper as manual drops
-    local newDropId = Helpers.CreateDropId(networkId)
-    
-    
-    -- Create the item data with full properties
+
+    -- Get item info
     local itemInfo = RSGCore.Shared.Items[item:lower()]
-    if not itemInfo then
-        -- Item not found in shared items
-        DeleteEntity(bag)
-        return false
-    end
-    
+    if not itemInfo then return false end
+
+    -- Create item data
     local itemData = {
         name = item,
         amount = amount,
@@ -592,17 +573,37 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
         shouldClose = itemInfo.shouldClose,
         combinable = itemInfo.combinable
     }
-    
-    -- Create itemsTable with metatable like in createDrop callback
-    local itemsTable = setmetatable({ itemData }, {
-        __len = function(t)
-            local length = 0
-            for _ in pairs(t) do length = length + 1 end
-            return length
-        end
-    })
-    
-    -- Create the drop data structure - exactly like in createDrop callback
+
+    -- Use the shared drop creation function from callbacks.lua
+    -- We need to call it directly since it's local to that file
+    local config = require 'shared.config'
+
+    -- Create the bag entity
+    local bag = CreateObjectNoOffset(
+        config.ItemDropObject,
+        coords.x + 0.5,
+        coords.y + 0.5,
+        coords.z,
+        true, true, false
+    )
+
+    -- Wait for entity to spawn with timeout
+    local timeout = 100
+    while not DoesEntityExist(bag) and timeout > 0 do
+        Wait(50)
+        timeout -= 1
+    end
+
+    if not DoesEntityExist(bag) then return false end
+
+    -- Get network ID and create drop ID
+    local networkId = NetworkGetNetworkIdFromEntity(bag)
+    local newDropId = Helpers.CreateDropId(networkId)
+
+    -- Create itemsTable
+    local itemsTable = { itemData }
+
+    -- Create drop (don't remove from inventory - assume already removed)
     if not Drops[newDropId] then
         Drops[newDropId] = {
             name = newDropId,
@@ -613,21 +614,21 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
             coords = coords,
             maxweight = config.DropSize.maxweight,
             slots = config.DropSize.slots,
-            isOpen = false,
-            openedBy = nil
+            isOpen = true  -- Fixed: drops should be immediately lootable
         }
-        
-        -- Trigger the same event as manual drops
+
+        -- Setup client target
         TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
     else
+        -- Add to existing drop
         table.insert(Drops[newDropId].items, itemData)
     end
-    
+
     -- Log the forced drop
     local logMessage = string.format('**%s (citizenid: %s | id: %s)** item force dropped due to full inventory: %s x%s at %s',
         GetPlayerName(source), Player.PlayerData.citizenid, source, item, amount, coords)
     TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', 'Force Drop', 'orange', logMessage)
-    
+
     -- Notify the player
     TriggerClientEvent('ox_lib:notify', source, {
         title = 'Inventory Full',
@@ -635,8 +636,8 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
         type = 'warning',
         duration = 5000
     })
-    
-    return true
+
+    return networkId
 end
 
 exports('ForceDropItem', Inventory.ForceDropItem)

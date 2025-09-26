@@ -22,12 +22,6 @@ RegisterNetEvent('rsg-inventory:client:giveAnim', function()
     TaskPlayAnim(cache.ped, dict, 'small_fish_give_player', 8.0, 1.0, -1, 16, 0, false, false, false)
     RemoveAnimDict(dict) -- clean up animation dict from memory
 end)
-RegisterNetEvent('rsg-inventory:client:openPlayerInventory', function(targetId)
-    if not Inventory.CanPlayerUseInventory() then return end
-    TriggerServerEvent('rsg-inventory:server:openPlayerInventory', targetId)
-end)
-
-RegisterNetEvent('rsg-inventory:client:openStash', function(stashId)
-    if not Inventory.CanPlayerUseInventory() then return end
-    TriggerServerEvent('rsg-inventory:server:openStash', stashId)
-end)
+-- Client relay events removed for security - call server events directly
+-- Use TriggerServerEvent('rsg-inventory:server:openPlayerInventory', targetId) instead
+-- Use TriggerServerEvent('rsg-inventory:server:openStash', stashId) instead

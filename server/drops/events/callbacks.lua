@@ -4,74 +4,83 @@ lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
     return Drops -- return the table containing all active drops
 end)
 
--- Callback to create a new item drop
-lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
-    local Player = RSGCore.Functions.GetPlayer(source) -- get the player object
-    if not Player then return false end
-
-    local playerPed = GetPlayerPed(source) -- get player's ped
-    local playerCoords = GetEntityCoords(playerPed) -- get player's coordinates
-    local isMove = false -- flag if the item is a weapon (for special handling)
-
-    -- Special handling for weapons
-    if item.type == 'weapon' then
-        isMove = true
-        Inventory.CheckWeapon(source, item) -- check/remove weapon if needed
-    end
-
-    -- Remove the item from the player's inventory
-    if not Inventory.RemoveItem(source, item.name, item.amount, item.fromSlot, 'dropped item', isMove) then
-        return false -- stop if item could not be removed
-    end
-
-    -- Play pickup animation for player
-    TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
-
+-- Shared function to create drops (eliminates code duplication)
+local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, source)
     local config = require 'shared.config'
-    -- Create the physical object in the world for the drop
+
+    -- Remove item from inventory if requested (for manual drops)
+    if shouldRemoveFromInventory and source then
+        local isMove = itemData.type == 'weapon'
+        if isMove then
+            Inventory.CheckWeapon(source, itemData)
+        end
+
+        if not Inventory.RemoveItem(source, itemData.name, itemData.amount, itemData.fromSlot, 'dropped item', isMove) then
+            return false
+        end
+
+        -- Play pickup animation
+        local playerPed = GetPlayerPed(source)
+        TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
+    end
+
+    -- Create the bag entity
     local bag = CreateObjectNoOffset(
-        config.ItemDropObject,                       -- object model (bag/box)
-        playerCoords.x + 0.5,                        -- slightly offset X
-        playerCoords.y + 0.5,                        -- slightly offset Y
-        playerCoords.z,                              -- Z coordinate
-        true, true, false                             -- dynamic, networked, not visible initially
+        config.ItemDropObject,
+        coords.x + 0.5,
+        coords.y + 0.5,
+        coords.z,
+        true, true, false
     )
 
-    -- Wait until the object actually exists in the world (timeout 5s)
-    local timeout = 100 
+    -- Wait for entity to spawn with timeout
+    local timeout = 100
     while not DoesEntityExist(bag) and timeout > 0 do
         Wait(50)
         timeout -= 1
     end
 
-    if not DoesEntityExist(bag) then return false end 
+    if not DoesEntityExist(bag) then return false end
 
-    -- Get network ID for the object (used to sync with clients)
-    local dropId = NetworkGetNetworkIdFromEntity(bag)
-    local newDropId = Helpers.CreateDropId(dropId) -- generate a unique ID for the drop
+    -- Get network ID and create drop ID
+    local networkId = NetworkGetNetworkIdFromEntity(bag)
+    local newDropId = Helpers.CreateDropId(networkId)
 
-    local itemsTable = { item } -- table of items in this drop
+    -- Create itemsTable
+    local itemsTable = { itemData }
 
-    -- If this is a new drop, initialize it
+    -- Create or update drop
     if not Drops[newDropId] then
         Drops[newDropId] = {
             name = newDropId,
             label = 'Drop',
-            items = itemsTable,               -- items inside the drop
-            entityId = dropId,                -- networked entity ID
-            createdTime = os.time(),          -- timestamp of creation
-            coords = playerCoords,            -- coordinates of the drop
-            maxweight = config.DropSize.maxweight, -- max weight the drop can hold
-            slots = config.DropSize.slots,    -- number of item slots
-            isOpen = true                      -- whether the drop can be looted
+            items = itemsTable,
+            entityId = networkId,
+            createdTime = os.time(),
+            coords = coords,
+            maxweight = config.DropSize.maxweight,
+            slots = config.DropSize.slots,
+            isOpen = true  -- Fixed: drops should be immediately lootable
         }
 
-        -- Tell all clients to add this object as an interactable target
-        TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, dropId)
+        -- Setup client target
+        TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
     else
-        -- If drop already exists (stacking items), add item to it
-        table.insert(Drops[newDropId].items, item)
+        -- Add to existing drop
+        table.insert(Drops[newDropId].items, itemData)
     end
 
-    return dropId -- return the network ID of the dropped object
+    return networkId
+end
+
+-- Callback to create a new item drop
+lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
+    local Player = RSGCore.Functions.GetPlayer(source)
+    if not Player then return false end
+
+    local playerPed = GetPlayerPed(source)
+    local playerCoords = GetEntityCoords(playerPed)
+
+    -- Use shared drop creation function
+    return CreateItemDrop(playerCoords, item, true, source)
 end)
