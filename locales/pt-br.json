@@ -3,11 +3,11 @@
     "error_already_holding_bag": "Você já está segurando uma bolsa, guarde-a primeiro",
     "error_gun_and_bag": "Você não pode segurar uma arma e uma bolsa ao mesmo tempo",
     "error": "Erro",
-    "error.fullbag": "Você já está segurando uma bolsa, largue-a!",
+    "error.fullbag": "Você já está segurando uma bolsa, solte-a!",
     "pdne": "O jogador não está online",
     "SpamProtection": "Você está pressionando os botões rápido demais! Espere um momento antes de tentar novamente.",
     "not_enough_money": "Você não tem dinheiro suficiente",
-    "cannot_carry": "Você não pode carregar isto",
+    "cannot_carry": "Você não pode carregar isso",
     "cannot_purchase_more_than_stock": "Não é possível comprar mais do que o estoque atual",
     "shop_does_not_buy": "Esta loja não compra este item!",
     "not_enough_items": "Não há itens suficientes para vender!",
@@ -22,7 +22,10 @@
     "hotbarerror": "Você está morto, não pode usar a barra de acesso rápido.",
     "hotbarerror1": "Você não pode usar a barra de acesso rápido algemado.",
     "bagcannotplace": "A bolsa não pode ser colocada aqui.",
-    "bagplace": "A bolsa foi colocada."
+    "bagplace": "A bolsa foi colocada.",
+    "inventory_full": "Inventário Cheio!",
+    "no_free_slots": "Nenhum espaço livre disponível",
+    "not_enough_weight": "Peso disponível insuficiente!"
   },
   "info": {
     "enter_amount": "Digite a quantidade",
@@ -33,7 +36,7 @@
     "Pickup_bag": "Pegar bolsa",
     "o_bag": "Abrir bolsa",
     "vending": "Máquina de vendas",
-    "Prompt": "Não foi possível atualizar a posição de largar no servidor",
+    "Prompt": "Não foi possível atualizar a posição do item no servidor",
     "yhg": "Você deu: %s x%s",
     "no_price_or_not_for_sale": "Este item não tem preço ou não está à venda",
     "giveitem_help": "Dar um item a um jogador (Apenas Admin)",
@@ -45,6 +48,6 @@
     "inventory_closed": "Seu inventário foi fechado.",
     "param_target": "ID do jogador alvo",
     "param_item": "Nome do item (não o rótulo)",
-    "param_amount": "Quantidade para dar"
+    "param_amount": "Quantidade a ser dada"
   }
 }
