@@ -73,6 +73,8 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
     return networkId
 end
 
+Helpers.CreateItemDrop = CreateItemDrop
+
 -- Callback to create a new item drop
 lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
     local Player = RSGCore.Functions.GetPlayer(source)
