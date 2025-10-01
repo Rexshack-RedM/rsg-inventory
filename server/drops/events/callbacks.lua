@@ -60,7 +60,7 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
             coords = coords,
             maxweight = config.DropSize.maxweight,
             slots = config.DropSize.slots,
-            isOpen = true  -- Fixed: drops should be immediately lootable
+            isOpen = false
         }
 
         -- Setup client target
