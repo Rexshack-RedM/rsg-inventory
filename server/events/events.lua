@@ -247,3 +247,148 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         end
     end
 end)
+RegisterNetEvent('rsg-inventory:server:openPlayerInventory', function(targetId)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    local Target = RSGCore.Functions.GetPlayer(targetId)
+
+    if not Player or not Target then return end
+
+    -- Security checks
+    local srcPed = GetPlayerPed(src)
+    local targetPed = GetPlayerPed(targetId)
+    local srcCoords = GetEntityCoords(srcPed)
+    local targetCoords = GetEntityCoords(targetPed)
+    local distance = #(srcCoords - targetCoords)
+
+    -- Check if target is close enough (max 3.0 units)
+    if distance > 3.0 then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = 'Error',
+            description = 'Player is too far away',
+            type = 'error',
+            duration = 5000
+        })
+        return
+    end
+
+    -- Check if target player is unconscious/dead (required for looting)
+    local targetMeta = Target.PlayerData.metadata
+    if not targetMeta.isdead and not targetMeta.ishandcuffed then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = 'Error',
+            description = 'Player must be unconscious or restrained',
+            type = 'error',
+            duration = 5000
+        })
+        return
+    end
+
+    -- Additional permission check for law enforcement
+    local hasPermission = RSGCore.Functions.HasPermission(src, 'police') or
+                         Player.PlayerData.job.name == 'police' or
+                         Player.PlayerData.job.name == 'marshal'
+
+    if not hasPermission and not targetMeta.isdead then
+        TriggerClientEvent('ox_lib:notify', src, {
+            title = 'Error',
+            description = 'Insufficient permissions',
+            type = 'error',
+            duration = 5000
+        })
+        return
+    end
+
+    Inventory.OpenInventoryById(src, targetId)
+end)
+
+RegisterNetEvent('rsg-inventory:server:openStash', function(stashId)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+
+    if not Player then return end
+
+    -- Basic validation
+    if not stashId or type(stashId) ~= 'string' then
+        return TriggerClientEvent('ox_lib:notify', src, {
+            title = 'Error',
+            description = 'Invalid stash identifier',
+            type = 'error',
+            duration = 5000
+        })
+    end
+
+    -- Prevent access to restricted stashes (add your patterns here)
+    local restrictedPatterns = {
+        '^police%-',      -- Police stashes
+        '^marshal%-',     -- Marshal stashes
+        '^gang%-',        -- Gang stashes (unless player is in that gang)
+        '^admin%-',       -- Admin stashes
+        '^evidence%-'     -- Evidence stashes
+    }
+
+    local isRestricted = false
+    local stashType = nil
+
+    for _, pattern in ipairs(restrictedPatterns) do
+        if stashId:match(pattern) then
+            isRestricted = true
+            stashType = pattern:gsub('[%-^]', ''):gsub('%-', '')
+            break
+        end
+    end
+
+    if isRestricted then
+        local hasAccess = false
+
+        -- Check specific permissions based on stash type
+        if stashType == 'police' or stashType == 'marshal' then
+            hasAccess = RSGCore.Functions.HasPermission(src, 'police') or
+                       Player.PlayerData.job.name == 'police' or
+                       Player.PlayerData.job.name == 'marshal'
+        elseif stashType == 'gang' then
+            -- Extract gang name from stash ID (e.g., 'gang-lemoyne-stash' -> 'lemoyne')
+            local gangName = stashId:match('gang%-(.+)%-')
+            hasAccess = Player.PlayerData.gang and Player.PlayerData.gang.name == gangName
+        elseif stashType == 'admin' or stashType == 'evidence' then
+            hasAccess = RSGCore.Functions.HasPermission(src, 'admin')
+        end
+
+        if not hasAccess then
+            return TriggerClientEvent('ox_lib:notify', src, {
+                title = 'Access Denied',
+                description = 'You do not have permission to access this stash',
+                type = 'error',
+                duration = 5000
+            })
+        end
+    end
+
+    -- Additional distance check for world stashes
+    local stashCoords = Inventory.GetCoords(stashId, src)
+    if stashCoords then
+        local playerCoords = GetEntityCoords(GetPlayerPed(src))
+        local distance = #(playerCoords - stashCoords)
+
+        if distance > Inventory.MAX_DIST then
+            return TriggerClientEvent('ox_lib:notify', src, {
+                title = 'Error',
+                description = 'Stash is too far away',
+                type = 'error',
+                duration = 5000
+            })
+        end
+    end
+
+    Inventory.OpenInventory(src, stashId)
+end)
+
+AddEventHandler('playerDropped', function()
+    local src = source
+    for dropId, drop in pairs(Drops) do
+        if drop.openedBy == src then
+            drop.isOpen = false
+            drop.openedBy = nil
+        end
+    end
+end)

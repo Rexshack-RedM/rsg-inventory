@@ -25,7 +25,9 @@
     "bagplace": "The bag has been placed.",
     "inventory_full": "Inventory Full!",
     "no_free_slots": "No free slot available",
-    "not_enough_weight": "Not enough weight available!"
+    "not_enough_weight": "Not enough weight available!",
+    "inventory_force_drop": "Item dropped on ground due to full inventory!",
+    "inventory_force_drop_failed": "Failed to drop item on ground!"
   },
   "info": {
     "enter_amount": "Enter amount",
