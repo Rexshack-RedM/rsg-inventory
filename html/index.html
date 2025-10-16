@@ -81,17 +81,7 @@
                         <h3>{{ selectedItem.label }}</h3>
                     </div>
                     <div class="tooltip-divider"></div>
-                    <div class="item-info-content">
-                                <p v-if="selectedItem.info?.description" v-html="selectedItem.info.description"></p>
-                                <p v-else-if="selectedItem.description" v-html="selectedItem.description"></p>
-                                <div class="item-info-stats" v-if="selectedItem.info">
-                                    <p v-if="selectedItem.info.quality">Quality: {{ selectedItem.info.quality }}%</p>
-                                    <p v-if="selectedItem.info.weight">Weight: {{ (selectedItem.info.weight / 1000).toFixed(2) }}kg</p>
-                        </div>
-                    </div>
-                    <div class="tooltip-weight">
-                        <img class="tooltip-weight-icon" src="assets/weight.png" alt="weight" />
-                        <span>{{ selectedItem.weight != null ? (selectedItem.weight / 1000).toFixed(2) : (selectedItem.info && selectedItem.info.weight ? (selectedItem.info.weight / 1000).toFixed(2) : 'N/A') }}kg</span>
+                    <div class="item-info-content" v-html="generateDynamicTooltipContent(selectedItem)">
                     </div>
                 </div>
                 <div class="input-container" v-if="!isOtherInventoryEmpty">
