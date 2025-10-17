@@ -120,13 +120,13 @@ Inventory.CheckItemDecay = function(item, itemInfo, currentTime)
     end
 
     local timeElapsed = currentTime - item.info.lastUpdate
-    local decayRate = math.round(100 / (itemInfo.decay * 60), 2)
-    local newQuality = math.max(0, math.round(item.info.quality - timeElapsed * decayRate, 0))
+    local decayRate = 100 / (itemInfo.decay * 60)
+    local newQuality = math.max(0, item.info.quality - timeElapsed * decayRate)
 
     item.info.quality = newQuality
     item.info.lastUpdate = currentTime
 
-    return true, item.info.quality, itemInfo.delete == true
+    return true, math.round(newQuality, 1), itemInfo.delete == true
 end
 
 
