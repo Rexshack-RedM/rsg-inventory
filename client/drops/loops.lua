@@ -9,9 +9,9 @@ CreateThread(function()
     ---@type number Prompt group identifier
     local dropPromptGroup    = GetRandomIntInRange(0, 0xffffff)
     ---@type string Title for active prompt group
-    local dropGroupTitle     = CreateVarString(10, 'LITERAL_STRING', 'Loot bag')
+    local dropGroupTitle     = CreateVarString(10, 'LITERAL_STRING', locale('info.loot_bag') or 'Loot bag')
     ---@type string Text shown on the hold prompt
-    local dropBagPromptTitle = CreateVarString(10, 'LITERAL_STRING', 'Drop bag')
+    local dropBagPromptTitle = CreateVarString(10, 'LITERAL_STRING', locale('info.drop_bag') or 'Drop bag')
 
     --- Register a UI prompt for dropping the bag
     ---@type number prompt handle

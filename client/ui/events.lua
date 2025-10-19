@@ -41,7 +41,8 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
             action = 'itemBox',
             item = itemData,
             type = type,
-            amount = amount
+            amount = amount,
+            labels = buildLabels()
         })
 
         -- Update server hotbar if items were added or removed
@@ -80,6 +81,34 @@ RegisterNetEvent('rsg-inventory:client:updateHotbar', function(items)
     })
 end)
 
+local function L(k, d) return locale(k) or d end
+
+function buildLabels()
+    return {
+        title   = L('ui.title', 'RSG Inventory'),
+        close   = L('ui.close', 'Close'),
+        close_aria = L('ui.close_aria', 'Close inventory'),
+        use     = L('ui.use', 'Use'),
+        give    = L('ui.give', 'Give'),
+        single  = L('ui.single', 'Single'),
+        half    = L('ui.half', 'Half'),
+        all     = L('ui.all', 'All'),
+        split   = L('ui.split', 'Split'),
+        amount  = L('ui.amount', 'Amount'),
+        amount_placeholder = L('ui.amount_placeholder', 'amount'),
+        drop    = L('ui.drop', 'Drop'),
+        copy_serial = L('ui.copy_serial', 'Copy Serial'),
+        sell    = L('ui.sell', 'Sell'),
+        satchel = L('ui.satchel', 'Satchel'),
+        weight  = L('ui.weight', 'Weight'),
+        id      = L('ui.id', 'ID'),
+        cash    = L('ui.cash', 'Cash'),
+        received = L('ui.received', 'Received'),
+        used     = L('ui.used', 'Used'),
+        removed  = L('ui.removed', 'Removed')
+    }
+end
+
 -- Open the inventory UI with specified items and optional extra context
 -- @param items: table of inventory items
 -- @param other: optional table with extra info (trunk, stash, etc.)
@@ -87,17 +116,20 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     local token = exports['rsg-core']:GenerateCSRFToken()
     local Player = RSGCore.Functions.GetPlayerData()
     local config = require 'shared.config'
+    local function L(k, d) return locale(k) or d end
+    local labels = buildLabels()
     SetNuiFocus(true, true) -- focus mouse and keyboard on NUI
 
     SendNUIMessage({
-        action              = 'open',
-        inventory           = items,
-        slots               = Player.slots,          -- max inventory slots
-        maxweight           = Player.weight,     -- max inventory weight
-        playerId            = Player.source or Player.id or Player.citizenid, -- unique player identifier
-        other               = other,                 -- context, e.g., trunk inventory
-        token               = token,
-        closeKey            = config.Keybinds.Close,
-        cash                = Player.money.cash,         -- player's money
+        action    = 'open',
+        inventory = items,
+        slots     = Player.slots,
+        maxweight = Player.weight,
+        playerId  = Player.source or Player.id or Player.citizenid,
+        other     = other,
+        token     = token,
+        closeKey  = config.Keybinds.Close,
+        cash      = Player.money.cash,
+        labels    = labels
     })
 end)

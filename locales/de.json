@@ -22,7 +22,21 @@
     "hotbarerror": "Du bist tot, du kannst die Schnellleiste nicht benutzen.",
     "hotbarerror1": "Mit Handschellen kannst du die Schnellleiste nicht benutzen.",
     "bagcannotplace": "Die Tasche kann hier nicht platziert werden.",
-    "bagplace": "Die Tasche wurde platziert."
+    "bagplace": "Die Tasche wurde platziert.",
+    "inventory_full": "Inventar voll!",
+    "no_free_slots": "Kein freier Slot verfügbar",
+    "not_enough_weight": "Nicht genug Traglast verfügbar!",
+    "inventory_force_drop": "Gegenstand fallen gelassen, Inventar ist voll!",
+    "inventory_force_drop_failed": "Gegenstand konnte nicht fallen gelassen werden!",
+    "player_too_far": "Spieler ist zu weit entfernt",
+    "target_needs_restrained": "Spieler muss bewusstlos oder gefesselt sein",
+    "invalid_stash_identifier": "Ungültiger Lagerplatz-Identifikator",
+    "access_denied": "Zugriff verweigert",
+    "no_permission_stash": "Du hast keine Berechtigung auf dieses Lager zuzugreifen",
+    "stash_too_far": "Lager ist zu weit entfernt",
+    "inventory_in_use": "Dieses Inventar wird gerade verwendet",
+    "source_inv_too_far": "Quellinventar ist zu weit von dir entfernt.",
+    "target_inv_too_far": "Zielinventar ist zu weit von dir entfernt."
   },
   "info": {
     "enter_amount": "Menge eingeben",
@@ -45,6 +59,31 @@
     "inventory_closed": "Dein Inventar wurde geschlossen.",
     "param_target": "Zielspieler-ID",
     "param_item": "Gegenstandsname (nicht das Label)",
-    "param_amount": "Zu gebende Menge"
+    "param_amount": "Zu gebende Menge",
+    "loot_bag": "Beute-Tasche",
+    "drop_bag": "Tasche fallen lassen"
+  },
+  "ui": {
+    "title": "RSG Inventar",
+    "close": "Schließen",
+    "close_aria": "Inventar schließen",
+    "use": "Benutzen",
+    "give": "Geben",
+    "single": "Einzeln",
+    "half": "Halb",
+    "all": "Alles",
+    "split": "Teilen",
+    "amount": "Menge",
+    "amount_placeholder": "menge",
+    "drop": "Fallen lassen",
+    "copy_serial": "Seriennummer kopieren",
+    "sell": "Verkaufen",
+    "satchel": "Satteltasche",
+    "weight": "Gewicht",
+    "id": "ID",
+    "cash": "Geld",
+    "received": "Erhalten",
+    "used": "Benutzt",
+    "removed": "Entfernt"
   }
 }

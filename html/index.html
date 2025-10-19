@@ -23,22 +23,22 @@
         <div id="app">
             <div class="inventory-container" v-if="isInventoryOpen" @mousemove="drag" @mouseup="endDrag" @mousedown="containerMouseDownAction">
                 <div class="player-inventory-bg" :class="{ 'centered-player-inventory-bg': shouldCenterInventory }"></div>
-                <div class="close-btn player-close-btn" :class="{ 'centered-close-btn': shouldCenterInventory }" @click="closeInventory" role="button" aria-label="Close inventory">Close</div>
+                <div class="close-btn player-close-btn" :class="{ 'centered-close-btn': shouldCenterInventory }" @click="closeInventory" role="button" :aria-label="t.close_aria">{{ t.close }}</div>
                 <div class="player-inventory-header" :class="{ 'centered-inventory-header': shouldCenterInventory }">
                     <div class="labels-container">
                         <div class="inventory-label">
                             <p>{{ inventoryLabel }}</p>
                         </div>
                         <div class="current-weight">
-                            <img class="weight-icon" src="assets/weight.png" alt="weight" />
+                            <img class="weight-icon" src="assets/weight.png" :alt="t.weight" />
                             <p>{{ (playerWeight / 1000).toFixed(1) }} / {{ (maxWeight / 1000).toFixed(1) }}</p>
                         </div>
                         <div class="current-id">
-                            <img class="id-icon" src="assets/id.png" alt="id" />
+                            <img class="id-icon" src="assets/id.png" :alt="t.id" />
                             <p>{{ playerId }}</p>
                         </div>
                         <div class="current-money">
-                            <img class="money-icon" src="assets/cash.png" alt="money" />
+                            <img class="money-icon" src="assets/cash.png" :alt="t.cash" />
                             <p>${{ (playerMoney / 100).toFixed(2) }}</p>
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                 </div>
                 <div class="input-container" v-if="!isOtherInventoryEmpty">
                     <div class="input-wrapper">
-                        <input type="number" v-model="transferAmount" min="1" :placeholder="transferAmount === null ? 'amount' : ''" />
+                        <input type="number" v-model="transferAmount" min="1" :placeholder="transferAmount === null ? t.amount_placeholder : ''" />
                         <button @click="clearTransferAmount" class="clear-button">
                             <i class="fas fa-times"></i>
                         </button>
@@ -99,7 +99,7 @@
                             <p>{{ otherInventoryLabel }}</p>
                         </div>
                         <div class="current-weight">
-                            <img class="weight-icon" src="assets/weight.png" alt="weight" />
+                            <img class="weight-icon" src="assets/weight.png" :alt="t.weight" />
                             <p>{{ (otherInventoryWeight / 1000).toFixed(1) }} / {{(otherInventoryMaxWeight / 1000).toFixed(1) }}</p>
                         </div>
                     </div>
@@ -120,7 +120,7 @@
                                 <p>${{ Number(getItemInSlot(slot, 'other').price).toFixed(2) }}</p>
                             </div>
                             <div v-if="isShopInventory && getItemInSlot(slot, 'other') && getItemInSlot(slot, 'other').buyPrice" class="item-sell-price">
-                                <p>Sell: ${{ Number(getItemInSlot(slot, 'other').buyPrice).toFixed(2) }}</p>
+                                <p>{{ t.sell }}: ${{ Number(getItemInSlot(slot, 'other').buyPrice).toFixed(2) }}</p>
                             </div>
                             <div class="item-slot-durability" v-if="getItemInSlot(slot, 'other') && 'quality' in getItemInSlot(slot, 'other').info">
                                 <div
@@ -180,7 +180,7 @@
                         <div class="item-box-amount" v-if="notificationAmount && notificationAmount > 1">x{{ notificationAmount }}</div>
                     </div>
                     <div class="item-box-content">
-                        <div class="item-box-type" :class="'type-' + notificationType.toLowerCase()">{{ notificationType }}</div>
+                        <div class="item-box-type" :class="'type-' + (notificationClass || '').toLowerCase()">{{ notificationType }}</div>
                         <div class="item-box-divider"></div>
                         <div class="item-box-header">
                             <h4>{{ notificationText }}</h4>
@@ -216,34 +216,34 @@
                 </div>
             </div>
             <ul v-if="showContextMenu" class="context-menu" :style="{ top: contextMenuPosition.top, left: contextMenuPosition.left }">
-                <li v-if="contextMenuItem.useable" @click="useItem(contextMenuItem)">Use</li>
+                <li v-if="contextMenuItem.useable" @click="useItem(contextMenuItem)">{{ t.use }}</li>
                 <li @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
-                    Give
+                    {{ t.give }}
                     <ul v-if="showSubmenu" class="submenu">
-                        <li @click="giveItem(contextMenuItem, 1)">Single</li>
-                        <li @click="giveItem(contextMenuItem, 'half')">Half</li>
-                        <li @click="giveItem(contextMenuItem, 'all')">All</li>
-                        <li @click="giveItem(contextMenuItem, 'enteramount')">Amount</li>
+                        <li @click="giveItem(contextMenuItem, 1)">{{ t.single }}</li>
+                        <li @click="giveItem(contextMenuItem, 'half')">{{ t.half }}</li>
+                        <li @click="giveItem(contextMenuItem, 'all')">{{ t.all }}</li>
+                        <li @click="giveItem(contextMenuItem, 'enteramount')">{{ t.amount }}</li>
                     </ul>
                 </li>
                 <li @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
-                    Drop
+                    {{ t.drop }}
                     <ul v-if="showSubmenu" class="submenu">
-                        <li @click="dropItem(contextMenuItem, 1)">Single</li>
-                        <li @click="dropItem(contextMenuItem, 'half')">Half</li>
-                        <li @click="dropItem(contextMenuItem, 'all')">All</li>
-                        <li @click="dropItem(contextMenuItem, 'enteramount')">Amount</li>
+                        <li @click="dropItem(contextMenuItem, 1)">{{ t.single }}</li>
+                        <li @click="dropItem(contextMenuItem, 'half')">{{ t.half }}</li>
+                        <li @click="dropItem(contextMenuItem, 'all')">{{ t.all }}</li>
+                        <li @click="dropItem(contextMenuItem, 'enteramount')">{{ t.amount }}</li>
                     </ul>
                 </li>
                 <li @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
-                    Split
+                    {{ t.split }}
                     <ul v-if="showSubmenu" class="submenu">
-                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 1)">Single</li>
-                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 'half')">Half</li>
-                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 'enteramount')">Amount</li>
+                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 1)">{{ t.single }}</li>
+                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 'half')">{{ t.half }}</li>
+                        <li @click="splitAndPlaceItem(contextMenuItem, 'player', 'enteramount')">{{ t.amount }}</li>
                     </ul>
                 </li>
-                <li v-if="contextMenuItem.name.includes('weapon_')" @click="copySerial(contextMenuItem)">Copy Serial</li>
+                <li v-if="contextMenuItem.name.includes('weapon_')" @click="copySerial(contextMenuItem)">{{ t.copy_serial }}</li>
 
             </ul>
         </div>

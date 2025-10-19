@@ -27,7 +27,16 @@
     "no_free_slots": "No free slot available",
     "not_enough_weight": "Not enough weight available!",
     "inventory_force_drop": "Item dropped on ground due to full inventory!",
-    "inventory_force_drop_failed": "Failed to drop item on ground!"
+    "inventory_force_drop_failed": "Failed to drop item on ground!",
+    "player_too_far": "Player is too far away",
+    "target_needs_restrained": "Player must be unconscious or restrained",
+    "invalid_stash_identifier": "Invalid stash identifier",
+    "access_denied": "Access Denied",
+    "no_permission_stash": "You do not have permission to access this stash",
+    "stash_too_far": "Stash is too far away",
+    "inventory_in_use": "This inventory is currently in use",
+    "source_inv_too_far": "Source inventory is too far from you.",
+    "target_inv_too_far": "Target inventory is too far from you."
   },
   "info": {
     "enter_amount": "Enter amount",
@@ -50,6 +59,31 @@
     "inventory_closed": "Your inventory has been closed.",
     "param_target": "Target player ID",
     "param_item": "Item name (not the label)",
-    "param_amount": "Amount to give"
+    "param_amount": "Amount to give",
+    "loot_bag": "Loot bag",
+    "drop_bag": "Drop bag"
+  },
+  "ui": {
+    "title": "RSG Inventory",
+    "close": "Close",
+    "close_aria": "Close inventory",
+    "use": "Use",
+    "give": "Give",
+    "single": "Single",
+    "half": "Half",
+    "all": "All",
+    "split": "Split",
+    "amount": "Amount",
+    "amount_placeholder": "amount",
+    "drop": "Drop",
+    "copy_serial": "Copy Serial",
+    "sell": "Sell",
+    "satchel": "Satchel",
+    "weight": "Weight",
+    "id": "ID",
+    "cash": "Cash",
+    "received": "Received",
+    "used": "Used",
+    "removed": "Removed"
   }
 }
