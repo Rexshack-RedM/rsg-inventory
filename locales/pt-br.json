@@ -3,16 +3,16 @@
     "error_already_holding_bag": "Você já está segurando uma bolsa, guarde-a primeiro",
     "error_gun_and_bag": "Você não pode segurar uma arma e uma bolsa ao mesmo tempo",
     "error": "Erro",
-    "error.fullbag": "Você já está segurando uma bolsa, solte-a!",
+    "error.fullbag": "Você já está segurando uma bolsa, largue-a!",
     "pdne": "O jogador não está online",
     "SpamProtection": "Você está pressionando os botões rápido demais! Espere um momento antes de tentar novamente.",
     "not_enough_money": "Você não tem dinheiro suficiente",
-    "cannot_carry": "Você não pode carregar isso",
+    "cannot_carry": "Você não pode carregar isto",
     "cannot_purchase_more_than_stock": "Não é possível comprar mais do que o estoque atual",
     "shop_does_not_buy": "Esta loja não compra este item!",
     "not_enough_items": "Não há itens suficientes para vender!",
     "worthless_item": "Isto não tem valor! Tente vender uma quantidade maior.",
-    "shop_fully_stocked": "Este item está com estoque cheio, a loja não comprará mais!",
+    "shop_fully_stocked": "Este item está totalmente estocado, a loja não comprará mais!",
     "quality_too_low": "A qualidade deste item é muito baixa!",
     "idne": "O item não existe",
     "no_player_nearby": "Nenhum jogador por perto!",
@@ -25,7 +25,9 @@
     "bagplace": "A bolsa foi colocada.",
     "inventory_full": "Inventário Cheio!",
     "no_free_slots": "Nenhum espaço livre disponível",
-    "not_enough_weight": "Peso disponível insuficiente!"
+    "not_enough_weight": "Peso insuficiente disponível!",
+    "inventory_force_drop": "Item jogado no chão devido ao inventário cheio!",
+    "inventory_force_drop_failed": "Falha ao jogar o item no chão!"
   },
   "info": {
     "enter_amount": "Digite a quantidade",
@@ -36,11 +38,11 @@
     "Pickup_bag": "Pegar bolsa",
     "o_bag": "Abrir bolsa",
     "vending": "Máquina de vendas",
-    "Prompt": "Não foi possível atualizar a posição do item no servidor",
+    "Prompt": "Não foi possível atualizar a posição de largada no servidor",
     "yhg": "Você deu: %s x%s",
     "no_price_or_not_for_sale": "Este item não tem preço ou não está à venda",
     "giveitem_help": "Dar um item a um jogador (Apenas Admin)",
-    "randomitems_help": "Receber 10 itens aleatórios (não armas)",
+    "randomitems_help": "Receber 10 itens aleatórios que não sejam armas",
     "clearinv_help": "Limpar o inventário de um jogador (Apenas Admin)",
     "inventory_cleared": "Seu inventário foi limpo.",
     "inventory_cleared_for": "O inventário do jogador foi limpo: ",
@@ -48,6 +50,6 @@
     "inventory_closed": "Seu inventário foi fechado.",
     "param_target": "ID do jogador alvo",
     "param_item": "Nome do item (não o rótulo)",
-    "param_amount": "Quantidade a ser dada"
+    "param_amount": "Quantidade para dar"
   }
 }
