@@ -177,7 +177,7 @@ const InventoryContainer = Vue.createApp({
             this.playerInventory = {};
             this.otherInventory = {};
 
-            // -------- Hydratation des labels depuis Lua --------
+            // -------- Hydrating labels from Lua --------
             if (data.labels) {
                 this.t = { ...this.t, ...data.labels };
                 // Mets à jour les intitulés visibles
@@ -225,7 +225,7 @@ const InventoryContainer = Vue.createApp({
                 }
 
                 this.otherInventoryName = data.other.name;
-                // Si un label "other" est fourni, on l'utilise, sinon fallback sur t.drop (ou celui existant)
+                // If an "other" label is provided, use it, otherwise fallback to t.drop (or the existing one)
                 this.otherInventoryLabel = data.other.label || this.t.drop || this.otherInventoryLabel;
                 this.otherInventoryMaxWeight = data.other.maxweight;
                 this.otherInventorySlots = data.other.slots;
@@ -239,7 +239,7 @@ const InventoryContainer = Vue.createApp({
                 this.isOtherInventoryEmpty = false;
             }
 
-            // Titre de l'onglet (si labels envoyés)
+            // Tab title (if labels are provided)
             if (this.t && this.t.title) {
                 document.title = this.t.title;
             }
@@ -591,7 +591,7 @@ const InventoryContainer = Vue.createApp({
                 this.ghostElement = null;
             }
             this.currentlyDraggingItem = null;
-                       this.currentlyDraggingSlot = null;
+            this.currentlyDraggingSlot = null;
         },
         getInventoryByType(inventoryType) {
             return inventoryType === "player" ? this.playerInventory : this.otherInventory;
@@ -1006,7 +1006,7 @@ const InventoryContainer = Vue.createApp({
             this.notificationText = item.label || "";
             this.notificationImage = item.image ? "images/" + item.image : "";
 
-            // Mapping robuste des types vers libellés localisés
+            // Robust mapping of types to localized labels
             const typeMap = {
             add: this.t.received,
             added: this.t.received,
@@ -1020,10 +1020,10 @@ const InventoryContainer = Vue.createApp({
             removed: this.t.removed
             };
 
-            // Texte affiché (localisé)
+            // Displayed text (localized)
             this.notificationType = typeMap[rawType] || this.t[rawType] || (rawType ? rawType.charAt(0).toUpperCase() + rawType.slice(1) : "");
 
-            // Classe CSS stable (non localisée) pour conserver tes styles .type-add/.type-use/.type-remove
+            // Stable CSS class (non-localized) to preserve your .type-add / .type-use / .type-remove styles
             this.notificationClass = (rawType === 'added') ? 'add'
             : (rawType === 'removed') ? 'remove'
             : (rawType === 'use' || rawType === 'used') ? 'use'
