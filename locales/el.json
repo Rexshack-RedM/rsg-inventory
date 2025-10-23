@@ -22,7 +22,21 @@
     "hotbarerror": "Είστε νεκροί, δεν μπορείτε να χρησιμοποιήσετε την hotbar.",
     "hotbarerror1": "Δεν μπορείτε να χρησιμοποιήσετε την hotbar με χειροπέδες.",
     "bagcannotplace": "Η τσάντα δεν μπορεί να τοποθετηθεί εδώ.",
-    "bagplace": "Η τσάντα τοποθετήθηκε."
+    "bagplace": "Η τσάντα τοποθετήθηκε.",
+    "inventory_full": "Το inventory είναι γεμάτο!",
+    "no_free_slots": "Δεν υπάρχει ελεύθερη θέση",
+    "not_enough_weight": "Δεν υπάρχει αρκετό διαθέσιμο βάρος!",
+    "inventory_force_drop": "Το αντικείμενο έπεσε στο έδαφος επειδή το inventory είναι γεμάτο!",
+    "inventory_force_drop_failed": "Απέτυχε η ρίψη του αντικειμένου στο έδαφος!",
+    "player_too_far": "Ο παίκτης είναι πολύ μακριά",
+    "target_needs_restrained": "Ο παίκτης πρέπει να είναι αναίσθητος ή δεμένος",
+    "invalid_stash_identifier": "Μη έγκυρο αναγνωριστικό stash",
+    "access_denied": "Άρνηση πρόσβασης",
+    "no_permission_stash": "Δεν έχετε άδεια πρόσβασης σε αυτό το stash",
+    "stash_too_far": "Το stash είναι πολύ μακριά",
+    "inventory_in_use": "Αυτό το inventory χρησιμοποιείται ήδη",
+    "source_inv_too_far": "Το αρχικό inventory είναι πολύ μακριά από εσάς.",
+    "target_inv_too_far": "Το inventory στόχος είναι πολύ μακριά από εσάς."
   },
   "info": {
     "enter_amount": "Εισάγετε ποσότητα",
@@ -45,6 +59,31 @@
     "inventory_closed": "Το inventory σας έχει κλείσει.",
     "param_target": "ID παίκτη στόχου",
     "param_item": "Όνομα αντικειμένου (όχι η ετικέτα)",
-    "param_amount": "Ποσότητα για δώσιμο"
+    "param_amount": "Ποσότητα για δώσιμο",
+    "loot_bag": "Τσάντα λείας",
+    "drop_bag": "Αφήστε την τσάντα"
+  },
+  "ui": {
+    "title": "RSG Inventory",
+    "close": "Κλείσιμο",
+    "close_aria": "Κλείσιμο inventory",
+    "use": "Χρήση",
+    "give": "Δώστε",
+    "single": "Ένα",
+    "half": "Μισό",
+    "all": "Όλα",
+    "split": "Διαίρεση",
+    "amount": "Ποσότητα",
+    "amount_placeholder": "ποσότητα",
+    "drop": "Αφήστε",
+    "copy_serial": "Αντιγραφή Serial",
+    "sell": "Πώληση",
+    "satchel": "Τσάντα ώμου",
+    "weight": "Βάρος",
+    "id": "ID",
+    "cash": "Μετρητά",
+    "received": "Ελήφθη",
+    "used": "Χρησιμοποιήθηκε",
+    "removed": "Αφαιρέθηκε"
   }
 }

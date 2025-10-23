@@ -122,6 +122,31 @@ const InventoryContainer = Vue.createApp({
                 mouseDownY: 0,
                 scrollBoundElements: [],
                 cash: 0,
+
+                // -------- Localisation UI (fallback EN) --------
+                t: {
+                    title: 'RSG Inventory',
+                    close: 'Close',
+                    close_aria: 'Close inventory',
+                    use: 'Use',
+                    give: 'Give',
+                    single: 'Single',
+                    half: 'Half',
+                    all: 'All',
+                    amount: 'Amount',
+                    amount_placeholder: 'amount',
+                    drop: 'Drop',
+                    copy_serial: 'Copy Serial',
+                    sell: 'Sell',
+                    satchel: 'Satchel',
+                    weight: 'Weight',
+                    id: 'ID',
+                    cash: 'Cash',
+                    received: 'Received',
+                    used: 'Used',
+                    removed: 'Removed'
+                }
+                // ----------------------------------------------
             };
         },
         validateToken(csrfToken) {
@@ -151,6 +176,14 @@ const InventoryContainer = Vue.createApp({
             this.playerId = data.playerId || null;
             this.playerInventory = {};
             this.otherInventory = {};
+
+            // -------- Hydrating labels from Lua --------
+            if (data.labels) {
+                this.t = { ...this.t, ...data.labels };
+                // Mets à jour les intitulés visibles
+                this.inventoryLabel = this.t.satchel || this.inventoryLabel;
+            }
+            // ----------------------------------------------------
 
             if (data.cash !== undefined) {
                 this.cash = data.cash;
@@ -192,7 +225,8 @@ const InventoryContainer = Vue.createApp({
                 }
 
                 this.otherInventoryName = data.other.name;
-                this.otherInventoryLabel = data.other.label;
+                // If an "other" label is provided, use it, otherwise fallback to t.drop (or the existing one)
+                this.otherInventoryLabel = data.other.label || this.t.drop || this.otherInventoryLabel;
                 this.otherInventoryMaxWeight = data.other.maxweight;
                 this.otherInventorySlots = data.other.slots;
 
@@ -203,6 +237,11 @@ const InventoryContainer = Vue.createApp({
                 }
 
                 this.isOtherInventoryEmpty = false;
+            }
+
+            // Tab title (if labels are provided)
+            if (this.t && this.t.title) {
+                document.title = this.t.title;
             }
 
             this.$nextTick(() => {
@@ -272,8 +311,8 @@ const InventoryContainer = Vue.createApp({
                     const viewportW = window.innerWidth;
                     const viewportH = window.innerHeight;
                     const approxWidthPx = viewportW * 0.26;
-                            const approxHeightPx = viewportH * 0.24;
-        const paddingPx = Math.max(viewportW, viewportH) * 0.006;
+                    const approxHeightPx = viewportH * 0.24;
+                    const paddingPx = Math.max(viewportW, viewportH) * 0.006;
                     let leftPx = evt.clientX + paddingPx;
                     let topPx = evt.clientY - approxHeightPx / 2;
 
@@ -963,9 +1002,34 @@ const InventoryContainer = Vue.createApp({
         showItemNotification(itemData) {
             const item = itemData.item || {};
             const rawType = (itemData.type || '').toLowerCase();
+
             this.notificationText = item.label || "";
             this.notificationImage = item.image ? "images/" + item.image : "";
-            this.notificationType = rawType === "add" ? "Received" : rawType === "use" ? "Used" : (rawType === "drop" || rawType === "remove") ? "Removed" : "";
+
+            // Robust mapping of types to localized labels
+            const typeMap = {
+            add: this.t.received,
+            added: this.t.received,
+            receive: this.t.received,
+
+            use: this.t.used,
+            used: this.t.used,
+
+            drop: this.t.removed,
+            remove: this.t.removed,
+            removed: this.t.removed
+            };
+
+            // Displayed text (localized)
+            this.notificationType = typeMap[rawType] || this.t[rawType] || (rawType ? rawType.charAt(0).toUpperCase() + rawType.slice(1) : "");
+
+            // Stable CSS class (non-localized) to preserve your .type-add / .type-use / .type-remove styles
+            this.notificationClass = (rawType === 'added') ? 'add'
+            : (rawType === 'removed') ? 'remove'
+            : (rawType === 'use' || rawType === 'used') ? 'use'
+            : (rawType === 'drop') ? 'remove'
+            : rawType;
+
             this.notificationAmount = itemData.amount || 1;
             const desc = item.info?.description || item.description || "";
             this.notificationDescription = typeof desc === 'string' ? desc : '';
@@ -1211,6 +1275,9 @@ const InventoryContainer = Vue.createApp({
                     }
                     break;
                 case "itemBox":
+                    if (event.data.labels) {
+                    this.t = { ...this.t, ...event.data.labels };
+                    }
                     this.showItemNotification(event.data);
                     break;
                 /* case "requiredItem":

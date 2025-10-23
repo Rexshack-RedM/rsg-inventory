@@ -516,7 +516,7 @@ Inventory.OpenInventory = function (source, identifier, data)
     local inventory = Inventories[identifier]
 
     if inventory and inventory.isOpen then
-        TriggerClientEvent('ox_lib:notify', source, { title = 'This inventory is currently in use', type = 'error', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.access_denied') or locale('error.error'), type = 'error', duration = 5000 })
         return
     end
 

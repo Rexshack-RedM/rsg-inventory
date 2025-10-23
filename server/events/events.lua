@@ -164,7 +164,7 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
             if fromTooFar or toTooFar then
                 Inventory.CloseInventory(src, fromId)
                 Inventory.CloseInventory(src, toId)
-                local message = fromTooFar and 'Source inventory is too far from you.' or 'Target inventory is too far from you.'
+                local message = fromTooFar and locale('error.source_inv_too_far') or locale('error.target_inv_too_far')
                 TriggerClientEvent('ox_lib:notify', src, {
                     title = message,
                     type = 'error',
@@ -265,7 +265,7 @@ RegisterNetEvent('rsg-inventory:server:openPlayerInventory', function(targetId)
     if distance > 3.0 then
         TriggerClientEvent('ox_lib:notify', src, {
             title = 'Error',
-            description = 'Player is too far away',
+            description = locale('error.player_too_far'),
             type = 'error',
             duration = 5000
         })
@@ -277,7 +277,7 @@ RegisterNetEvent('rsg-inventory:server:openPlayerInventory', function(targetId)
     if not targetMeta.isdead and not targetMeta.ishandcuffed then
         TriggerClientEvent('ox_lib:notify', src, {
             title = 'Error',
-            description = 'Player must be unconscious or restrained',
+            description = locale('error.target_needs_restrained'),
             type = 'error',
             duration = 5000
         })
@@ -312,7 +312,7 @@ RegisterNetEvent('rsg-inventory:server:openStash', function(stashId)
     if not stashId or type(stashId) ~= 'string' then
         return TriggerClientEvent('ox_lib:notify', src, {
             title = 'Error',
-            description = 'Invalid stash identifier',
+            description = locale('error.invalid_stash_identifier'),
             type = 'error',
             duration = 5000
         })
@@ -356,8 +356,8 @@ RegisterNetEvent('rsg-inventory:server:openStash', function(stashId)
 
         if not hasAccess then
             return TriggerClientEvent('ox_lib:notify', src, {
-                title = 'Access Denied',
-                description = 'You do not have permission to access this stash',
+                title = locale('error.access_denied'),
+                description = locale('error.no_permission_stash'),
                 type = 'error',
                 duration = 5000
             })
@@ -373,7 +373,7 @@ RegisterNetEvent('rsg-inventory:server:openStash', function(stashId)
         if distance > Inventory.MAX_DIST then
             return TriggerClientEvent('ox_lib:notify', src, {
                 title = 'Error',
-                description = 'Stash is too far away',
+                description = locale('error.stash_too_far'),
                 type = 'error',
                 duration = 5000
             })

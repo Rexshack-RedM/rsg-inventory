@@ -25,7 +25,18 @@
     "bagplace": "A bolsa foi colocada.",
     "inventory_full": "Inventário Cheio!",
     "no_free_slots": "Nenhum espaço livre disponível",
-    "not_enough_weight": "Peso disponível insuficiente!"
+    "not_enough_weight": "Peso disponível insuficiente!",
+    "inventory_force_drop": "Item foi largado no chão devido ao inventário cheio!",
+    "inventory_force_drop_failed": "Falha ao largar o item no chão!",
+    "player_too_far": "O jogador está muito longe",
+    "target_needs_restrained": "O jogador deve estar inconsciente ou imobilizado",
+    "invalid_stash_identifier": "Identificador de armazenamento inválido",
+    "access_denied": "Acesso Negado",
+    "no_permission_stash": "Você não tem permissão para acessar este armazenamento",
+    "stash_too_far": "O armazenamento está muito longe",
+    "inventory_in_use": "Este inventário está atualmente em uso",
+    "source_inv_too_far": "O inventário de origem está muito longe de você.",
+    "target_inv_too_far": "O inventário alvo está muito longe de você."
   },
   "info": {
     "enter_amount": "Digite a quantidade",
@@ -48,6 +59,31 @@
     "inventory_closed": "Seu inventário foi fechado.",
     "param_target": "ID do jogador alvo",
     "param_item": "Nome do item (não o rótulo)",
-    "param_amount": "Quantidade a ser dada"
+    "param_amount": "Quantidade a ser dada",
+    "loot_bag": "Bolsa de saque",
+    "drop_bag": "Largar bolsa"
+  },
+  "ui": {
+    "title": "RSG Inventário",
+    "close": "Fechar",
+    "close_aria": "Fechar inventário",
+    "use": "Usar",
+    "give": "Dar",
+    "single": "Único",
+    "half": "Metade",
+    "all": "Tudo",
+    "split": "Dividir",
+    "amount": "Quantidade",
+    "amount_placeholder": "quantidade",
+    "drop": "Largar",
+    "copy_serial": "Copiar número de série",
+    "sell": "Vender",
+    "satchel": "Bolsa",
+    "weight": "Peso",
+    "id": "ID",
+    "cash": "Dinheiro",
+    "received": "Recebido",
+    "used": "Usado",
+    "removed": "Removido"
   }
 }

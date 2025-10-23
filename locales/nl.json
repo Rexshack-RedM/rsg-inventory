@@ -22,7 +22,21 @@
     "hotbarerror": "Je bent dood, je kan de hotbar niet gebruiken.",
     "hotbarerror1": "Met handboeien om kan je de hotbar niet gebruiken.",
     "bagcannotplace": "De tas kan hier niet worden neergezet.",
-    "bagplace": "De tas is neergezet."
+    "bagplace": "De tas is neergezet.",
+    "inventory_full": "Inventory vol!",
+    "no_free_slots": "Geen vrije slot beschikbaar",
+    "not_enough_weight": "Niet genoeg draaggewicht beschikbaar!",
+    "inventory_force_drop": "Item op de grond laten vallen wegens volle inventory!",
+    "inventory_force_drop_failed": "Item kon niet op de grond worden laten vallen!",
+    "player_too_far": "Speler is te ver weg",
+    "target_needs_restrained": "Speler moet bewusteloos of vastgebonden zijn",
+    "invalid_stash_identifier": "Ongeldige stash identifier",
+    "access_denied": "Toegang geweigerd",
+    "no_permission_stash": "Je hebt geen toestemming om deze stash te openen",
+    "stash_too_far": "Stash is te ver weg",
+    "inventory_in_use": "Deze inventory is momenteel in gebruik",
+    "source_inv_too_far": "De bron-inventory is te ver van jou verwijderd.",
+    "target_inv_too_far": "De doel-inventory is te ver van jou verwijderd."
   },
   "info": {
     "enter_amount": "Voer aantal in",
@@ -45,6 +59,31 @@
     "inventory_closed": "Je inventory is gesloten.",
     "param_target": "Doel speler ID",
     "param_item": "Item naam (niet het label)",
-    "param_amount": "Aantal om te geven"
+    "param_amount": "Aantal om te geven",
+    "loot_bag": "Pluniertas",
+    "drop_bag": "Tas laten vallen"
+  },
+  "ui": {
+    "title": "RSG Inventory",
+    "close": "Sluiten",
+    "close_aria": "Inventory sluiten",
+    "use": "Gebruik",
+    "give": "Geven",
+    "single": "Enkel",
+    "half": "Half",
+    "all": "Alles",
+    "split": "Splitsen",
+    "amount": "Aantal",
+    "amount_placeholder": "aantal",
+    "drop": "Laten vallen",
+    "copy_serial": "Serienummer kopiëren",
+    "sell": "Verkopen",
+    "satchel": "Zadeltas",
+    "weight": "Gewicht",
+    "id": "ID",
+    "cash": "Geld",
+    "received": "Ontvangen",
+    "used": "Gebruikt",
+    "removed": "Verwijderd"
   }
 }

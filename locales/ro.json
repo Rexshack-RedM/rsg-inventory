@@ -22,7 +22,21 @@
     "hotbarerror": "Ești mort, nu poți folosi bara rapidă.",
     "hotbarerror1": "Nu poți folosi bara rapidă cu cătușe.",
     "bagcannotplace": "Rucsacul nu poate fi plasat aici.",
-    "bagplace": "Rucsacul a fost plasat."
+    "bagplace": "Rucsacul a fost plasat.",
+    "inventory_full": "Inventar plin!",
+    "no_free_slots": "Niciun slot liber disponibil",
+    "not_enough_weight": "Greutate disponibilă insuficientă!",
+    "inventory_force_drop": "Obiectul a fost aruncat pe jos din cauza inventarului plin!",
+    "inventory_force_drop_failed": "Nu s-a putut arunca obiectul pe jos!",
+    "player_too_far": "Jucătorul este prea departe",
+    "target_needs_restrained": "Jucătorul trebuie să fie inconștient sau imobilizat",
+    "invalid_stash_identifier": "Identificator invalid pentru depozit",
+    "access_denied": "Acces interzis",
+    "no_permission_stash": "Nu ai permisiunea de a accesa acest depozit",
+    "stash_too_far": "Depozitul este prea departe",
+    "inventory_in_use": "Acest inventar este în prezent utilizat",
+    "source_inv_too_far": "Inventarul sursă este prea departe de tine.",
+    "target_inv_too_far": "Inventarul țintă este prea departe de tine."
   },
   "info": {
     "enter_amount": "Introduceți cantitatea",
@@ -45,6 +59,31 @@
     "inventory_closed": "Inventarul tău a fost închis.",
     "param_target": "ID jucător țintă",
     "param_item": "Numele obiectului (nu eticheta)",
-    "param_amount": "Cantitate de oferit"
+    "param_amount": "Cantitate de oferit",
+    "loot_bag": "Rucsac cu pradă",
+    "drop_bag": "Lasă rucsacul jos"
+  },
+  "ui": {
+    "title": "RSG Inventar",
+    "close": "Închide",
+    "close_aria": "Închide inventarul",
+    "use": "Folosește",
+    "give": "Oferă",
+    "single": "Unul",
+    "half": "Jumătate",
+    "all": "Toate",
+    "split": "Împarte",
+    "amount": "Cantitate",
+    "amount_placeholder": "cantitate",
+    "drop": "Lasă jos",
+    "copy_serial": "Copiază seria",
+    "sell": "Vinde",
+    "satchel": "Torbă",
+    "weight": "Greutate",
+    "id": "ID",
+    "cash": "Bani",
+    "received": "Primit",
+    "used": "Folosit",
+    "removed": "Eliminat"
   }
 }
