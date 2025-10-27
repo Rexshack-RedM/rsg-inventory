@@ -759,6 +759,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
 
     local inventory
     local player = RSGCore.Functions.GetPlayer(identifier)
+    local inventoryItem = nil
 
     if player then
         inventory = player.PlayerData.items
@@ -778,7 +779,6 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
     
     if slot then
         slot = tonumber(slot)
-        local inventoryItem = nil
         local itemKey = nil
 
         for key, invItem in pairs(inventory) do
@@ -813,6 +813,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
                 local removeAmount = math.min(available, amount - totalRemoved)
                 invItem.amount = invItem.amount - removeAmount
                 totalRemoved = totalRemoved + removeAmount
+                inventoryItem = invItem
 
                 if invItem.amount <= 0 then
                     inventory[itemKey] = nil
@@ -839,6 +840,12 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
 
     if player then 
         player.Functions.SetPlayerData('items', inventory)
+         local data = {
+            amount = amount,
+            slot = slot,
+            info = inventoryItem.info
+        }
+        TriggerEvent("rsg-inventory:server:itemRemovedFromPlayerInventory", identifier, item, data, reason, isMove)
     end
 
     local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
