@@ -1082,6 +1082,10 @@ const InventoryContainer = Vue.createApp({
                 el.select();
                 document.execCommand("copy");
                 document.body.removeChild(el);
+                axios.post("https://rsg-inventory/SerialCopied", {}).catch((error) => {
+                    console.error("Error notifying serial copy:", error);
+            });
+                this.showContextMenu = false;                
             }
         },
         /* openWeaponAttachments() {
