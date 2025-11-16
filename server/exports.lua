@@ -840,6 +840,13 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
 
     if player then
         player.Functions.SetPlayerData('items', inventory)
+        -- Hook for external resources to handle item removal logic
+        local data = {
+            amount = amount,
+            slot = slot,
+            info = inventoryItem.info
+        }
+        TriggerEvent("rsg-inventory:server:itemRemovedFromPlayerInventory", identifier, item, data, reason, isMove)
     end
 
     local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
