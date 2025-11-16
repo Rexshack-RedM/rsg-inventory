@@ -840,7 +840,8 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
 
     if player then
         player.Functions.SetPlayerData('items', inventory)
-        -- Hook for external resources to handle item removal logic
+        -- Trigger event hook for external resources to handle custom 'after removal' logic
+        -- This event is not registered in rsg-inventory itself - it's for third-party resources
         local data = {
             amount = amount,
             slot = slot,
