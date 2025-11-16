@@ -838,7 +838,7 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
     end
 
-    if player then
+    if player then 
         player.Functions.SetPlayerData('items', inventory)
         -- Trigger event hook for external resources to handle custom 'after removal' logic
         -- This event is not registered in rsg-inventory itself - it's for third-party resources
