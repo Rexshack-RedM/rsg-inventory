@@ -838,14 +838,8 @@ Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
         TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
     end
 
-    if player then 
+    if player then
         player.Functions.SetPlayerData('items', inventory)
-         local data = {
-            amount = amount,
-            slot = slot,
-            info = inventoryItem.info
-        }
-        TriggerEvent("rsg-inventory:server:itemRemovedFromPlayerInventory", identifier, item, data, reason, isMove)
     end
 
     local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
