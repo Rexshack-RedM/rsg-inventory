@@ -418,7 +418,9 @@ const InventoryContainer = Vue.createApp({
                 targetInventory[targetSlot] = newItem;
                 newItem.slot = targetSlot;
             } else {
-                const targetItemKey = Object.keys(targetInventory).find((key) => targetInventory[key] && targetInventory[key].name === item.name);
+                const targetItemKey = Object.keys(
+                    targetInventory).find((key) => targetInventory[key] && targetInventory[key].name === item.name && targetInventory[key].info.quality === item.info.quality
+                );
                 const targetItem = targetInventory[targetItemKey];
 
                 if (!targetItem) {

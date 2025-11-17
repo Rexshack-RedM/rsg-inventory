@@ -28,7 +28,7 @@ Make sure these resources are running before starting **rsg-inventory**:
 - 🐎 **Vehicle Trunk & Glovebox** — Includes optional horse saddlebag support  
 - 🏪 **Shops** — Works great with [**rsg-shops**](https://github.com/Rexshack-RedM/rsg-shops) 🥐  
 - 🎒 **Item Drops** — Physical objects in the world  
-- ⚖ **Configurable Limits** — Weight, slots, stash, and drop sizes  
+- ⚖ **Configurable Limits** — Stash, and drop sizes  
 - 🚫 **Hotbar Spam Protection** — Adjustable timers and notifications  
 
 ---
@@ -43,8 +43,6 @@ Make sure these resources are running before starting **rsg-inventory**:
 ## 📜 Example Config
 ```lua
 return {
-    MaxWeight = 120000,
-    MaxSlots = 40,
     StashSize = { maxweight = 2000000, slots = 100 },
     DropSize = { maxweight = 1000000, slots = 50 },
     HotbarSpamProtectionTimeout = 500,
@@ -61,6 +59,12 @@ return {
 3. Add `ensure rsg-inventory` to your `server.cfg`  
 4. Edit `shared/config.lua` to fit your server’s needs
 
+```lua
+--- NOTES
+
+--- player inventory max weight and slots are configured in rsg-core\config.lua (RSGConfig.Player.PlayerDefaults)
+--- if inventory items should decay at modified rate, add decay{PERCENTAGE} to stash name (i.e.: basement69-decay30, freezer111_decay0, composter333decay5000)
+```
 ---
 
 ## 💎 Credits
