@@ -104,10 +104,11 @@ end
 --- @param item table The item table.
 --- @param itemInfo table|nil Optional item definition from RSGCore.Shared.Items.
 --- @param currentTime number|nil Optional timestamp (defaults to os.time()).
+--- @param decayRateModifier number|nil Optional modifier for configured decay rate
 --- @return boolean shouldUpdate Whether the item metadata was updated.
 --- @return number|nil newQuality The new quality of the item after decay.
 --- @return boolean shouldDelete Whether the item should be deleted when quality reaches 0.
-Inventory.CheckItemDecay = function(item, itemInfo, currentTime)
+Inventory.CheckItemDecay = function(item, itemInfo, currentTime, decayRateModifier)
     itemInfo = itemInfo or RSGCore.Shared.Items[item.name:lower()]
     currentTime = currentTime or os.time()
 
@@ -118,28 +119,28 @@ Inventory.CheckItemDecay = function(item, itemInfo, currentTime)
         item.info.lastUpdate = currentTime
         return true, item.info.quality, itemInfo.delete == true
     end
-
+    decayRateModifier = decayRateModifier or 1
     local timeElapsed = currentTime - item.info.lastUpdate
-    local decayRate = 100 / (itemInfo.decay * 60)
+    local decayRate = (100 / (itemInfo.decay * 60)) * decayRateModifier
     local newQuality = math.max(0, item.info.quality - timeElapsed * decayRate)
-
     item.info.quality = math.round(newQuality, 1)
     item.info.lastUpdate = currentTime
 
-    return true, math.round(newQuality, 1), itemInfo.delete == true
+    return true, item.info.quality, itemInfo.delete == true
 end
 
 
 --- @param items table<number, table> Inventory items (indexed by slot).
+--- @param decayRateModifier number|nil Optional modifier for configured decay rate
 --- @return boolean needsUpdate Returns true if any item was updated or deleted.
 --- @return table removedItems Returns removed items.
-Inventory.CheckItemsDecay = function(items)
+Inventory.CheckItemsDecay = function(items, decayRateModifier)
     local needsUpdate = false
     local currentTime = os.time()
     local removedItems = {}
 
     for slot, item in pairs(items) do
-        local updated, quality, delete = Inventory.CheckItemDecay(item, nil, currentTime)
+        local updated, quality, delete = Inventory.CheckItemDecay(item, nil, currentTime, decayRateModifier)
         if updated then
             if delete and quality <= 0 then
                 removedItems[slot] = items[slot]

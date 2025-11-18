@@ -2,10 +2,6 @@ return {
     -- Whether to use targeting system (e.g., for interaction)
     UseTarget = GetConvar('UseTarget', 'false') == 'true',
 
-    -- Maximum weight and slot capacity for player inventory
-    MaxWeight = 120000,
-    MaxSlots = 40,
-
     -- Configuration for stash storage (e.g., chests, safes)
     StashSize = {
         maxweight = 2000000, -- Maximum weight capacity
@@ -69,5 +65,8 @@ return {
         Hotbar        = 'hotbar',       -- Open hotbar
         Inventory     = 'inventory',    -- Open inventory
         openInv       = 'openinv',      -- Alternate command to open inventory
-    }
+    },
+
+    -- Should items in player inventory decay while player is offline
+    ItemsDecayWhileOffline = false
 }
