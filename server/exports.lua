@@ -206,13 +206,8 @@ Inventory.GetItemByName = function(source, item)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
     local items = Player.PlayerData.items
-    -- Find any item regardless of serial (for compatibility)
-    for slot, inventoryItem in pairs(items) do
-        if inventoryItem.name:lower() == tostring(item):lower() then
-            return inventoryItem
-        end
-    end
-    return nil
+    local slot = Inventory.GetFirstSlotByItem(items, tostring(item):lower())
+    return items[slot]
 end
 
 exports('GetItemByName', Inventory.GetItemByName)
@@ -676,25 +671,21 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     local updated = false
     if not itemInfo.unique then
         if not slot then
-            if itemInfo.decay or info.quality then
-                local serial = info.serie or info.serial
-                slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality, serial)
+            -- Check for serial number first - items with serials should not stack with items without serials
+            if info.serie then
+                slot = Inventory.GetFirstSlotByItemWithSerie(inventory, item, info.serie)
+            elseif itemInfo.decay or info.quality then
+                slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality)
             else
-                local serial = info.serie or info.serial
-                slot = Inventory.GetFirstSlotByItem(inventory, item, serial)
+                slot = Inventory.GetFirstSlotByItem(inventory, item)
             end
         end
         if slot then
-            local slotItem = inventory[slot]
-            if slotItem and slotItem.name:lower() == item:lower() then
-                -- Check serial compatibility for stacking
-                local newSerial = info.serie or info.serial
-                local existingSerial = slotItem.info.serie or slotItem.info.serial
-                local canStack = info.quality == slotItem.info.quality and newSerial == existingSerial
-                
-                if canStack then
-                    slotItem.amount = slotItem.amount + amount
+            for _, invItem in pairs(inventory) do
+                if invItem.slot == slot and info.quality == invItem.info.quality and info.serie == invItem.info.serie then
+                    invItem.amount = invItem.amount + amount
                     updated = true
+                    break
                 end
             end
         end
