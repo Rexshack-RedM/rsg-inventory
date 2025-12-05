@@ -37,7 +37,7 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
     local timeout = 100
     while not DoesEntityExist(bag) and timeout > 0 do
         Wait(50)
-        timeout -= 1
+        timeout = timeout - 1
     end
 
     if not DoesEntityExist(bag) then return false end
@@ -66,8 +66,27 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
         -- Setup client target
         TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
     else
-        -- Add to existing drop
-        table.insert(Drops[newDropId].items, itemData)
+        -- Check if item can stack with existing items in the drop
+        local stacked = false
+        for i, existingItem in pairs(Drops[newDropId].items) do
+            -- Check if items can stack (same name, quality, and serial compatibility)
+            if existingItem.name == itemData.name and existingItem.info.quality == itemData.info.quality then
+                local existingSerial = existingItem.info.serie or existingItem.info.serial
+                local newSerial = itemData.info.serie or itemData.info.serial
+                
+                -- Items can only stack if both have no serial or both have the same serial
+                if existingSerial == newSerial then
+                    existingItem.amount = existingItem.amount + itemData.amount
+                    stacked = true
+                    break
+                end
+            end
+        end
+        
+        -- If couldn't stack with any existing item, add as new item to the drop
+        if not stacked then
+            table.insert(Drops[newDropId].items, itemData)
+        end
     end
 
     return networkId
