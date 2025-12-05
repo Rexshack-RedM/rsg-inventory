@@ -1072,30 +1072,6 @@ div {
     font-weight: bold;
 }
 
-.custom-tooltip .tooltip-serial {
-    color: #ffd700;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.custom-tooltip .tooltip-quality-high {
-    color: #4CAF50;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.custom-tooltip .tooltip-quality-medium {
-    color: #FF9800;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.custom-tooltip .tooltip-quality-low {
-    color: #F44336;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
 .custom-tooltip .tooltip-weight {
     font-size: 0.8em;
     text-align: right;
@@ -1216,34 +1192,6 @@ div {
     word-break: break-word;
     max-height: calc(var(--tooltip-max-h) - 5vh);
     overflow-y: auto;
-}
-
-.item-info-content .tooltip-serial {
-    color: #ffd700;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.item-info-content .tooltip-quality-high {
-    color: #4CAF50;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.item-info-content .tooltip-quality-medium {
-    color: #FF9800;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.item-info-content .tooltip-quality-low {
-    color: #F44336;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.item-info-content .tooltip-info-key {
-    font-weight: bold;
 }
 
 /* Divider interno do tooltip */
