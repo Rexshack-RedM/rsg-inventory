@@ -1148,10 +1148,31 @@ const InventoryContainer = Vue.createApp({
                 || item.description?.replace(/\n/g, "<br>")
                 || "No description available.";
 
+            // Display important info first (serial, quality, etc.)
+            if (item.info) {
+                // Serial/Serie information - display prominently
+                if (item.info.serie || item.info.serial) {
+                    const serialValue = item.info.serie || item.info.serial;
+                    content += `<div class="tooltip-info"><span class="tooltip-info-key">Serial:</span> <span class="tooltip-serial">${serialValue}</span></div>`;
+                }
+                
+                // Quality information - display prominently  
+                if (item.info.quality !== undefined) {
+                    const qualityPercent = parseFloat(item.info.quality);
+                    let qualityClass = 'tooltip-quality-low';
+                    if (qualityPercent > 75) qualityClass = 'tooltip-quality-high';
+                    else if (qualityPercent > 25) qualityClass = 'tooltip-quality-medium';
+                    
+                    content += `<div class="tooltip-info"><span class="tooltip-info-key">Quality:</span> <span class="${qualityClass}">${qualityPercent.toFixed(1)}%</span></div>`;
+                }
+            }
+
             const renderInfo = (obj, indent = 0) => {
                 let html = "";
                 for (const [key, value] of Object.entries(obj)) {
-                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components") continue;
+                    // Skip already displayed fields and unwanted fields
+                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components" || 
+                        key === "serie" || key === "serial" || key === "quality") continue;
 
                     const padding = "&nbsp;".repeat(indent * 4);
 
@@ -1165,16 +1186,13 @@ const InventoryContainer = Vue.createApp({
                 return html;
             };
 
-
             if (item.info && Object.keys(item.info).length > 0) {
                 content += renderInfo(item.info);
             }
 
-
             content += `<div class="tooltip-description">${description}</div>`;
             content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight != null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
             content += `</div>`;
-
 
             return content;
         },
@@ -1182,16 +1200,39 @@ const InventoryContainer = Vue.createApp({
             if (!item) {
                 return "";
             }
+            // Debug: Log item structure to help troubleshoot
+            console.log('Generating dynamic tooltip for item:', item);
             let content = "";
 
             const description = item.info?.description?.replace(/\n/g, "<br>")
                 || item.description?.replace(/\n/g, "<br>")
                 || "";
 
+            // Display important info first (serial, quality, etc.)
+            if (item.info) {
+                // Serial/Serie information - display prominently
+                if (item.info.serie || item.info.serial) {
+                    const serialValue = item.info.serie || item.info.serial;
+                    content += `<div class="tooltip-info"><span class="tooltip-info-key">Serial:</span> <span class="tooltip-serial">${serialValue}</span></div>`;
+                }
+                
+                // Quality information - display prominently  
+                if (item.info.quality !== undefined) {
+                    const qualityPercent = parseFloat(item.info.quality);
+                    let qualityClass = 'tooltip-quality-low';
+                    if (qualityPercent > 75) qualityClass = 'tooltip-quality-high';
+                    else if (qualityPercent > 25) qualityClass = 'tooltip-quality-medium';
+                    
+                    content += `<div class="tooltip-info"><span class="tooltip-info-key">Quality:</span> <span class="${qualityClass}">${qualityPercent.toFixed(1)}%</span></div>`;
+                }
+            }
+
             const renderInfo = (obj, indent = 0) => {
                 let html = "";
                 for (const [key, value] of Object.entries(obj)) {
-                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components") continue;
+                    // Skip already displayed fields and unwanted fields
+                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components" || 
+                        key === "serie" || key === "serial" || key === "quality") continue;
 
                     const padding = "&nbsp;".repeat(indent * 4);
 
