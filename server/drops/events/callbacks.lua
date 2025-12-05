@@ -69,13 +69,20 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
         -- Check if item can stack with existing items in the drop
         local stacked = false
         for i, existingItem in pairs(Drops[newDropId].items) do
-            -- Check if items can stack (same name, quality, and serial compatibility)
-            if existingItem.name == itemData.name and existingItem.info.quality == itemData.info.quality then
-                local existingSerial = existingItem.info.serie or existingItem.info.serial
-                local newSerial = itemData.info.serie or itemData.info.serial
+            -- Items must have matching name, quality, and serial/serie to stack
+            if existingItem.name == itemData.name then
+                local existingSerie = existingItem.info.serie
+                local newSerie = itemData.info.serie
+                local existingQuality = existingItem.info.quality
+                local newQuality = itemData.info.quality
                 
-                -- Items can only stack if both have no serial or both have the same serial
-                if existingSerial == newSerial then
+                -- Items can only stack if:
+                -- 1. Both have the same serial (or both have no serial)
+                -- 2. Both have the same quality (or both have no quality)
+                local serieMatch = (existingSerie == newSerie)
+                local qualityMatch = (existingQuality == newQuality)
+                
+                if serieMatch and qualityMatch then
                     existingItem.amount = existingItem.amount + itemData.amount
                     stacked = true
                     break
