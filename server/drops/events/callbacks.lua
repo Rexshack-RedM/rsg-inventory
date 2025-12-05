@@ -37,7 +37,7 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
     local timeout = 100
     while not DoesEntityExist(bag) and timeout > 0 do
         Wait(50)
-        timeout = timeout - 1
+        timeout -= 1
     end
 
     if not DoesEntityExist(bag) then return false end
