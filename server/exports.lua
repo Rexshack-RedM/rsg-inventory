@@ -161,17 +161,11 @@ exports('GetSlotsByItem', Inventory.GetSlotsByItem)
 --- @param items table The table of items to search through.
 --- @param itemName string The name of the item to search for.
 --- @return number|nil - The slot number of the first matching item, or nil if no match is found.
-Inventory.GetFirstSlotByItem = function(items, itemName, serial)
+Inventory.GetFirstSlotByItem = function(items, itemName)
     if not items then return end
     for slot, item in pairs(items) do
         if item.name:lower() == itemName:lower() then
-            -- Check serial compatibility - items with serials should not stack with items without serials
-            local itemSerial = item.info.serie or item.info.serial
-            local serialMatch = (serial == nil and itemSerial == nil) or (serial == itemSerial)
-            
-            if serialMatch then
-                return tonumber(slot)
-            end
+            return tonumber(slot)
         end
     end
     return nil
