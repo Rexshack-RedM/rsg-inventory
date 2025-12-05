@@ -1200,8 +1200,7 @@ const InventoryContainer = Vue.createApp({
             if (!item) {
                 return "";
             }
-            // Debug: Log item structure to help troubleshoot
-            console.log('Generating dynamic tooltip for item:', item);
+
             let content = "";
 
             const description = item.info?.description?.replace(/\n/g, "<br>")
