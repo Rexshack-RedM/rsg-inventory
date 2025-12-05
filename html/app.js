@@ -1172,7 +1172,7 @@ const InventoryContainer = Vue.createApp({
                 for (const [key, value] of Object.entries(obj)) {
                     // Skip already displayed fields and unwanted fields
                     if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components" || 
-                        key === "serie" || key === "serial" || key === "quality") continue;
+                        key === "serie" || key === "quality") continue;
 
                     const padding = "&nbsp;".repeat(indent * 4);
 
