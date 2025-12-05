@@ -1151,8 +1151,8 @@ const InventoryContainer = Vue.createApp({
             // Display important info first (serial, quality, etc.)
             if (item.info) {
                 // Serial/Serie information - display prominently
-                if (item.info.serie || item.info.serial) {
-                    const serialValue = item.info.serie || item.info.serial;
+                if (item.info.serie) {
+                    const serialValue = item.info.serie;
                     content += `<div class="tooltip-info"><span class="tooltip-info-key">Serial:</span> <span class="tooltip-serial">${serialValue}</span></div>`;
                 }
                 
@@ -1210,8 +1210,8 @@ const InventoryContainer = Vue.createApp({
             // Display important info first (serial, quality, etc.)
             if (item.info) {
                 // Serial/Serie information - display prominently
-                if (item.info.serie || item.info.serial) {
-                    const serialValue = item.info.serie || item.info.serial;
+                if (item.info.serie) {
+                    const serialValue = item.info.serie;
                     content += `<div class="tooltip-info"><span class="tooltip-info-key">Serial:</span> <span class="tooltip-serial">${serialValue}</span></div>`;
                 }
                 
@@ -1231,7 +1231,7 @@ const InventoryContainer = Vue.createApp({
                 for (const [key, value] of Object.entries(obj)) {
                     // Skip already displayed fields and unwanted fields
                     if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components" || 
-                        key === "serie" || key === "serial" || key === "quality") continue;
+                        key === "serie" || key === "quality") continue;
 
                     const padding = "&nbsp;".repeat(indent * 4);
 
