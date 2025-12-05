@@ -90,19 +90,30 @@ end
 --- @param itemName string The name of the item to search for.
 --- @param quality number item quality to match
 --- @return number|nil - The slot number of the first matching item, or nil if no match is found.
-Inventory.GetFirstSlotByItemWithQuality = function(items, itemName, quality, serial)
+Inventory.GetFirstSlotByItemWithQuality = function(items, itemName, quality)
     if not items then return end
     for slot, item in pairs(items) do
-        -- Check if item matches name and quality
-        local nameMatch = item.name:lower() == itemName:lower()
-        local qualityMatch = item.info.quality == quality
-        
-        -- Check serial compatibility - items with serials should not stack with items without serials
-        local itemSerial = item.info.serie or item.info.serial
-        local serialMatch = (serial == nil and itemSerial == nil) or (serial == itemSerial)
-        
-        if nameMatch and qualityMatch and serialMatch then
+        if item.name:lower() == itemName:lower() and item.info.quality == quality then
             return tonumber(slot)
+        end
+    end
+    return nil
+end
+
+-- Retrieves the first slot number that contains an item with matching serial number
+--- @param items table The table of items to search through.
+--- @param itemName string The name of the item to search for.
+--- @param serie string|nil The serial number to match (nil will only match items without serials)
+--- @return number|nil - The slot number of the first matching item, or nil if no match is found.
+Inventory.GetFirstSlotByItemWithSerie = function(items, itemName, serie)
+    if not items then return end
+    for slot, item in pairs(items) do
+        if item.name:lower() == itemName:lower() then
+            local itemSerie = item.info.serie
+            -- Match items with same serial, or both without serials
+            if itemSerie == serie then
+                return tonumber(slot)
+            end
         end
     end
     return nil
