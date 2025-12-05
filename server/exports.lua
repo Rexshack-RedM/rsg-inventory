@@ -161,11 +161,17 @@ exports('GetSlotsByItem', Inventory.GetSlotsByItem)
 --- @param items table The table of items to search through.
 --- @param itemName string The name of the item to search for.
 --- @return number|nil - The slot number of the first matching item, or nil if no match is found.
-Inventory.GetFirstSlotByItem = function(items, itemName)
+Inventory.GetFirstSlotByItem = function(items, itemName, serial)
     if not items then return end
     for slot, item in pairs(items) do
         if item.name:lower() == itemName:lower() then
-            return tonumber(slot)
+            -- Check serial compatibility - items with serials should not stack with items without serials
+            local itemSerial = item.info.serie or item.info.serial
+            local serialMatch = (serial == nil and itemSerial == nil) or (serial == itemSerial)
+            
+            if serialMatch then
+                return tonumber(slot)
+            end
         end
     end
     return nil
@@ -206,8 +212,13 @@ Inventory.GetItemByName = function(source, item)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
     local items = Player.PlayerData.items
-    local slot = Inventory.GetFirstSlotByItem(items, tostring(item):lower())
-    return items[slot]
+    -- Find any item regardless of serial (for compatibility)
+    for slot, inventoryItem in pairs(items) do
+        if inventoryItem.name:lower() == tostring(item):lower() then
+            return inventoryItem
+        end
+    end
+    return nil
 end
 
 exports('GetItemByName', Inventory.GetItemByName)
@@ -672,17 +683,24 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     if not itemInfo.unique then
         if not slot then
             if itemInfo.decay or info.quality then
-                slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality)
+                local serial = info.serie or info.serial
+                slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality, serial)
             else
-                slot = Inventory.GetFirstSlotByItem(inventory, item)
+                local serial = info.serie or info.serial
+                slot = Inventory.GetFirstSlotByItem(inventory, item, serial)
             end
         end
         if slot then
-            for _, invItem in pairs(inventory) do
-                if invItem.slot == slot and info.quality == invItem.info.quality then
-                    invItem.amount = invItem.amount + amount
+            local slotItem = inventory[slot]
+            if slotItem and slotItem.name:lower() == item:lower() then
+                -- Check serial compatibility for stacking
+                local newSerial = info.serie or info.serial
+                local existingSerial = slotItem.info.serie or slotItem.info.serial
+                local canStack = info.quality == slotItem.info.quality and newSerial == existingSerial
+                
+                if canStack then
+                    slotItem.amount = slotItem.amount + amount
                     updated = true
-                    break
                 end
             end
         end
