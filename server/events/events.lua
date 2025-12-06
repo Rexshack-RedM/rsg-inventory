@@ -177,7 +177,7 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         -- Stack items if same type, quality, and serial status (items with serials should never stack)
         local fromSerial = fromItem.info.serie
         local toSerial = toItem and toItem.info.serie
-        local canStack = toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality and fromSerial == toSerial
+        local canStack = toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality and fromSerial  == nil and toSerial == nil
         
         if canStack then
             if toId ~= fromId then
