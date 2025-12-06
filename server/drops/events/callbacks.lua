@@ -77,12 +77,10 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
                 local newQuality = itemData.info.quality
                 
                 -- Items can only stack if:
-                -- 1. Both have the same serial (or both have no serial)
-                -- 2. Both have the same quality (or both have no quality)
-                local serieMatch = (existingSerie == newSerie)
+                -- 1. Both have the same quality (or both have no quality)
                 local qualityMatch = (existingQuality == newQuality)
                 
-                if serieMatch and qualityMatch then
+                if qualityMatch then
                     existingItem.amount = existingItem.amount + itemData.amount
                     stacked = true
                     break
