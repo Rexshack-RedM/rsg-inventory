@@ -671,7 +671,10 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     local updated = false
     if not itemInfo.unique then
         if not slot then
-            if itemInfo.decay or info.quality then
+            -- Check for serial number first - items with serials should not stack with items without serials
+            if info.serie then
+                slot = Inventory.GetFirstSlotByItemWithSerie(inventory, item, info.serie)
+            elseif itemInfo.decay or info.quality then
                 slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality)
             else
                 slot = Inventory.GetFirstSlotByItem(inventory, item)
@@ -679,7 +682,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         end
         if slot then
             for _, invItem in pairs(inventory) do
-                if invItem.slot == slot and info.quality == invItem.info.quality then
+                if invItem.slot == slot and info.quality == invItem.info.quality and info.serie == invItem.info.serie then
                     invItem.amount = invItem.amount + amount
                     updated = true
                     break

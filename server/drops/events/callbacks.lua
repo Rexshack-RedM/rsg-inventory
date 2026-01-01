@@ -66,8 +66,32 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
         -- Setup client target
         TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
     else
-        -- Add to existing drop
-        table.insert(Drops[newDropId].items, itemData)
+        -- Check if item can stack with existing items in the drop
+        local stacked = false
+        for i, existingItem in pairs(Drops[newDropId].items) do
+            -- Items must have matching name, quality, and serial/serie to stack
+            if existingItem.name == itemData.name then
+                local existingSerie = existingItem.info.serie
+                local newSerie = itemData.info.serie
+                local existingQuality = existingItem.info.quality
+                local newQuality = itemData.info.quality
+                
+                -- Items can only stack if:
+                -- 1. Both have the same quality (or both have no quality)
+                local qualityMatch = (existingQuality == newQuality)
+                
+                if qualityMatch then
+                    existingItem.amount = existingItem.amount + itemData.amount
+                    stacked = true
+                    break
+                end
+            end
+        end
+        
+        -- If couldn't stack with any existing item, add as new item to the drop
+        if not stacked then
+            table.insert(Drops[newDropId].items, itemData)
+        end
     end
 
     return networkId
