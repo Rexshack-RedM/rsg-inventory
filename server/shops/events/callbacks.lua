@@ -1,15 +1,23 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+
+-- Rate limiting
+local purchaseCooldowns = {}
+
 -- Helper function for notifications
 local function notifyPlayer(source, messageKey, type)
     TriggerClientEvent('ox_lib:notify', source, { title = locale(messageKey), type = type or 'error', duration = 5000 })
 end
 
 lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, data)
+    -- Rate limit
+    local now = os.time()
+    if purchaseCooldowns[source] and now - purchaseCooldowns[source] < 1 then return false end
+    purchaseCooldowns[source] = now
+
     local itemInfo      = data.item
     local amount        = math.round(data.amount)
     local shopName      = string.gsub(data.shop, '^shop%-', '')
     local sourceInvType = data.sourceinvtype
-    local targetSlot    = data.targetslot
 
     -- Prevent non-positive amount
     if amount <= 0 then return false end
@@ -34,8 +42,15 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
     if sourceInvType == 'player' then
         for _, shopItem in ipairs(shopInfo.items) do
             if itemInfo.name == shopItem.name and shopItem.buyPrice then
+                -- Fetch the real item from player inventory by slot (don't trust client quality)
+                local realItem = Inventory.GetItemBySlot(source, itemInfo.slot)
+                if not realItem or realItem.name ~= itemInfo.name then
+                    notifyPlayer(source, 'error.not_enough_items') return false
+                end
+                local realQuality = realItem.info.quality or 100
+
                 -- Quality check
-                if itemInfo.info.quality and itemInfo.info.quality < (shopItem.minQuality or 1) then
+                if realQuality < (shopItem.minQuality or 1) then
                     notifyPlayer(source, 'error.quality_too_low') return false
                 end
 
@@ -49,17 +64,10 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
                     notifyPlayer(source, 'error.not_enough_items') return false
                 end
 
-                -- Update shop stock and calculate buy price
+                -- Update shop stock and calculate buy price using server-side quality
                 if shopItem.amount then shopItem.amount = shopItem.amount + amount end
-                local buyPrice = shopItem.buyPrice * amount
-                if itemInfo.info.quality then
-                    buyPrice = buyPrice * (itemInfo.info.quality / 100)
-                end
-                buyPrice = math.round(buyPrice, 2)
-
-                if buyPrice < 0.01 then
-                    notifyPlayer(source, 'error.worthless_item') return false
-                end
+                local buyPrice = shopItem.buyPrice * amount * (realQuality / 100)
+                buyPrice = math.max(0.01, math.round(buyPrice, 2))
 
                 Inventory.RemoveItem(source, itemInfo.name, amount, itemInfo.slot, 'shop-sell')
                 Player.Functions.AddMoney('cash', buyPrice, 'shop-sell')
@@ -97,7 +105,7 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
     end
 
     Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-    Inventory.AddItem(source, itemInfo.name, amount, targetSlot, itemInfo.info, 'shop-purchase')
+    Inventory.AddItem(source, itemInfo.name, amount, false, itemInfo.info, 'shop-purchase')
     TriggerClientEvent('rsg-inventory:client:updateInventory', source)
     return true
 end)

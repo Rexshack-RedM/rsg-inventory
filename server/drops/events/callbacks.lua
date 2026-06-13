@@ -10,12 +10,26 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
 
     -- Remove item from inventory if requested (for manual drops)
     if shouldRemoveFromInventory and source then
-        local isMove = itemData.type == 'weapon'
+        -- Fetch the real item server-side by slot (don't trust client metadata)
+        local realItem = Inventory.GetItemBySlot(source, itemData.fromSlot)
+        if not realItem or realItem.name:lower() ~= itemData.name:lower() or realItem.amount < itemData.amount then
+            return false
+        end
+
+        -- Use server-side item data for the drop payload
+        itemData.name   = realItem.name
+        itemData.amount = itemData.amount
+        itemData.info   = realItem.info or {}
+        itemData.type   = realItem.type
+        itemData.label  = realItem.label
+        itemData.weight = realItem.weight
+
+        local isMove = realItem.type == 'weapon'
         if isMove then
             Inventory.CheckWeapon(source, itemData)
         end
 
-        if not Inventory.RemoveItem(source, itemData.name, itemData.amount, itemData.fromSlot, 'dropped item', isMove) then
+        if not Inventory.RemoveItem(source, realItem.name, itemData.amount, itemData.fromSlot, 'dropped item', isMove) then
             return false
         end
 
@@ -75,10 +89,18 @@ end
 
 Helpers.CreateItemDrop = CreateItemDrop
 
+-- Rate limiting for drop creation
+local dropCooldowns = {}
+
 -- Callback to create a new item drop
 lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return false end
+
+    -- Rate limit
+    local now = os.time()
+    if dropCooldowns[source] and now - dropCooldowns[source] < 1 then return false end
+    dropCooldowns[source] = now
 
     local playerPed = GetPlayerPed(source)
     local playerCoords = GetEntityCoords(playerPed)

@@ -5,7 +5,7 @@ ox_lib 'locale'
 lua54 'yes'
 
 description 'rsg-inventory'
-version '2.7.4'
+version '2.7.5'
 
 shared_scripts {
     '@ox_lib/init.lua',

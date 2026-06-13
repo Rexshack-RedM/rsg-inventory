@@ -18,7 +18,14 @@ RegisterNetEvent('rsg-inventory:server:closeInventory', function(inventory)
     -- Handle other player's inventory
     if inventory:find('otherplayer-') then
         local targetId = tonumber(inventory:match('otherplayer%-(.+)'))
-        Player(targetId).state.inv_busy = false
+        -- Only clear inv_busy if source is near the target (prevents forging otherplayer-<id>)
+        local targetPed = GetPlayerPed(targetId)
+        local srcPed = GetPlayerPed(src)
+        if targetPed and DoesEntityExist(targetPed) and DoesEntityExist(srcPed) then
+            if #(GetEntityCoords(srcPed) - GetEntityCoords(targetPed)) <= Inventory.MAX_DIST then
+                Player(targetId).state.inv_busy = false
+            end
+        end
         return
     end
 
@@ -28,6 +35,8 @@ RegisterNetEvent('rsg-inventory:server:closeInventory', function(inventory)
         if next(Drops[inventory].items) == nil and not Drops[inventory].isOpen then 
             TriggerClientEvent('rsg-inventory:client:removeDropTarget', -1, Drops[inventory].entityId)
             Wait(500)
+            -- Re-check state after yield (another player may have opened the drop)
+            if not Drops[inventory] or Drops[inventory].isOpen then return end
             local entity = NetworkGetEntityFromNetworkId(Drops[inventory].entityId)
             if DoesEntityExist(entity) then DeleteEntity(entity) end
             Drops[inventory] = nil
@@ -133,52 +142,106 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
     local isMove = false
     fromSlot, toSlot, fromAmount, toAmount = tonumber(fromSlot), tonumber(toSlot), tonumber(fromAmount), tonumber(toAmount)
 
+    -- Auth: restrict access to other player inventories (must be dead/handcuffed, within 3.0)
+    local function getOtherPlayerId(inv)
+        if inv:find('otherplayer-') then
+            return tonumber(inv:match('otherplayer%-(.+)'))
+        end
+    end
+    local targetId = getOtherPlayerId(fromInventory) or getOtherPlayerId(toInventory)
+    if targetId then
+        local Target = RSGCore.Functions.GetPlayer(targetId)
+        if not Target then
+            Inventory.CloseInventory(src, fromInventory)
+            Inventory.CloseInventory(src, toInventory)
+            return
+        end
+        local srcPed, targetPed = GetPlayerPed(src), GetPlayerPed(targetId)
+        if #(GetEntityCoords(srcPed) - GetEntityCoords(targetPed)) > 3.0 then
+            Inventory.CloseInventory(src, fromInventory)
+            Inventory.CloseInventory(src, toInventory)
+            TriggerClientEvent('ox_lib:notify', src, { title = 'Error', description = locale('error.player_too_far'), type = 'error', duration = 5000 })
+            return
+        end
+        local targetMeta = Target.PlayerData.metadata
+        if not targetMeta.isdead and not targetMeta.ishandcuffed then
+            Inventory.CloseInventory(src, fromInventory)
+            Inventory.CloseInventory(src, toInventory)
+            TriggerClientEvent('ox_lib:notify', src, { title = 'Error', description = locale('error.target_needs_restrained'), type = 'error', duration = 5000 })
+            return
+        end
+        local hasPerm = RSGCore.Functions.HasPermission(src, 'police') or Player.PlayerData.job.name == 'police' or Player.PlayerData.job.name == 'marshal'
+        if not hasPerm and not targetMeta.isdead then
+            Inventory.CloseInventory(src, fromInventory)
+            Inventory.CloseInventory(src, toInventory)
+            return
+        end
+    end
+
+    -- Auth: restrict access to stashes with restricted prefixes
+    local restrictedPatterns = { '^police%-', '^marshal%-', '^gang%-', '^admin%-', '^evidence%-' }
+    for _, invName in pairs({ fromInventory, toInventory }) do
+        for _, pattern in ipairs(restrictedPatterns) do
+            if invName:match(pattern) then
+                local stashType = pattern:gsub('[%-^]', ''):gsub('%-', '')
+                local hasAccess = false
+                if stashType == 'police' or stashType == 'marshal' then
+                    hasAccess = RSGCore.Functions.HasPermission(src, 'police') or Player.PlayerData.job.name == 'police' or Player.PlayerData.job.name == 'marshal'
+                elseif stashType == 'gang' then
+                    local gangName = invName:match('gang%-(.+)%-')
+                    hasAccess = Player.PlayerData.gang and Player.PlayerData.gang.name == gangName
+                else
+                    hasAccess = RSGCore.Functions.HasPermission(src, 'admin')
+                end
+                if not hasAccess then
+                    Inventory.CloseInventory(src, invName)
+                    TriggerClientEvent('ox_lib:notify', src, { title = 'Access Denied', description = 'No permission', type = 'error', duration = 5000 })
+                    return
+                end
+            end
+        end
+    end
+
+    local fromId, fromType = Inventory.GetIdentifier(fromInventory, src)
+    local toId, toType = Inventory.GetIdentifier(toInventory, src)
+    if fromId ~= toId then isMove = true end
+
+    -- Distance check (except admin)
+    if not RSGCore.Functions.HasPermission(src, 'admin') then
+        local srcCoords = GetEntityCoords(GetPlayerPed(src))
+        local maxDist = Inventory.MAX_DIST
+        local isInventoryTooFar = function(inventoryCoords)
+            return inventoryCoords and #(srcCoords - inventoryCoords) > maxDist
+        end
+        local fromTooFar = isInventoryTooFar(Inventory.GetCoords(fromInventory, src))
+        local toTooFar = isInventoryTooFar(Inventory.GetCoords(toInventory, src))
+        if fromTooFar or toTooFar then
+            Inventory.CloseInventory(src, fromId)
+            Inventory.CloseInventory(src, toId)
+            local message = fromTooFar and locale('error.source_inv_too_far') or locale('error.target_inv_too_far')
+            TriggerClientEvent('ox_lib:notify', src, { title = message, type = 'error', duration = 5000 })
+            return
+        end
+    end
+
     local fromItem = Inventory.GetItem(fromInventory, src, fromSlot)
     local toItem = Inventory.GetItem(toInventory, src, toSlot)
 
     if fromItem then
-        -- Prevent stacking more than available
         if not toItem and toAmount > fromItem.amount then return end
 
-        -- Special handling when moving weapons out of player's inventory
-        if fromInventory == 'player' and toInventory ~= 'player' then 
+        if fromInventory == 'player' and toInventory ~= 'player' then
             isMove = true
-            Inventory.CheckWeapon(src, fromItem) 
-        end
-
-        local fromId, fromType = Inventory.GetIdentifier(fromInventory, src)
-        local toId, toType = Inventory.GetIdentifier(toInventory, src)
-        if fromId ~= toId then isMove = true end
-
-        -- Prevent interaction of source player with inventories on long distance (except admin)
-        if not RSGCore.Functions.HasPermission(src, 'admin') then
-            local srcCoords = GetEntityCoords(GetPlayerPed(src))
-            local maxDist = Inventory.MAX_DIST
-            local isInventoryTooFar = function(inventoryCoords)
-                return inventoryCoords and #(srcCoords - inventoryCoords) > maxDist
-            end
-            
-            local fromTooFar = isInventoryTooFar(Inventory.GetCoords(fromInventory, src))
-            local toTooFar = isInventoryTooFar(Inventory.GetCoords(toInventory, src))
-            
-            if fromTooFar or toTooFar then
-                Inventory.CloseInventory(src, fromId)
-                Inventory.CloseInventory(src, toId)
-                local message = fromTooFar and locale('error.source_inv_too_far') or locale('error.target_inv_too_far')
-                TriggerClientEvent('ox_lib:notify', src, {
-                    title = message,
-                    type = 'error',
-                    duration = 5000
-                })
-                return
-            end
+            Inventory.CheckWeapon(src, fromItem)
         end
 
         -- Stack items if same type & quality
         if toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality then
             if toId ~= fromId then
-                if Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item') then
-                    Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove)
+                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
+                    if not Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item') then
+                        Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback stacked item')
+                    end
                 end
             else
                 if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
@@ -189,8 +252,10 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         -- Split items if moving part of the stack
         elseif not toItem and toAmount < fromAmount then
             if fromId ~= toId then
-                if Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item') then
-                    Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove)
+                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
+                    if not Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item') then
+                        Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback split item')
+                    end
                 end
             else
                 if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
@@ -235,7 +300,9 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
                         Inventory.CloseInventory(src, toId)
                     else
                         if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item', isMove) then
-                            Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item')
+                            if not Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'moved item') then
+                                Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback moved item')
+                            end
                         end
                     end
                 else
