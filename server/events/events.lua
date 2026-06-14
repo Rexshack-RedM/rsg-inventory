@@ -88,7 +88,6 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(item)
                 'INSERT INTO player_weapons (serial, citizenid) VALUES (@serial, @citizenid)',
                 { serial = itemData.info.serie, citizenid = Player.PlayerData.citizenid }
             )
-            Wait(1000)
         end
         TriggerClientEvent('rsg-weapons:client:UseWeapon', src, itemData)
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, itemInfo, 'use')
