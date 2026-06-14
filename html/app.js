@@ -45,7 +45,7 @@ const InventoryContainer = Vue.createApp({
             }
         },
         shouldCenterInventory() {
-            return this.isOtherInventoryEmpty;
+            return this.isOtherInventoryEmpty && !this.isTradeActive;
         },
     },
     watch: {
@@ -107,6 +107,7 @@ const InventoryContainer = Vue.createApp({
                 tooltipPosition: { topVh: 0, leftVw: 0 },
 
                 playerId: null,
+                playerName: null,
 
                 currentlyDraggingItem: null,
                 currentlyDraggingSlot: null,
@@ -122,6 +123,20 @@ const InventoryContainer = Vue.createApp({
                 mouseDownY: 0,
                 scrollBoundElements: [],
                 cash: 0,
+
+                // -------- Trade state --------
+                tradeId: null,
+                tradePartner: null,
+                tradePartnerName: null,
+                myTradeOffers: {},
+                theirTradeOffers: {},
+                myTradeAccepted: false,
+                theirTradeAccepted: false,
+                isTradeActive: false,
+                isTradeComplete: false,
+                // ----------------------------------------------
+
+                nuiToken: null,
 
                 // -------- Localisation UI (fallback EN) --------
                 t: {
@@ -144,7 +159,15 @@ const InventoryContainer = Vue.createApp({
                     cash: 'Cash',
                     received: 'Received',
                     used: 'Used',
-                    removed: 'Removed'
+                    removed: 'Removed',
+                    trade: 'Trade',
+                    your_offer: 'Your Offer',
+                    their_offer: 'Their Offer',
+                    accept: 'Accept',
+                    waiting: 'Waiting for other player...',
+                    cancel: 'Cancel',
+                    accepted: 'Accepted',
+                    no_items_offered: 'No items offered'
                 }
                 // ----------------------------------------------
             };
@@ -174,6 +197,7 @@ const InventoryContainer = Vue.createApp({
             this.maxWeight = data.maxweight;
             this.totalSlots = data.slots;
             this.playerId = data.playerId || null;
+            this.playerName = data.playerName || null;
             this.playerInventory = {};
             this.otherInventory = {};
 
@@ -271,12 +295,18 @@ const InventoryContainer = Vue.createApp({
         async closeInventory() {
             let inventoryName = this.otherInventoryName;
             const wasHotbarEnabled = this.wasHotbarEnabled;
+            const wasTradeActive = this.isTradeActive;
+            const currentTradeId = this.tradeId;
             let hotbarItems = []
             if (wasHotbarEnabled) {
                 hotbarItems = Array(5).fill(null).map((_, index) => {
                     const item = this.playerInventory[index + 1];
                     return item !== undefined ? item : null;
                 });
+            }
+
+            if (wasTradeActive && currentTradeId) {
+                axios.post("https://rsg-inventory/CancelTrade", { tradeId: currentTradeId }).catch(() => {});
             }
 
             Object.assign(this, this.getInitialState());
@@ -530,9 +560,15 @@ const InventoryContainer = Vue.createApp({
                     this.handleDropOnOtherSlot(targetSlot);
                 }
             }
-            const targetInventoryContainer = event.target.closest(".inventory-container");
-            if (targetInventoryContainer && !targetPlayerItemSlotElement && !targetOtherItemSlotElement) {
-                this.handleDropOnInventoryContainer();
+            const targetTradeContainer = event.target.closest(".trade-container, .trade-panel, .trade-items");
+            if (targetTradeContainer && this.dragStartInventoryType === "player" && this.isTradeActive) {
+                const amount = this.transferAmount !== null ? this.transferAmount : this.currentlyDraggingItem.amount;
+                this.addItemToTrade(this.currentlyDraggingItem, amount);
+            } else {
+                const targetInventoryContainer = event.target.closest(".inventory-container");
+                if (targetInventoryContainer && !targetPlayerItemSlotElement && !targetOtherItemSlotElement) {
+                    this.handleDropOnInventoryContainer();
+                }
             }
             this.clearDragData();
         },
@@ -1243,8 +1279,158 @@ const InventoryContainer = Vue.createApp({
                     this.busy = false;
                 });
         },
+        // -------- Trade Methods --------
+        openTrade(data) {
+            this.isInventoryOpen = true;
+            this.maxWeight = data.maxweight || 0;
+            this.totalSlots = data.slots || 0;
+            this.playerId = data.playerId || null;
+            this.playerName = data.playerName || null;
+            this.cash = data.cash || 0;
+            this.playerInventory = {};
+            this.otherInventory = {};
+            this.isOtherInventoryEmpty = true;
+
+            if (data.labels) {
+                this.t = { ...this.t, ...data.labels };
+                this.inventoryLabel = this.t.satchel || this.inventoryLabel;
+            }
+
+            if (data.inventory) {
+                if (Array.isArray(data.inventory)) {
+                    data.inventory.forEach((item) => {
+                        if (item && item.slot) {
+                            this.playerInventory[item.slot] = item;
+                        }
+                    });
+                } else if (typeof data.inventory === "object") {
+                    for (const key in data.inventory) {
+                        const item = data.inventory[key];
+                        if (item && item.slot) {
+                            this.playerInventory[item.slot] = item;
+                        }
+                    }
+                }
+            }
+
+            this.tradeId = data.tradeId;
+            this.tradePartner = data.partnerId;
+            this.tradePartnerName = data.partnerName;
+            this.myTradeOffers = {};
+            this.theirTradeOffers = {};
+            this.myTradeAccepted = false;
+            this.theirTradeAccepted = false;
+            this.isTradeActive = true;
+            this.isTradeComplete = false;
+
+            this.$nextTick(() => {
+                this.attachGridScrollListeners();
+            });
+        },
+        updateTrade(data) {
+            const tradeData = data.tradeData;
+            const myId = Number(this.playerId);
+            const isInitiator = Number(tradeData.initiator) === myId;
+            this.myTradeAccepted = isInitiator ? tradeData.initiatorAccepted : tradeData.targetAccepted;
+            this.theirTradeAccepted = isInitiator ? tradeData.targetAccepted : tradeData.initiatorAccepted;
+            this.myTradeOffers = isInitiator ? tradeData.initiatorItems : tradeData.targetItems;
+            this.theirTradeOffers = isInitiator ? tradeData.targetItems : tradeData.initiatorItems;
+        },
+        cancelTradeUI() {
+            this.isTradeActive = false;
+            this.isTradeComplete = false;
+            this.tradeId = null;
+            this.tradePartner = null;
+            this.tradePartnerName = null;
+            this.myTradeOffers = {};
+            this.theirTradeOffers = {};
+            this.myTradeAccepted = false;
+            this.theirTradeAccepted = false;
+        },
+        completeTradeUI() {
+            this.isTradeActive = false;
+            this.isTradeComplete = true;
+            this.tradeId = null;
+            this.tradePartner = null;
+            this.tradePartnerName = null;
+            this.myTradeOffers = {};
+            this.theirTradeOffers = {};
+            this.myTradeAccepted = false;
+            this.theirTradeAccepted = false;
+            this.closeInventory();
+        },
+        addItemToTrade(item, amount) {
+            if (!this.isTradeActive || !this.tradeId) return;
+            const amountToAdd = amount !== undefined ? amount : item.amount;
+            if (amountToAdd < 1 || amountToAdd > item.amount) return;
+            axios.post("https://rsg-inventory/AddTradeItem", {
+                tradeId: this.tradeId,
+                item: item,
+                amount: amountToAdd,
+            }).catch((error) => {
+                console.error("Error adding item to trade:", error);
+            });
+            this.showContextMenu = false;
+        },
+        async addItemToTradeWithPrompt(item) {
+            if (!this.isTradeActive || !this.tradeId) return;
+            try {
+                const response = await axios.post("https://rsg-inventory/GiveItemAmount");
+                const amount = response.data;
+                if (amount && amount > 0 && amount <= item.amount) {
+                    this.addItemToTrade(item, amount);
+                }
+            } catch (error) {
+                console.error("Error getting trade amount:", error);
+            }
+            this.showContextMenu = false;
+        },
+        removeItemFromTrade(tradeSlot) {
+            if (!this.isTradeActive || !this.tradeId) return;
+            axios.post("https://rsg-inventory/RemoveTradeItem", {
+                tradeId: this.tradeId,
+                tradeSlot: tradeSlot,
+            }).catch((error) => {
+                console.error("Error removing item from trade:", error);
+            });
+        },
+        confirmTrade() {
+            if (!this.isTradeActive || !this.tradeId) return;
+            axios.post("https://rsg-inventory/ConfirmTrade", {
+                tradeId: this.tradeId,
+            }).catch((error) => {
+                console.error("Error confirming trade:", error);
+            });
+        },
+        cancelTrade() {
+            if (!this.isTradeActive || !this.tradeId) return;
+            axios.post("https://rsg-inventory/CancelTrade", {
+                tradeId: this.tradeId,
+            }).catch((error) => {
+                console.error("Error cancelling trade:", error);
+            });
+        },
+        initiateTrade(targetId) {
+            axios.post("https://rsg-inventory/InitiateTrade", {
+                targetId: targetId,
+            }).catch((error) => {
+                console.error("Error initiating trade:", error);
+            });
+        },
     },
+    // ---------------------------------
     mounted() {
+        // Inject CSRF token into all outgoing NUI callback calls
+        axios.interceptors.request.use((config) => {
+            if (config.url && config.url.startsWith("https://rsg-inventory/")) {
+                const token = window.nuiToken;
+                if (token && typeof config.data === "object" && config.data !== null) {
+                    config.data.token = token;
+                }
+            }
+            return config;
+        });
+
         window.addEventListener("keyup", (event) => {
             const code = event.code;
             if (code === "Escape" || code === "Tab" || code === this.additionalCloseKey) {
@@ -1255,6 +1441,12 @@ const InventoryContainer = Vue.createApp({
         });
 
         window.addEventListener("message", async (event) => {
+            // Store callback token for NUI callback CSRF validation
+            if (event.data.invToken) {
+                this.nuiToken = event.data.invToken;
+                window.nuiToken = event.data.invToken;
+            }
+
             switch (event.data.action) {
                 case "open":
                     let isValid = await this.validateToken(event.data.token)
@@ -1266,13 +1458,13 @@ const InventoryContainer = Vue.createApp({
                     this.closeInventory();
                     break;
                 case "update":
-                    if (this.validateToken(event.data.token)) {
+                    if (await this.validateToken(event.data.token)) {
                         this.updateInventory(event.data);
                         this.$nextTick(() => this.attachGridScrollListeners());
                     }
                     break;
                 case "toggleHotbar":
-                    if (this.validateToken(event.data.token)) {
+                    if (await this.validateToken(event.data.token)) {
                         this.toggleHotbar(event.data);
                     }
                     break;
@@ -1286,8 +1478,28 @@ const InventoryContainer = Vue.createApp({
                     this.showRequiredItem(event.data);
                     break; */
                 case "updateHotbar":
-                    if (this.validateToken(event.data.token)) {
+                    if (await this.validateToken(event.data.token)) {
                         this.hotbarItems = event.data.items;
+                    }
+                    break;
+                case "openTrade":
+                    if (await this.validateToken(event.data.token)) {
+                        this.openTrade(event.data);
+                    }
+                    break;
+                case "updateTrade":
+                    if (await this.validateToken(event.data.token)) {
+                        this.updateTrade(event.data);
+                    }
+                    break;
+                case "cancelTrade":
+                    if (await this.validateToken(event.data.token)) {
+                        this.cancelTradeUI();
+                    }
+                    break;
+                case "completeTrade":
+                    if (await this.validateToken(event.data.token)) {
+                        this.completeTradeUI();
                     }
                     break;
                 default:

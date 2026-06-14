@@ -457,7 +457,9 @@ Inventory.OpenInventoryById = function(source, targetId)
     local targetItems = TargetPlayer.PlayerData.items
     local formattedInventory = {
         name = 'otherplayer-' .. targetId,
-        label = GetPlayerName(targetId),
+        label = (TargetPlayer.PlayerData.charinfo and TargetPlayer.PlayerData.charinfo.firstname)
+            and (TargetPlayer.PlayerData.charinfo.firstname .. ' ' .. TargetPlayer.PlayerData.charinfo.lastname)
+            or GetPlayerName(targetId),
         maxweight = TargetPlayer.PlayerData.weight,
         slots = TargetPlayer.PlayerData.slots,
         inventory = targetItems

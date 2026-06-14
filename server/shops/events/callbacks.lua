@@ -105,7 +105,7 @@ lib.callback.register('rsg-inventory:server:attemptPurchase', function(source, d
     end
 
     Player.Functions.RemoveMoney('cash', price, 'shop-purchase')
-    Inventory.AddItem(source, itemInfo.name, amount, false, itemInfo.info, 'shop-purchase')
+    Inventory.AddItem(source, itemInfo.name, amount, false, shopSlot.info or {}, 'shop-purchase')
     TriggerClientEvent('rsg-inventory:client:updateInventory', source)
     return true
 end)

@@ -28,6 +28,7 @@ Make sure these resources are running before starting **rsg-inventory**:
 - 🐎 **Vehicle Trunk & Glovebox** — Includes optional horse saddlebag support  
 - 🏪 **Shops** — Works great with [**rsg-shops**](https://github.com/Rexshack-RedM/rsg-shops) 🥐  
 - 🎒 **Item Drops** — Physical objects in the world  
+- 🔁 **Player Trading** — Right-click a player to send a trade request; secure item exchange with escrow system and full rollback on cancel/disconnect  
 - ⚖ **Configurable Limits** — Stash, and drop sizes  
 - 🚫 **Hotbar Spam Protection** — Adjustable timers and notifications  
 

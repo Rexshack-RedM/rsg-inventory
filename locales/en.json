@@ -84,6 +84,14 @@
     "cash": "Cash",
     "received": "Received",
     "used": "Used",
-    "removed": "Removed"
+    "removed": "Removed",
+    "trade": "Trade",
+    "your_offer": "Your Offer",
+    "their_offer": "Their Offer",
+    "accept": "Accept",
+    "waiting": "Waiting for other player...",
+    "cancel": "Cancel",
+    "accepted": "Accepted",
+    "no_items_offered": "No items offered"
   }
 }

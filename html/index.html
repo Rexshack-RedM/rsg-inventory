@@ -35,7 +35,7 @@
                         </div>
                         <div class="current-id">
                             <img class="id-icon" src="assets/id.png" :alt="t.id" />
-                            <p>{{ playerId }}</p>
+                            <p>{{ playerName || playerId }}</p>
                         </div>
                         <div class="current-money">
                             <img class="money-icon" src="assets/cash.png" :alt="t.cash" />
@@ -84,7 +84,7 @@
                     <div class="item-info-content" v-html="generateDynamicTooltipContent(selectedItem)">
                     </div>
                 </div>
-                <div class="input-container" v-if="!isOtherInventoryEmpty">
+                <div class="input-container" v-if="!isOtherInventoryEmpty && !isTradeActive">
                     <div class="input-wrapper">
                         <input type="number" v-model="transferAmount" min="1" :placeholder="transferAmount === null ? t.amount_placeholder : ''" />
                         <button @click="clearTransferAmount" class="clear-button">
@@ -92,7 +92,53 @@
                         </button>
                     </div>
                 </div>
-                <div class="other-inventory-bg" v-if="!isOtherInventoryEmpty"></div>
+                <div class="trade-container" v-if="isTradeActive">
+                    <div class="trade-bg"></div>
+                    <div class="trade-header">
+                        <div class="trade-header-title">{{ t.trade }} {{ tradePartnerName ? 'with ' + tradePartnerName : '' }}</div>
+                    </div>
+                    <div class="trade-panels">
+                        <div class="trade-panel my-offer">
+                            <div class="trade-panel-title">
+                                {{ t.your_offer }}
+                                <span v-if="myTradeAccepted" class="trade-accepted-badge">{{ t.accepted }}</span>
+                            </div>
+                            <div class="trade-items">
+                                <div v-for="(item, slot) in myTradeOffers" :key="slot" class="trade-item-slot" @click="removeItemFromTrade(slot)">
+                                    <div class="trade-item-img">
+                                        <img :src="'images/' + item.image" alt="" />
+                                    </div>
+                                    <div class="trade-item-amount">x{{ item.amount }}</div>
+                                    <div class="trade-item-label">{{ item.label }}</div>
+                                </div>
+                                <div v-if="Object.keys(myTradeOffers).length === 0" class="trade-empty">{{ t.no_items_offered }}</div>
+                            </div>
+                        </div>
+                        <div class="trade-panel their-offer">
+                            <div class="trade-panel-title">
+                                {{ t.their_offer }}
+                                <span v-if="theirTradeAccepted" class="trade-accepted-badge">{{ t.accepted }}</span>
+                            </div>
+                            <div class="trade-items">
+                                <div v-for="(item, slot) in theirTradeOffers" :key="slot" class="trade-item-slot">
+                                    <div class="trade-item-img">
+                                        <img :src="'images/' + item.image" alt="" />
+                                    </div>
+                                    <div class="trade-item-amount">x{{ item.amount }}</div>
+                                    <div class="trade-item-label">{{ item.label }}</div>
+                                </div>
+                                <div v-if="Object.keys(theirTradeOffers).length === 0" class="trade-empty">{{ t.no_items_offered }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="trade-buttons">
+                        <button class="trade-confirm-btn" @click="confirmTrade" :disabled="myTradeAccepted">
+                            {{ myTradeAccepted ? t.waiting : t.accept }}
+                        </button>
+                        <button class="trade-cancel-btn" @click="cancelTrade">{{ t.cancel }}</button>
+                    </div>
+                </div>
+                <div class="other-inventory-bg" v-if="!isOtherInventoryEmpty && !isTradeActive"></div>
                 <div class="other-inventory-header" v-if="!isOtherInventoryEmpty">
                     <div class="labels-container">
                         <div class="inventory-label">
@@ -217,6 +263,15 @@
             </div>
             <ul v-if="showContextMenu" class="context-menu" :style="{ top: contextMenuPosition.top, left: contextMenuPosition.left }">
                 <li v-if="contextMenuItem.useable" @click="useItem(contextMenuItem)">{{ t.use }}</li>
+                <li v-if="isTradeActive" @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
+                    {{ t.trade }}
+                    <ul v-if="showSubmenu" class="submenu">
+                        <li @click="addItemToTrade(contextMenuItem, 1)">{{ t.single }}</li>
+                        <li @click="addItemToTrade(contextMenuItem, Math.ceil(contextMenuItem.amount / 2))">{{ t.half }}</li>
+                        <li @click="addItemToTrade(contextMenuItem, contextMenuItem.amount)">{{ t.all }}</li>
+                        <li @click="addItemToTradeWithPrompt(contextMenuItem)">{{ t.amount }}</li>
+                    </ul>
+                </li>
                 <li @mouseover="showSubmenu = true" @mouseleave="showSubmenu = false">
                     {{ t.give }}
                     <ul v-if="showSubmenu" class="submenu">

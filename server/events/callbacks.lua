@@ -1,4 +1,15 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+
+lib.callback.register('rsg-inventory:server:getPlayerName', function(source, targetId)
+    local Player = RSGCore.Functions.GetPlayer(targetId)
+    if not Player then return GetPlayerName(targetId) end
+    local char = Player.PlayerData.charinfo
+    if char and char.firstname then
+        return char.firstname .. ' ' .. char.lastname
+    end
+    return GetPlayerName(targetId)
+end)
+
 -- Register a server callback for giving an item from one player to another
 lib.callback.register('rsg-inventory:server:giveItem', function(source, target, item, amount, slot, info)
     -- Get the player object for the source (the giver)

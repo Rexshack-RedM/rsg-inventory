@@ -1,3 +1,25 @@
+-- CSRF token for NUI callbacks (JS → Lua direction)
+local callbackToken = nil
+
+local function generateToken()
+    callbackToken = tostring(math.random(100000, 999999)) .. tostring(GetGameTimer())
+    return callbackToken
+end
+
+local function validateToken(token)
+    if not token or not callbackToken or token ~= callbackToken then return false end
+    return true
+end
+
+-- Shared functions for events.lua / trade_callbacks.lua (same-resource, no exports needed)
+_G.GenerateInventoryCbToken = function()
+    return generateToken()
+end
+
+_G.ValidateInventoryCbToken = function(token)
+    return validateToken(token)
+end
+
 --- Returns the local player ID for a given server ID
 ---@param serverId number The server ID of the player
 ---@return number|nil The local player ID if found, nil otherwise
@@ -27,9 +49,10 @@ local function GetNearbyPlayers(maxDistance)
                 local dist = #(GetEntityCoords(ped) - myCoords)
                 if dist <= maxDist then
                     local sid = GetPlayerServerId(pid)
+                    local playerName = lib.callback.await('rsg-inventory:server:getPlayerName', false, sid)
                     options[#options+1] = {
                         value = sid,
-                        label = "Player : " .. sid,
+                        label = playerName or "Player : " .. sid,
                     }
                 end
             end
@@ -64,12 +87,14 @@ end
 
 --- NUI callback to attempt a purchase
 RegisterNUICallback('AttemptPurchase', function(data, cb)
+    if not validateToken(data and data.token) then cb(false) return end
     local ok = lib.callback.await('rsg-inventory:server:attemptPurchase', false, data)
     cb(ok)
 end)
 
 --- NUI callback to close the inventory
 RegisterNUICallback('CloseInventory', function(data, cb)
+    if not validateToken(data and data.token) then cb('ok') return end
     SetNuiFocus(false, false)
     if data and data.name then
         if data.name:find('trunk-') then
@@ -85,6 +110,7 @@ end)
 
 --- NUI callback to use an item
 RegisterNUICallback('UseItem', function(data, cb)
+    if not validateToken(data and data.token) then cb('ok') return end
     if data and data.item then
         TriggerServerEvent('rsg-inventory:server:useItem', data.item)
     end
@@ -93,6 +119,7 @@ end)
 
 --- NUI callback to move items between inventories
 RegisterNUICallback('SetInventoryData', function(data, cb)
+    if not validateToken(data and data.token) then cb('ok') return end
     if data then
         TriggerServerEvent('rsg-inventory:server:SetInventoryData',
             data.fromInventory, data.toInventory,
@@ -105,6 +132,7 @@ end)
 
 --- NUI callback to give an item to another player
 RegisterNUICallback('GiveItem', function(data, cb)
+    if not validateToken(data and data.token) then cb(false) return end
     if not data or not data.item or not data.item.name then
         cb(false)
         return
@@ -186,7 +214,8 @@ RegisterNUICallback('GiveItem', function(data, cb)
 end)
 
 --- NUI callback to request the amount of an item to give
-RegisterNUICallback('GiveItemAmount', function(_, cb)
+RegisterNUICallback('GiveItemAmount', function(data, cb)
+    if not validateToken(data and data.token) then cb(0) return end
     local input = lib.inputDialog(locale('info.enter_amount'), {
         { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
     })

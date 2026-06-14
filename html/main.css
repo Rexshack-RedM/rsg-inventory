@@ -1235,3 +1235,200 @@ div {
     color: #ccc;
     font-size: 0.9vh;
 }
+
+/* -------- Trade UI -------- */
+.trade-container {
+    position: absolute;
+    top: 50%;
+    right: calc(14vw + var(--bg-width) / 2);
+    transform: translate(50%, -50%);
+    width: 42vw;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.trade-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url(./assets/background.png);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: -1;
+}
+
+.trade-header {
+    width: 90%;
+    text-align: center;
+    padding: 1.5vh 0 0.5vh 0;
+    color: white;
+    font-family: 'RDR Lino', sans-serif;
+    font-size: 1.8vh;
+    letter-spacing: 0.2vh;
+}
+
+.trade-panels {
+    display: flex;
+    width: 90%;
+    gap: 1vw;
+    padding: 1vh 0;
+    justify-content: space-between;
+}
+
+.trade-panel {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 0.12vh solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.4vh;
+    min-height: 20vh;
+    max-height: 30vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.trade-panel-title {
+    color: white;
+    font-family: 'RDR Lino', sans-serif;
+    font-size: 1.4vh;
+    text-align: center;
+    padding: 0.8vh;
+    border-bottom: 0.12vh solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5vw;
+}
+
+.trade-accepted-badge {
+    background-color: #2a6433;
+    color: white;
+    font-size: 1vh;
+    padding: 0.2vh 0.6vh;
+    border-radius: 0.3vh;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.trade-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3vw;
+    padding: 0.5vh;
+    overflow-y: auto;
+    flex: 1;
+    align-content: flex-start;
+}
+
+.trade-item-slot {
+    width: calc(25% - 0.3vw);
+    aspect-ratio: 1 / 1;
+    background-image: url(./assets/img-item.png);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.trade-item-slot:hover {
+    background-image: url(./assets/img-item-hover.png);
+    opacity: 0.8;
+}
+
+.trade-item-img {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 60%;
+}
+
+.trade-item-img img {
+    width: 60%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.trade-item-amount {
+    position: absolute;
+    top: 0.2vh;
+    right: 0.2vh;
+    color: white;
+    font-size: 0.8vh;
+    font-weight: bold;
+}
+
+.trade-item-label {
+    color: white;
+    font-size: 0.7vh;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 90%;
+    position: absolute;
+    bottom: 0.2vh;
+}
+
+.trade-empty {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.2vh;
+    text-align: center;
+    width: 100%;
+    padding: 3vh 0;
+}
+
+.trade-buttons {
+    display: flex;
+    gap: 1vw;
+    padding: 1vh 0 1.5vh 0;
+    width: 90%;
+    justify-content: center;
+}
+
+.trade-confirm-btn,
+.trade-cancel-btn {
+    flex: 1;
+    max-width: 12vw;
+    height: 3.5vh;
+    font-family: 'RDR Lino', sans-serif;
+    font-size: 1.4vh;
+    letter-spacing: 0.1vh;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #e5e5e5;
+}
+
+.trade-confirm-btn {
+    background-image: url(./assets/close_btn.png);
+}
+
+.trade-confirm-btn:hover:not(:disabled) {
+    background-image: url(./assets/close_btn_hover.png);
+}
+
+.trade-confirm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.trade-cancel-btn {
+    background-image: url(./assets/close_btn.png);
+}
+
+.trade-cancel-btn:hover {
+    background-image: url(./assets/close_btn_hover.png);
+}

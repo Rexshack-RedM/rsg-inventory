@@ -5,7 +5,7 @@ ox_lib 'locale'
 lua54 'yes'
 
 description 'rsg-inventory'
-version '2.7.5'
+version '2.8.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -21,6 +21,9 @@ client_scripts {
     'client/drops/events.lua',
     'client/ui/events.lua',
     'client/ui/callbacks.lua',
+    'client/ui/trade_events.lua',
+    'client/ui/trade_callbacks.lua',
+    'client/ui/trade_target.lua',
     'client/drops/ui/callbacks.lua',
     'client/main.lua',
     'client/drops/loops.lua',

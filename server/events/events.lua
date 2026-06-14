@@ -126,16 +126,24 @@ RegisterNetEvent('rsg-inventory:server:updateHotbar', function()
 end)
 
 
+-- Rate limiting for inventory move/split/swap
+local setInventoryCooldowns = {}
+
 --[[ 
     Server Event: Move or swap items between inventories
     Handles stacking, splitting, moving, and swapping items between inventories
 --]]
 RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory, toInventory, fromSlot, toSlot, fromAmount, toAmount)
+    -- Rate limit per player (100ms)
+    local src = source
+    local now = GetGameTimer()
+    if setInventoryCooldowns[src] and now - setInventoryCooldowns[src] < 100 then return end
+    setInventoryCooldowns[src] = now
+
     -- Prevent moving items to shops
     if toInventory:find('shop-') then return end
     if not fromInventory or not toInventory or not fromSlot or not toSlot or not fromAmount or not toAmount then return end
 
-    local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     if not Player then return end
 
@@ -280,8 +288,14 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
                     if addSuccessFrom and addSuccessTo then
                         if Inventory.RemoveItem(fromId, fromItem.name, fromItemAmount, fromSlot, 'swapped item', isMove) and
                            Inventory.RemoveItem(toId, toItem.name, toItemAmount, toSlot, 'swapped item', isMove) then
-                            Inventory.AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item')
-                            Inventory.AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item')
+                            if not Inventory.AddItem(toId, fromItem.name, fromItemAmount, toSlot, fromItem.info, 'swapped item') then
+                                Inventory.AddItem(fromId, fromItem.name, fromItemAmount, fromSlot, fromItem.info, 'swap rollback')
+                                Inventory.AddItem(toId, toItem.name, toItemAmount, toSlot, toItem.info, 'swap rollback')
+                            elseif not Inventory.AddItem(fromId, toItem.name, toItemAmount, fromSlot, toItem.info, 'swapped item') then
+                                Inventory.RemoveItem(toId, fromItem.name, fromItemAmount, toSlot, 'swap rollback', true)
+                                Inventory.AddItem(fromId, fromItem.name, fromItemAmount, fromSlot, fromItem.info, 'swap rollback')
+                                Inventory.AddItem(toId, toItem.name, toItemAmount, toSlot, toItem.info, 'swap rollback')
+                            end
                         end
                     end
                 else

@@ -1,7 +1,11 @@
 -- Callback triggered when a player drops an item from their inventory
-RegisterNUICallback('DropItem', function(item, cb)
+RegisterNUICallback('DropItem', function(data, cb)
+    if not data or not data.token or not ValidateInventoryCbToken(data.token) then
+        cb(false)
+        return
+    end
     -- Request the server to create a dropped item entity and get its network ID
-    local dropId = lib.callback.await('rsg-inventory:server:createDrop', false, item)
+    local dropId = lib.callback.await('rsg-inventory:server:createDrop', false, data)
 
     -- If the drop creation failed, return false to the UI
     if not dropId then
@@ -65,7 +69,11 @@ RegisterNUICallback('DropItem', function(item, cb)
 end)
 
 -- Callback triggered when dropping an item fails (e.g., invalid or blocked)
-RegisterNUICallback('PlayDropFail', function(_, cb)
+RegisterNUICallback('PlayDropFail', function(data, cb)
+    if not data or not data.token or not ValidateInventoryCbToken(data.token) then
+        cb('ok')
+        return
+    end
     -- Play a failure sound to notify the player
     PlaySound(-1, 'Place_Prop_Fail', 'DLC_Dmod_Prop_Editor_Sounds', 0, 0, 1)
     cb('ok') -- Return success to the UI even though the drop failed

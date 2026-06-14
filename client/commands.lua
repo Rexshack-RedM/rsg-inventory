@@ -60,6 +60,23 @@ RegisterCommand(config.CommandNames.Hotbar, function()
     end
 end, false)
 
+RegisterCommand('trade', function()
+    if not canOpen() then
+        openErrorNotify()
+        return
+    end
+
+    local config = require 'shared.config'
+    local input = lib.inputDialog(locale('info.enter_player_id'), {
+        { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
+    })
+    if not input or not input[1] then return end
+    local targetId = tonumber(input[1])
+    if targetId then
+        TriggerServerEvent('rsg-inventory:server:initiateTrade', targetId)
+    end
+end, false)
+
 for i = 1, 5 do
     RegisterCommand('slot_' .. i, function()
         Inventory.UseHotbarItem(i)
