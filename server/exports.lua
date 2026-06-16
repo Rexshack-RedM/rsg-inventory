@@ -680,7 +680,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         end
         if slot then
             for _, invItem in pairs(inventory) do
-                if invItem.slot == slot and info.quality ~= nil and invItem.info.quality ~= nil and info.quality == invItem.info.quality then
+                if invItem.slot == slot and info.quality == invItem.info.quality then
                     invItem.amount = invItem.amount + amount
                     updated = true
                     break

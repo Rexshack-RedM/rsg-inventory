@@ -245,10 +245,16 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         -- Stack items if same type & quality
         if toItem and fromItem.name == toItem.name and fromItem.info.quality == toItem.info.quality then
             if toId ~= fromId then
-                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
-                    if not Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item') then
-                        Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback stacked item')
+                if Inventory.CanAddItem(toId, fromItem.name, toAmount) then
+                    if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
+                        if not Inventory.AddItem(toId, toItem.name, toAmount, toSlot, toItem.info, 'stacked item') then
+                            Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback stacked item')
+                        end
                     end
+                else
+                    Inventory.SaveStash(fromId)
+                    Inventory.CloseInventory(src, fromId)
+                    Inventory.CloseInventory(src, toId)
                 end
             else
                 if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'stacked item', isMove) then
@@ -259,10 +265,16 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
         -- Split items if moving part of the stack
         elseif not toItem and toAmount < fromAmount then
             if fromId ~= toId then
-                if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
-                    if not Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item') then
-                        Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback split item')
+                if Inventory.CanAddItem(toId, fromItem.name, toAmount) then
+                    if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
+                        if not Inventory.AddItem(toId, fromItem.name, toAmount, toSlot, fromItem.info, 'split item') then
+                            Inventory.AddItem(fromId, fromItem.name, toAmount, fromSlot, fromItem.info, 'rollback split item')
+                        end
                     end
+                else
+                    Inventory.SaveStash(fromId)
+                    Inventory.CloseInventory(src, fromId)
+                    Inventory.CloseInventory(src, toId)
                 end
             else
                 if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'split item', isMove) then
@@ -281,6 +293,8 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
                     local addSuccessTo = Inventory.CanAddItem(fromId, toItem.name, toItemAmount)
 
                     if not addSuccessFrom or not addSuccessTo then
+                        Inventory.SaveStash(fromId)
+                        Inventory.CloseInventory(src, fromId)
                         Inventory.CloseInventory(src, toId)
                     end
 
@@ -310,6 +324,8 @@ RegisterNetEvent('rsg-inventory:server:SetInventoryData', function(fromInventory
                 if toId ~= fromId then
                     local fromItemAmount = fromItem.amount
                     if not Inventory.CanAddItem(toId, fromItem.name, fromItemAmount) then
+                        Inventory.SaveStash(fromId)
+                        Inventory.CloseInventory(src, fromId)
                         Inventory.CloseInventory(src, toId)
                     else
                         if Inventory.RemoveItem(fromId, fromItem.name, toAmount, fromSlot, 'moved item', isMove) then
