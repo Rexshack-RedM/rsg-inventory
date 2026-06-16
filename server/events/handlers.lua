@@ -1,9 +1,11 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 -- Player Disconnect Handler
 AddEventHandler('playerDropped', function()
-    for _, inv in pairs(Inventories) do
+    for invId, inv in pairs(Inventories) do
         if inv.isOpen == source then
             inv.isOpen = false
+            MySQL.prepare('INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
+                { invId, json.encode(inv.items), json.encode(inv.items) })
         end
     end
 end)

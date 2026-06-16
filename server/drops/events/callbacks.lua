@@ -8,11 +8,30 @@ end)
 local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, source)
     local config = require 'shared.config'
 
-    -- Remove item from inventory if requested (for manual drops)
+    -- Create the bag entity first (before removing from inventory)
+    local bag = CreateObjectNoOffset(
+        config.ItemDropObject,
+        coords.x + 0.5,
+        coords.y + 0.5,
+        coords.z,
+        true, true, false
+    )
+
+    -- Wait for entity to spawn with timeout
+    local timeout = 100
+    while not DoesEntityExist(bag) and timeout > 0 do
+        Wait(50)
+        timeout -= 1
+    end
+
+    if not DoesEntityExist(bag) then return false end
+
+    -- Remove item from inventory only after confirming the drop entity exists
     if shouldRemoveFromInventory and source then
         -- Fetch the real item server-side by slot (don't trust client metadata)
         local realItem = Inventory.GetItemBySlot(source, itemData.fromSlot)
         if not realItem or realItem.name:lower() ~= itemData.name:lower() or realItem.amount < itemData.amount then
+            DeleteEntity(bag)
             return false
         end
 
@@ -30,6 +49,7 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
         end
 
         if not Inventory.RemoveItem(source, realItem.name, itemData.amount, itemData.fromSlot, 'dropped item', isMove) then
+            DeleteEntity(bag)
             return false
         end
 
@@ -37,24 +57,6 @@ local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, sourc
         local playerPed = GetPlayerPed(source)
         TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
     end
-
-    -- Create the bag entity
-    local bag = CreateObjectNoOffset(
-        config.ItemDropObject,
-        coords.x + 0.5,
-        coords.y + 0.5,
-        coords.z,
-        true, true, false
-    )
-
-    -- Wait for entity to spawn with timeout
-    local timeout = 100
-    while not DoesEntityExist(bag) and timeout > 0 do
-        Wait(50)
-        timeout -= 1
-    end
-
-    if not DoesEntityExist(bag) then return false end
 
     -- Get network ID and create drop ID
     local networkId = NetworkGetNetworkIdFromEntity(bag)

@@ -653,9 +653,8 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     
     local totalWeight = Inventory.GetTotalWeight(inventory)
     if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
-        -- If this is a player and not a forced add, try to drop on ground
         if player then
-            return Inventory.ForceDropItem(identifier, item, amount, info, reason or 'inventory full - weight')
+            Inventory.ForceDropItem(identifier, item, amount, info, reason or 'inventory full - weight')
         end
         return false
     end
@@ -681,7 +680,7 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
         end
         if slot then
             for _, invItem in pairs(inventory) do
-                if invItem.slot == slot and info.quality == invItem.info.quality then
+                if invItem.slot == slot and info.quality ~= nil and invItem.info.quality ~= nil and info.quality == invItem.info.quality then
                     invItem.amount = invItem.amount + amount
                     updated = true
                     break
@@ -693,9 +692,8 @@ Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
     if not updated then
         slot = slot or Inventory.GetFirstFreeSlot(inventory, inventorySlots)
         if not slot then
-            -- If this is a player and not a forced add, try to drop on ground
             if player then
-                return Inventory.ForceDropItem(identifier, item, amount, info, reason or 'inventory full - slots')
+                Inventory.ForceDropItem(identifier, item, amount, info, reason or 'inventory full - slots')
             end
             return false
         end
