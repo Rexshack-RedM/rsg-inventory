@@ -9,17 +9,28 @@ ShopsStockCache = {}
 
 CreateThread(function()
     MySQL.query('SELECT * FROM inventories', {}, function(result)
-        if result and #result > 0 then
-            for i = 1, #result do
-                local inventory = result[i]
-                local cacheKey = inventory.identifier
-                Inventories[cacheKey] = {
-                    items = json.decode(inventory.items) or {},
+        if not result or #result <= 0 then
+            return
+        end
+
+        for i = 1, #result do
+            local storedInventory = result[i]
+
+            local identifier = storedInventory.identifier
+            local items = json.decode(storedInventory.items) or {}
+
+            local inventory = Inventories[identifier]
+            if not inventory then
+                Inventories[identifier] = {
+                    items = items,
                     isOpen = false
                 }
+            else
+                inventory.items = items
             end
-            print(#result .. ' inventories successfully loaded')
         end
+
+        print(#result .. ' inventories successfully loaded')
     end)
 end)
 
