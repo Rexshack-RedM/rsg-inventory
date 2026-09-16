@@ -225,3 +225,13 @@ RegisterNUICallback('GiveItemAmount', function(data, cb)
         cb(0)
     end
 end)
+
+RegisterNUICallback('SerialCopied', function(_, cb)
+    lib.notify({
+        title = locale('info.serial_title'),
+        description = locale('info.serial_copied'),
+        type = 'success'
+    })
+    if cb then cb(1) end
+end)
+
