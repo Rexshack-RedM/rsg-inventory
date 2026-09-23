@@ -1,62 +1,48 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
--- Open drops
+
 RegisterNetEvent('rsg-inventory:server:openDrop', function(dropId)
     local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
+    local RSGPlayer = RSGCore.Functions.GetPlayer(src)
+    if not RSGPlayer or type(dropId) ~= 'string' then return end
+    if Player(src).state.inv_busy then return end
 
-    -- Get player position
-    local ped = GetPlayerPed(src)
-    local playerCoords = GetEntityCoords(ped)
-
-    -- Get the drop by ID
     local drop = Drops[dropId]
-    if not drop or drop.isOpen then return end
+    if not drop then return end
+    if drop.isOpen and drop.isOpen ~= src then
+        return TriggerClientEvent('ox_lib:notify', src, { title = locale('error.inventory_in_use'), type = 'error', duration = 4000 })
+    end
+    if #(GetEntityCoords(GetPlayerPed(src)) - drop.coords) > 2.5 then return end
 
-    -- Check if player is close enough to the drop
-    if #(playerCoords - drop.coords) > 2.5 then return end
-
-    -- Check for item decay
     Inventory.CheckItemsDecay(drop.items)
 
-    -- Format the drop inventory for the client
-    local formattedInventory = {
-        name      = dropId,
-        label     = dropId,
+    drop.isOpen = src
+    OpenedInventories[src] = dropId
+    Player(src).state.inv_busy = true
+
+    TriggerClientEvent('rsg-inventory:client:openInventory', src, RSGPlayer.PlayerData.items, {
+        name = dropId,
+        label = drop.label,
         maxweight = drop.maxweight,
-        slots     = drop.slots,
-        inventory = drop.items
-    }
-
-    -- Mark the drop as open
-    drop.isOpen = true
-
-    -- Send both player inventory and drop inventory to client
-    TriggerClientEvent('rsg-inventory:client:openInventory', src, Player.PlayerData.items, formattedInventory)
+        slots = drop.slots,
+        inventory = drop.items,
+    })
 end)
-    -- update drops
+
+--- Updates a drop's position after a player carried and placed the bag.
+--- Position comes from the server-side entity; the client value is only a fallback.
 lib.callback.register('rsg-inventory:updateDrop', function(source, dropId, coords)
-    local drop = Drops and Drops[dropId]
-    if not drop then
-        return false, 'no bag'
-    end
+    local drop = type(dropId) == 'string' and Drops[dropId]
+    if not drop then return false end
 
-    -- Validate coordinates (accepts vector3 or table with x/y/z)
-    local newCoords = (type(coords) == 'vector3' and coords)
-        or (type(coords) == 'table' and coords.x and coords.y and coords.z and vector3(coords.x, coords.y, coords.z))
-
+    local playerCoords = GetEntityCoords(GetPlayerPed(source))
+    local entity = NetworkGetEntityFromNetworkId(drop.entityId)
+    local newCoords = DoesEntityExist(entity) and GetEntityCoords(entity)
     if not newCoords then
-        return false, 'no coords'
+        if type(coords) ~= 'vector3' and not (type(coords) == 'table' and coords.x and coords.y and coords.z) then return false end
+        newCoords = vector3(coords.x, coords.y, coords.z)
     end
 
-    -- Check if player is close enough to update the drop
-    local ped = GetPlayerPed(source)
-    local pCoords = GetEntityCoords(ped)
-    if #(pCoords - newCoords) > Inventory.MAX_DIST then
-        return false, 'error distance'
-    end
-
-    -- Update drop coordinates
+    if #(playerCoords - newCoords) > Inventory.MAX_DIST then return false end
     drop.coords = newCoords
-    return true, 'Good'
+    return true
 end)

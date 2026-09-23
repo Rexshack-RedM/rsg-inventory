@@ -8,18 +8,10 @@ Shops.SetupShopItems = function(shopItems, shopData)
         for _, item in pairs(shopItems) do
             local itemInfo = RSGCore.Shared.Items[item.name:lower()]
             if itemInfo then
-                if item.amount then
-                    if shopData.persistentStock then
-                        if ShopsStockCache[shopData.name] and ShopsStockCache[shopData.name].items[itemInfo['name']] then
-                            amount = tonumber(ShopsStockCache[shopData.name].items[itemInfo['name']].stock)
-                        else 
-                            amount = item.amount
-                        end
-                    else
-                        amount = item.amount
-                    end
-                else
-                    amount = nil
+                local amount = item.amount
+                local cached = shopData.persistentStock and ShopsStockCache[shopData.name]
+                if amount and cached and cached.items[itemInfo.name] then
+                    amount = tonumber(cached.items[itemInfo.name].stock)
                 end
 
                 items[slot] = {
@@ -51,10 +43,10 @@ end
 
 Shops.SaveItemsInStock = function()
     local saveData = {}
-    for shopName, shopData in pairs(RegisteredShops) do 
+    for shopName, shopData in pairs(RegisteredShops) do
         if shopData.persistentStock then
-            for slot, item in pairs(shopData.items) do 
-                if item.amount then 
+            for _, item in pairs(shopData.items) do
+                if item.amount then
                     saveData[#saveData + 1] = {
                         shop_name = shopName,
                         item_name = item.name,
@@ -87,18 +79,11 @@ end
 Shops.LoadItemsInStock = function()
     local query = "SELECT shop_name, item_name, stock FROM shop_stock"
 
-    MySQL.query(query, {}, function(result)
-        if not result or #result == 0 then return end
+    local result = MySQL.query.await(query)
+    if not result then return end
 
-        for _, row in ipairs(result) do
-            if not ShopsStockCache[row.shop_name] then
-                ShopsStockCache[row.shop_name] = { items = {} }
-            end
-
-            ShopsStockCache[row.shop_name].items[row.item_name] = {
-                name = row.item_name,
-                stock = row.stock
-            }
-        end
-    end)
+    for _, row in ipairs(result) do
+        ShopsStockCache[row.shop_name] = ShopsStockCache[row.shop_name] or { items = {} }
+        ShopsStockCache[row.shop_name].items[row.item_name] = { name = row.item_name, stock = row.stock }
+    end
 end

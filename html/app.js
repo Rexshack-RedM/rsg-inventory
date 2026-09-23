@@ -322,6 +322,21 @@ const InventoryContainer = Vue.createApp({
                 console.error("Error closing inventory:", error);
             }
         },
+        toSlotMap(items) {
+            const map = {};
+            if (!items) return map;
+            for (const item of Object.values(items)) {
+                if (item && item.slot) map[item.slot] = item;
+            }
+            return map;
+        },
+        refreshInventories(data) {
+            this.playerInventory = this.toSlotMap(data.inventory);
+            if (data.otherInventory && this.otherInventoryName && !this.isShopInventory) {
+                this.otherInventory = this.toSlotMap(data.otherInventory);
+            }
+            this.busy = false;
+        },
         clearTransferAmount() {
             this.transferAmount = null;
         },
@@ -417,23 +432,18 @@ const InventoryContainer = Vue.createApp({
                 return;
             }
 
-            const totalWeightAfterTransfer = this.otherInventoryWeight + sourceItem.weight * amountToTransfer;
-            if (totalWeightAfterTransfer > this.otherInventoryMaxWeight) {
+            const toPlayer = sourceInventoryType !== "player";
+            const totalWeightAfterTransfer = (toPlayer ? this.playerWeight : this.otherInventoryWeight) + sourceItem.weight * amountToTransfer;
+            if (totalWeightAfterTransfer > (toPlayer ? this.maxWeight : this.otherInventoryMaxWeight)) {
                 this.inventoryError(item.slot);
                 this.busy = false;
                 return;
             }
 
-            if (this.playerInventory != targetInventory) {
-                if (this.findNextAvailableSlot(targetInventory) > this.otherInventorySlots) {
-                    this.inventoryError(item.slot);
-                    this.busy = false;
-                    return;
-                }
-            }
+            const targetMaxSlots = targetInventory === this.playerInventory ? this.totalSlots : this.otherInventorySlots;
 
             if (item.unique) {
-                targetSlot = this.findNextAvailableSlot(targetInventory);
+                targetSlot = this.findNextAvailableSlot(targetInventory, targetMaxSlots);
                 if (targetSlot === null) {
                     this.inventoryError(item.slot);
                     this.busy = false;
@@ -460,7 +470,7 @@ const InventoryContainer = Vue.createApp({
                         amount: amountToTransfer,
                     };
 
-                    targetSlot = this.findNextAvailableSlot(targetInventory);
+                    targetSlot = this.findNextAvailableSlot(targetInventory, targetMaxSlots);
                     if (targetSlot === null) {
                         this.inventoryError(item.slot);
                         this.busy = false;
@@ -791,7 +801,7 @@ const InventoryContainer = Vue.createApp({
                                 amountToGive = item.amount;
                                 break;
                             case "enteramount":
-                                const amounttt = await axios.post("https://rsg-inventory/GiveItemAmount")
+                                const amounttt = await axios.post("https://rsg-inventory/GiveItemAmount", {})
                                 amountToGive = amounttt.data;
                                 break;
                             default:
@@ -805,6 +815,11 @@ const InventoryContainer = Vue.createApp({
                         return;
                     }
 
+                    amountToGive = Math.floor(Number(amountToGive) || 0);
+                    if (amountToGive < 1) {
+                        this.showContextMenu = false;
+                        return;
+                    }
                     if (amountToGive > item.amount) {
                         amountToGive = item.amount;
                     }
@@ -869,38 +884,6 @@ const InventoryContainer = Vue.createApp({
                 this.contextMenuItem = null;
             } else {
                 this.hideItemInfo();
-                if (item.inventory === "other") {
-                    const matchingItemKey = Object.keys(this.playerInventory).find((key) => this.playerInventory[key].name === item.name);
-                    const matchingItem = this.playerInventory[matchingItemKey];
-
-                    if (matchingItem && matchingItem.unique) {
-                        const newItemKey = Object.keys(this.playerInventory).length + 1;
-                        const newItem = {
-                            ...item,
-                            inventory: "player",
-                            amount: 1,
-                        };
-                        this.playerInventory[newItemKey] = newItem;
-                    } else if (matchingItem) {
-                        matchingItem.amount++;
-                    } else {
-                        const newItemKey = Object.keys(this.playerInventory).length + 1;
-                        const newItem = {
-                            ...item,
-                            inventory: "player",
-                            amount: 1,
-                        };
-                        this.playerInventory[newItemKey] = newItem;
-                    }
-                    item.amount--;
-
-                    if (item.amount <= 0) {
-                        const itemKey = Object.keys(this.otherInventory).find((key) => this.otherInventory[key] === item);
-                        if (itemKey) {
-                            delete this.otherInventory[itemKey];
-                        }
-                    }
-                }
                 const menuLeft = event.clientX;
                 const menuTop = event.clientY;
                 this.showContextMenu = true;
@@ -952,7 +935,7 @@ const InventoryContainer = Vue.createApp({
                                 amountToGive = selectedItem.amount;
                                 break;
                             case "enteramount":
-                                const amounttt = await axios.post("https://rsg-inventory/GiveItemAmount")
+                                const amounttt = await axios.post("https://rsg-inventory/GiveItemAmount", {})
                                 amountToGive = amounttt.data;
                                 break;
                             default:
@@ -963,8 +946,9 @@ const InventoryContainer = Vue.createApp({
                         amountToGive = quantity;
                     }
 
-                    if (amountToGive > selectedItem.amount) {
-                        console.error("Specified quantity exceeds available amount.");
+                    amountToGive = Math.floor(Number(amountToGive) || 0);
+                    if (amountToGive < 1 || amountToGive > selectedItem.amount) {
+                        this.showContextMenu = false;
                         return;
                     }
 
@@ -973,12 +957,11 @@ const InventoryContainer = Vue.createApp({
                             item: selectedItem,
                             amount: amountToGive,
                             slot: selectedItem.slot,
-                            info: selectedItem.info,
                         });
                         if (!response.data) return;
 
                         this.playerInventory[selectedItem.slot].amount -= amountToGive;
-                        if (this.playerInventory[selectedItem.slot].amount === 0) {
+                        if (this.playerInventory[selectedItem.slot].amount <= 0) {
                             delete this.playerInventory[selectedItem.slot];
                         }
                     } catch (error) {
@@ -990,8 +973,8 @@ const InventoryContainer = Vue.createApp({
             }
             this.showContextMenu = false;
         },
-        findNextAvailableSlot(inventory) {
-            for (let slot = 1; slot <= this.totalSlots; slot++) {
+        findNextAvailableSlot(inventory, maxSlots = this.totalSlots) {
+            for (let slot = 1; slot <= maxSlots; slot++) {
                 if (!inventory[slot]) {
                     return slot;
                 }
@@ -1003,23 +986,24 @@ const InventoryContainer = Vue.createApp({
             let amount = 1;
             if (item && item.amount > 1) {
                 if (splitamount == 'half') {
-                    amount = Math.ceil(item.amount / 2);
+                    amount = Math.floor(item.amount / 2);
                 } else if (splitamount == 'enteramount') {
-                    const inputAmount = await axios.post("https://rsg-inventory/GiveItemAmount")
-                    amount = inputAmount.data;
-
-                    if (amount < 1) {
-                        amount = 1;
-                    } else if (amount > item.amount) {
-                        amount = item.amount;
-                    }
+                    const inputAmount = await axios.post("https://rsg-inventory/GiveItemAmount", {})
+                    amount = Math.floor(Number(inputAmount.data) || 0);
+                }
+                // a split must leave at least one item behind
+                if (amount < 1 || amount >= item.amount) {
+                    this.showContextMenu = false;
+                    return;
                 }
 
                 const originalSlot = Object.keys(inventoryRef).find((key) => inventoryRef[key] === item);
                 if (originalSlot !== undefined) {
                     const newItem = { ...item, amount: amount };
-                    const nextSlot = this.findNextAvailableSlot(inventoryRef);
+                    const maxSlots = inventoryType === "player" ? this.totalSlots : this.otherInventorySlots;
+                    const nextSlot = this.findNextAvailableSlot(inventoryRef, maxSlots);
                     if (nextSlot !== null) {
+                        newItem.slot = nextSlot;
                         inventoryRef[nextSlot] = newItem;
                         inventoryRef[originalSlot] = { ...item, amount: item.amount - amount };
                         this.postInventoryData(inventoryType, inventoryType, originalSlot, nextSlot, item.amount, newItem.amount);
@@ -1070,7 +1054,7 @@ const InventoryContainer = Vue.createApp({
 
             this.notificationAmount = itemData.amount || 1;
             const desc = item.info?.description || item.description || "";
-            this.notificationDescription = typeof desc === 'string' ? desc : '';
+            this.notificationDescription = typeof desc === 'string' ? this.escapeHtml(desc).replace(/\n/g, "<br>") : '';
             this.showNotification = true;
 
             if (this.notificationTimeout) {
@@ -1083,17 +1067,6 @@ const InventoryContainer = Vue.createApp({
                 this.notificationTimeout = null;
             }, 3000);
         },
-        /* showRequiredItem(data) {
-            if (data.toggle) {
-                this.requiredItems = data.items;
-                this.showRequiredItems = true;
-            } else {
-                setTimeout(() => {
-                    this.showRequiredItems = false;
-                    this.requiredItems = [];
-                }, 100);
-            }
-        }, */
         inventoryError(slot) {
             const slotElement = document.getElementById(`slot-${slot}`);
             if (slotElement) {
@@ -1122,135 +1095,47 @@ const InventoryContainer = Vue.createApp({
                 document.body.removeChild(el);
             }
         },
-        /* openWeaponAttachments() {
-            if (!this.contextMenuItem) {
-                return;
-            }
-            if (!this.showWeaponAttachments) {
-                this.selectedWeapon = this.contextMenuItem;
-                this.showWeaponAttachments = true;
-                axios
-                    .post("https://rsg-inventory/GetWeaponData", JSON.stringify({ weapon: this.selectedWeapon.name, ItemData: this.selectedWeapon }))
-                    .then((response) => {
-                        const data = response.data;
-                        if (data.AttachmentData !== null && data.AttachmentData !== undefined) {
-                            if (data.AttachmentData.length > 0) {
-                                this.selectedWeaponAttachments = data.AttachmentData;
-                            }
-                        }
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    });
-            } else {
-                this.showWeaponAttachments = false;
-                this.selectedWeapon = null;
-                this.selectedWeaponAttachments = [];
-            }
-        },
-        removeAttachment(attachment) {
-            if (!this.selectedWeapon) {
-                return;
-            }
-            const index = this.selectedWeaponAttachments.indexOf(attachment);
-            if (index !== -1) {
-                this.selectedWeaponAttachments.splice(index, 1);
-            }
-            axios
-                .post("https://rsg-inventory/RemoveAttachment", JSON.stringify({ AttachmentData: attachment, WeaponData: this.selectedWeapon }))
-                .then((response) => {
-                    this.selectedWeapon = response.data.WeaponData;
-                    if (response.data.Attachments) {
-                        this.selectedWeaponAttachments = response.data.Attachments;
-                    }
-                    const nextSlot = this.findNextAvailableSlot(this.playerInventory);
-                    if (nextSlot !== null) {
-                        response.data.itemInfo.amount = 1;
-                        this.playerInventory[nextSlot] = response.data.itemInfo;
-                    }
-                })
-                .catch((error) => {
-                    console.error(error);
-                    this.selectedWeaponAttachments.splice(index, 0, attachment);
-                });
-        }, */
-        generateTooltipContent(item) {
-            if (!item) {
-                return "";
-            }
-            let content = `<div class="custom-tooltip"><div class="tooltip-header">${item.label}</div><hr class="tooltip-divider">`;
-
-            const description = item.info?.description?.replace(/\n/g, "<br>")
-                || item.description?.replace(/\n/g, "<br>")
-                || "No description available.";
-
-            const renderInfo = (obj, indent = 0) => {
-                let html = "";
-                for (const [key, value] of Object.entries(obj)) {
-                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components") continue;
-
-                    const padding = "&nbsp;".repeat(indent * 4);
-
-                    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                        html += `<div class="tooltip-info"><span class="tooltip-info-key">${padding}${this.formatKey(key)}:</span></div>`;
-                        html += renderInfo(value, indent + 1);
-                    } else {
-                        html += `<div class="tooltip-info"><span class="tooltip-info-key">${padding}${this.formatKey(key)}:</span> ${value}</div>`;
-                    }
-                }
-                return html;
-            };
-
-
-            if (item.info && Object.keys(item.info).length > 0) {
-                content += renderInfo(item.info);
-            }
-
-
-            content += `<div class="tooltip-description">${description}</div>`;
-            content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight != null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
-            content += `</div>`;
-
-
-            return content;
+        escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
         },
         generateDynamicTooltipContent(item) {
             if (!item) {
                 return "";
             }
-            let content = "";
-
-            const description = item.info?.description?.replace(/\n/g, "<br>")
-                || item.description?.replace(/\n/g, "<br>")
-                || "";
+            const esc = (v) => this.escapeHtml(v);
+            const hidden = new Set(["description", "lastUpdate", "componentshash", "components"]);
 
             const renderInfo = (obj, indent = 0) => {
                 let html = "";
                 for (const [key, value] of Object.entries(obj)) {
-                    if (key === "description" || key === "lastUpdate" || key === "componentshash" || key === "components") continue;
-
+                    if (hidden.has(key)) continue;
                     const padding = "&nbsp;".repeat(indent * 4);
-
+                    const label = `<span class="tooltip-info-key">${padding}${esc(this.formatKey(key))}:</span>`;
                     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                        html += `<div class="tooltip-info"><span class="tooltip-info-key">${padding}${this.formatKey(key)}:</span></div>`;
-                        html += renderInfo(value, indent + 1);
+                        html += `<div class="tooltip-info">${label}</div>` + renderInfo(value, indent + 1);
                     } else {
-                        html += `<div class="tooltip-info"><span class="tooltip-info-key">${padding}${this.formatKey(key)}:</span> ${value}</div>`;
+                        html += `<div class="tooltip-info">${label} ${esc(value)}</div>`;
                     }
                 }
                 return html;
             };
 
-            if (item.info && Object.keys(item.info).length > 0) {
+            let content = "";
+            if (item.info && typeof item.info === "object" && Object.keys(item.info).length > 0) {
                 content += renderInfo(item.info);
             }
 
-            if (description) {
-                content += `<div class="tooltip-description">${description}</div>`;
+            const rawDescription = (typeof item.info?.description === "string" && item.info.description) || item.description || "";
+            if (rawDescription) {
+                content += `<div class="tooltip-description">${esc(rawDescription).replace(/\n/g, "<br>")}</div>`;
             }
 
             content += `<div class="tooltip-weight"><i class="fas fa-weight-hanging"></i> ${item.weight != null ? (item.weight / 1000).toFixed(1) : "N/A"}kg</div>`;
-
             return content;
         },
         formatKey(key) {
@@ -1375,7 +1260,7 @@ const InventoryContainer = Vue.createApp({
         async addItemToTradeWithPrompt(item) {
             if (!this.isTradeActive || !this.tradeId) return;
             try {
-                const response = await axios.post("https://rsg-inventory/GiveItemAmount");
+                const response = await axios.post("https://rsg-inventory/GiveItemAmount", {});
                 const amount = response.data;
                 if (amount && amount > 0 && amount <= item.amount) {
                     this.addItemToTrade(item, amount);
@@ -1474,9 +1359,11 @@ const InventoryContainer = Vue.createApp({
                     }
                     this.showItemNotification(event.data);
                     break;
-                /* case "requiredItem":
-                    this.showRequiredItem(event.data);
-                    break; */
+                case "refresh":
+                    if (await this.validateToken(event.data.token)) {
+                        this.refreshInventories(event.data);
+                    }
+                    break;
                 case "updateHotbar":
                     if (await this.validateToken(event.data.token)) {
                         this.hotbarItems = event.data.items;
@@ -1509,9 +1396,6 @@ const InventoryContainer = Vue.createApp({
     },
     beforeUnmount() {
         this.detachGridScrollListeners();
-        window.removeEventListener("mousemove", () => { });
-        window.removeEventListener("keydown", () => { });
-        window.removeEventListener("message", () => { });
     },
 });
 

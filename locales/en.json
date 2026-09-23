@@ -36,7 +36,12 @@
     "stash_too_far": "Stash is too far away",
     "inventory_in_use": "This inventory is currently in use",
     "source_inv_too_far": "Source inventory is too far from you.",
-    "target_inv_too_far": "Target inventory is too far from you."
+    "target_inv_too_far": "Target inventory is too far from you.",
+    "cannot_use_in_melee": "You cannot use that while fighting",
+    "not_enough_space": "Not enough space for that",
+    "no_permission": "You do not have permission to do that",
+    "target_cannot_carry": "That player cannot carry this",
+    "invalid_amount": "Invalid amount"
   },
   "info": {
     "enter_amount": "Enter amount",
@@ -61,7 +66,8 @@
     "param_item": "Item name (not the label)",
     "param_amount": "Amount to give",
     "loot_bag": "Loot bag",
-    "drop_bag": "Drop bag"
+    "drop_bag": "Drop bag",
+    "drop_label": "Dropped Bag"
   },
   "ui": {
     "title": "RSG Inventory",
@@ -92,6 +98,24 @@
     "waiting": "Waiting for other player...",
     "cancel": "Cancel",
     "accepted": "Accepted",
-    "no_items_offered": "No items offered"
+    "no_items_offered": "No items offered",
+    "player": "Player",
+    "no_description": "No description available."
+  },
+  "trade": {
+    "title": "Trade",
+    "request_title": "Trade Request",
+    "accept_from": "Accept trade from %s",
+    "decline_from": "Decline trade from %s",
+    "request_sent": "Trade request sent to %s",
+    "request_declined": "Trade request declined",
+    "already_trading": "You are already in a trade",
+    "target_already_trading": "That player is already in a trade",
+    "cannot_trade_now": "You cannot trade right now",
+    "target_cannot_trade": "That player cannot trade right now",
+    "too_many_items": "You cannot offer any more items",
+    "completed": "Trade completed successfully",
+    "failed_item": "Trade failed - %s could not be transferred",
+    "cancelled": "Trade cancelled"
   }
 }

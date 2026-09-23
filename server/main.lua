@@ -1,49 +1,63 @@
-
 -- globals
 math = lib.math
---
+
 Inventories = {}
 Drops = {}
 RegisteredShops = {}
 ShopsStockCache = {}
-
-CreateThread(function()
-    MySQL.query('SELECT * FROM inventories', {}, function(result)
-        if not result or #result <= 0 then
-            return
-        end
-
-        for i = 1, #result do
-            local storedInventory = result[i]
-
-            local identifier = storedInventory.identifier
-            local items = json.decode(storedInventory.items) or {}
-
-            local inventory = Inventories[identifier]
-            if not inventory then
-                Inventories[identifier] = {
-                    items = items,
-                    isOpen = false
-                }
-            else
-                inventory.items = items
-            end
-        end
-
-        print(#result .. ' inventories successfully loaded')
-    end)
-end)
+OpenedInventories = {} -- [source] = identifier of the secondary inventory the player currently has open
 
 local config = require 'shared.config'
-CreateThread(function()
-    while true do
-        for k, v in pairs(Drops) do
-            if v and (v.createdTime + (config.CleanupDropTime * 60) < os.time()) and not Drops[k].isOpen then
-                local entity = NetworkGetEntityFromNetworkId(v.entityId)
-                if DoesEntityExist(entity) then DeleteEntity(entity) end
-                Drops[k] = nil
+
+--- Re-keys an items table by numeric slot (JSON round-trips turn sparse slot keys into strings)
+--- @param items table
+--- @return table
+function NormalizeItems(items)
+    local normalized = {}
+    if type(items) ~= 'table' then return normalized end
+    for key, item in pairs(items) do
+        if type(item) == 'table' then
+            local slot = tonumber(item.slot) or tonumber(key)
+            if slot then
+                item.slot = slot
+                item.info = type(item.info) == 'table' and item.info or {}
+                normalized[slot] = item
             end
         end
+    end
+    return normalized
+end
+
+CreateThread(function()
+    local result = MySQL.query.await('SELECT identifier, items FROM inventories')
+    if not result then return end
+
+    for i = 1, #result do
+        local row = result[i]
+        local items = NormalizeItems(json.decode(row.items or '[]'))
+        local inventory = Inventories[row.identifier]
+        if inventory then
+            inventory.items = items
+        else
+            Inventories[row.identifier] = { items = items, isOpen = false }
+        end
+    end
+
+    print(('%s inventories successfully loaded'):format(#result))
+end)
+
+-- Cleanup expired drops
+CreateThread(function()
+    while true do
         Wait(config.CleanupDropInterval * 60000)
+        local now = os.time()
+        for dropId, drop in pairs(Drops) do
+            if not drop.isOpen and drop.createdTime + (config.CleanupDropTime * 60) < now then
+                local entity = NetworkGetEntityFromNetworkId(drop.entityId)
+                if DoesEntityExist(entity) then DeleteEntity(entity) end
+                TriggerClientEvent('rsg-inventory:client:removeDropTarget', -1, drop.entityId)
+                Drops[dropId] = nil
+            end
+        end
     end
 end)

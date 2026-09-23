@@ -23,34 +23,19 @@ Inventory.InitializeInventory = function(inventoryId, data)
 end
 
 Inventory.GetItem = function(inventoryId, src, slot)
-    local items = {}
+    local items
     if inventoryId == 'player' then
         local Player = RSGCore.Functions.GetPlayer(src)
-        if Player and Player.PlayerData.items then
-            items = Player.PlayerData.items
-        end
-    elseif inventoryId:find('otherplayer-') then
-        local targetId = tonumber(inventoryId:match('otherplayer%-(.+)'))
-        local targetPlayer = RSGCore.Functions.GetPlayer(targetId)
-        if targetPlayer and targetPlayer.PlayerData.items then
-            items = targetPlayer.PlayerData.items
-        end
-    elseif inventoryId:find('drop-') == 1 then
-        if Drops[inventoryId] and Drops[inventoryId]['items'] then
-            items = Drops[inventoryId]['items']
-        end
-    else
-        if Inventories[inventoryId] and Inventories[inventoryId]['items'] then
-            items = Inventories[inventoryId]['items']
-        end
+        items = Player and Player.PlayerData.items
+    elseif inventoryId:find('^otherplayer%-') then
+        local targetPlayer = RSGCore.Functions.GetPlayer(tonumber(inventoryId:match('^otherplayer%-(%d+)$')))
+        items = targetPlayer and targetPlayer.PlayerData.items
+    elseif Drops[inventoryId] then
+        items = Drops[inventoryId].items
+    elseif Inventories[inventoryId] then
+        items = Inventories[inventoryId].items
     end
-
-    for _, item in pairs(items) do
-        if item.slot == slot then
-            return item
-        end
-    end
-    return nil
+    return items and items[slot] or nil
 end
 
 Inventory.GetFirstFreeSlot = function(items, maxSlots)
@@ -65,9 +50,9 @@ end
 Inventory.GetIdentifier = function(inventoryId, src)
     if inventoryId == 'player' then
         return src, Inventory.TYPES.PLAYER
-    elseif inventoryId:find('otherplayer-') then
-        return tonumber(inventoryId:match('otherplayer%-(.+)')), Inventory.TYPES.OTHER_PLAYER
-    elseif inventoryId:find('drop-') then
+    elseif inventoryId:find('^otherplayer%-') then
+        return tonumber(inventoryId:match('^otherplayer%-(%d+)$')), Inventory.TYPES.OTHER_PLAYER
+    elseif inventoryId:find('^drop%-') then
         return inventoryId, Inventory.TYPES.DROP
     else
         return inventoryId, Inventory.TYPES.STASH
@@ -93,7 +78,7 @@ end
 Inventory.GetFirstSlotByItemWithQuality = function(items, itemName, quality)
     if not items then return end
     for slot, item in pairs(items) do
-        if item.name:lower() == itemName:lower() and item.info.quality == quality then
+        if item.name:lower() == itemName:lower() and item.info and item.info.quality == quality then
             return tonumber(slot)
         end
     end
@@ -113,6 +98,7 @@ Inventory.CheckItemDecay = function(item, itemInfo, currentTime, decayRateModifi
     currentTime = currentTime or os.time()
 
     if not itemInfo or not itemInfo.decay then return false, nil, false end
+    if type(item.info) ~= 'table' then item.info = {} end
 
     if not item.info.quality or not item.info.lastUpdate then
         item.info.quality = item.info.quality or 100
@@ -160,7 +146,7 @@ Inventory.CheckPlayerItemsDecay = function(player)
 
     if needsUpdate then
         player.Functions.SetPlayerData('items', player.PlayerData.items)
-        for _, item in pairs(removedItems) do 
+        for _, item in pairs(removedItems) do
             TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name], 'remove', item.amount)
         end
     end
@@ -169,14 +155,13 @@ end
 
 --- @param player table The player object.
 --- @param item table item object.
-Inventory.CheckPlayerItemDecay = function(player, item) 
+Inventory.CheckPlayerItemDecay = function(player, item)
     local updated, quality, delete = Inventory.CheckItemDecay(item)
     if updated then
         if delete and quality <= 0 then
             player.PlayerData.items[item.slot] = nil
             TriggerClientEvent('rsg-inventory:client:ItemBox', player.PlayerData.source, RSGCore.Shared.Items[item.name], 'remove', item.amount)
         end
-        
         player.Functions.SetPlayerData('items', player.PlayerData.items)
     end
 
@@ -188,12 +173,12 @@ end
 --- @param src? any
 --- @return vector3|nil
 Inventory.GetCoords = function(inventoryId, src)
-    local _,inventoryType = Inventory.GetIdentifier(inventoryId)
+    local id, inventoryType = Inventory.GetIdentifier(inventoryId, src)
     if inventoryType == Inventory.TYPES.PLAYER then
         local ped = GetPlayerPed(src)
         return DoesEntityExist(ped) and GetEntityCoords(ped)
     elseif inventoryType == Inventory.TYPES.OTHER_PLAYER then
-        local ped = GetPlayerPed(_)
+        local ped = GetPlayerPed(id)
         return DoesEntityExist(ped) and GetEntityCoords(ped)
     elseif inventoryType == Inventory.TYPES.DROP then
         return Drops[inventoryId]?.coords
@@ -202,4 +187,77 @@ Inventory.GetCoords = function(inventoryId, src)
     else
         warn(("Unexpected inventory type - '%s'"):format(inventoryType))
     end
+end
+
+
+local RESTRICTED_STASHES = { 'police', 'marshal', 'gang', 'admin', 'evidence' }
+
+--- Returns false if the stash identifier is restricted and the player lacks access.
+--- @param src number
+--- @param Player table RSGCore player
+--- @param identifier string
+--- @return boolean
+Inventory.HasStashAccess = function(src, Player, identifier)
+    for _, prefix in ipairs(RESTRICTED_STASHES) do
+        if identifier:find('^' .. prefix .. '%-') then
+            if prefix == 'police' or prefix == 'marshal' then
+                local job = Player.PlayerData.job and Player.PlayerData.job.name
+                return RSGCore.Functions.HasPermission(src, 'police') or job == 'police' or job == 'marshal'
+            elseif prefix == 'gang' then
+                -- e.g. 'gang-lemoyne-stash' -> 'lemoyne'
+                local gangName = identifier:match('^gang%-(.+)%-')
+                return Player.PlayerData.gang ~= nil and Player.PlayerData.gang.name == gangName
+            end
+            return RSGCore.Functions.HasPermission(src, 'admin')
+        end
+    end
+    return true
+end
+
+--- Validates that src may loot/search the target player.
+--- Dead players can be looted by anyone; handcuffed players only by law enforcement.
+--- @return boolean ok, string|nil localeKey
+Inventory.CanAccessOtherPlayer = function(src, Player, targetId)
+    local Target = RSGCore.Functions.GetPlayer(targetId)
+    if not Target or targetId == src then return false end
+    local srcPed, targetPed = GetPlayerPed(src), GetPlayerPed(targetId)
+    if not DoesEntityExist(srcPed) or not DoesEntityExist(targetPed) then return false end
+    if #(GetEntityCoords(srcPed) - GetEntityCoords(targetPed)) > 3.0 then
+        return false, 'error.player_too_far'
+    end
+    local meta = Target.PlayerData.metadata
+    if meta.isdead then return true end
+    if not meta.ishandcuffed then return false, 'error.target_needs_restrained' end
+    local job = Player.PlayerData.job and Player.PlayerData.job.name
+    if RSGCore.Functions.HasPermission(src, 'police') or job == 'police' or job == 'marshal' then
+        return true
+    end
+    return false, 'error.no_permission'
+end
+
+--- Pushes the current state of the player's (and the open secondary) inventory to the NUI.
+--- Used to resync the UI after a server-side rejection.
+Inventory.RefreshClient = function(src)
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player then return end
+    local otherId = OpenedInventories[src]
+    local otherItems
+    if otherId then
+        if otherId:find('^otherplayer%-') then
+            local target = RSGCore.Functions.GetPlayer(tonumber(otherId:match('^otherplayer%-(%d+)$')))
+            otherItems = target and target.PlayerData.items
+        elseif Drops[otherId] then
+            otherItems = Drops[otherId].items
+        elseif Inventories[otherId] then
+            otherItems = Inventories[otherId].items
+        end
+    end
+    TriggerClientEvent('rsg-inventory:client:refreshInventory', src, Player.PlayerData.items, otherItems)
+end
+
+--- Persists a stash to the database.
+Inventory.PersistStash = function(identifier, inv)
+    local items = json.encode(inv.items)
+    MySQL.prepare('INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?',
+        { identifier, items, items })
 end

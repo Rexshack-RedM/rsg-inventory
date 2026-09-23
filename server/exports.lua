@@ -21,7 +21,7 @@ Inventory.LoadInventory = function(source, citizenid)
                 loadedInventory[item.slot] = {
                     name = itemInfo['name'],
                     amount = item.amount,
-                    info = item.info or '',
+                    info = type(item.info) == 'table' and item.info or {},
                     label = itemInfo['label'],
                     description = itemInfo['description'] or '',
                     weight = itemInfo['weight'],
@@ -180,7 +180,9 @@ exports('GetFirstSlotByItem', Inventory.GetFirstSlotByItem)
 Inventory.GetItemBySlot = function(source, slot)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return end
-    local item = Player.PlayerData.items[tonumber(slot)]
+    slot = tonumber(slot)
+    if not slot then return end
+    local item = Player.PlayerData.items[slot]
     if not item then return end
     return Inventory.CheckPlayerItemDecay(Player, item)
 end
@@ -294,49 +296,39 @@ exports('GetItemCount', Inventory.GetItemCount)
 --- @return boolean - Returns true if the item can be added, false otherwise.
 --- @return string|nil - Returns a string indicating the reason why the item cannot be added (e.g., 'weight' or 'slots'), or nil if it can be added.
 Inventory.CanAddItem = function(source, item, amount)
+    amount = tonumber(amount) or 1
+    if type(item) ~= 'string' or amount <= 0 then return false end
+    local itemData = RSGCore.Shared.Items[item:lower()]
+    if not itemData then return false end
+
+    local inventory, maxWeight, maxSlots
     local Player = RSGCore.Functions.GetPlayer(source)
     if Player then
-        local itemData = RSGCore.Shared.Items[item:lower()]
-        if not itemData then return false end
-
-        local weight = itemData.weight * amount
-        local totalWeight = Inventory.GetTotalWeight(Player.PlayerData.items) + weight
-
-        if totalWeight > Player.PlayerData.weight then
-            return false, 'weight'
-        end
-
-        local slotsUsed = 0
-        for _, v in pairs(Player.PlayerData.items) do
-            if v then
-                slotsUsed = slotsUsed + 1
-            end
-        end
-        
-        if slotsUsed >= Player.PlayerData.slots then
-            return false, 'slots'
-        end
-
-        return true
-
+        inventory, maxWeight, maxSlots = Player.PlayerData.items, Player.PlayerData.weight, Player.PlayerData.slots
     elseif Inventories[source] then
-        local inventory = Inventories[source].items
-        local inventoryWeight = Inventories[source].maxweight or 250000
-        local itemData = RSGCore.Shared.Items[item:lower()]
-        
-        if not itemData then return false end
-        
-        local weight = itemData.weight * amount
-        local totalWeight = Inventory.GetTotalWeight(inventory) + weight
-        
-        if totalWeight > inventoryWeight then
-            return false, 'weight'
-        end
-
-        return true
+        inventory, maxWeight, maxSlots = Inventories[source].items, Inventories[source].maxweight, Inventories[source].slots
+    elseif Drops[source] then
+        inventory, maxWeight, maxSlots = Drops[source].items, Drops[source].maxweight, Drops[source].slots
     else
         return true
     end
+
+    if Inventory.GetTotalWeight(inventory) + (itemData.weight * amount) > (maxWeight or config.StashSize.maxweight) then
+        return false, 'weight'
+    end
+
+    -- A stackable item that already has a stack does not need a new slot
+    if not itemData.unique and not itemData.decay and Inventory.GetFirstSlotByItem(inventory, item) then
+        return true
+    end
+
+    local slotsUsed = 0
+    for _ in pairs(inventory) do slotsUsed = slotsUsed + 1 end
+    if slotsUsed >= (maxSlots or config.StashSize.slots) then
+        return false, 'slots'
+    end
+
+    return true
 end
 
 exports('CanAddItem', Inventory.CanAddItem)
@@ -361,6 +353,7 @@ exports('GetFreeWeight', Inventory.GetFreeWeight)
 
 Inventory.ClearInventory = function(source, filterItems)
     local player = RSGCore.Functions.GetPlayer(source)
+    if not player then return end
     local savedItemData = {}
     if filterItems then
         if type(filterItems) == 'string' then
@@ -429,14 +422,19 @@ end
 
 exports('HasItem', Inventory.HasItem)
 
--- CloseInventory function closes the inventory for a given source and identifier.
--- It sets the isOpen flag of the inventory identified by the given identifier to false.
--- It also sets the inv_busy flag of the player identified by the given source to false.
--- Finally, it triggers the 'rsg-inventory:client:closeInv' event for the given source.
+--- Closes the player's inventory UI and releases the lock on the secondary inventory they had open.
+--- @param source number
+--- @param identifier string|nil
 Inventory.CloseInventory = function(source, identifier)
-    if identifier and Inventories[identifier] then
-        Inventories[identifier].isOpen = false
+    identifier = identifier or OpenedInventories[source]
+    if identifier then
+        local inv = Inventories[identifier] or Drops[identifier]
+        if inv and (inv.isOpen == source or inv.isOpen == true) then
+            inv.isOpen = false
+            if Inventories[identifier] then Inventory.PersistStash(identifier, inv) end
+        end
     end
+    OpenedInventories[source] = nil
     Player(source).state.inv_busy = false
     TriggerClientEvent('rsg-inventory:client:closeInv', source)
 end
@@ -447,26 +445,31 @@ exports('CloseInventory', Inventory.CloseInventory)
 --- @param source number - The player's server ID.
 --- @param targetId number - The ID of the player whose inventory will be opened.
 Inventory.OpenInventoryById = function(source, targetId)
+    targetId = tonumber(targetId)
     local RSGPlayer = RSGCore.Functions.GetPlayer(source)
-    local TargetPlayer = RSGCore.Functions.GetPlayer(tonumber(targetId))
+    local TargetPlayer = RSGCore.Functions.GetPlayer(targetId)
     if not RSGPlayer or not TargetPlayer then return end
-    if Player(targetId).state.inv_busy then Inventory.CloseInventory(targetId) end
+
+    -- Close the target's own UI first so they cannot move items while being searched
+    if Player(targetId).state.inv_busy then
+        Inventory.CloseInventory(targetId)
+        Wait(250)
+    end
+    Player(targetId).state.inv_busy = true
+
     Inventory.CheckPlayerItemsDecay(RSGPlayer)
     Inventory.CheckPlayerItemsDecay(TargetPlayer)
-    local playerItems = RSGPlayer.PlayerData.items
-    local targetItems = TargetPlayer.PlayerData.items
+    local charinfo = TargetPlayer.PlayerData.charinfo
     local formattedInventory = {
         name = 'otherplayer-' .. targetId,
-        label = (TargetPlayer.PlayerData.charinfo and TargetPlayer.PlayerData.charinfo.firstname)
-            and (TargetPlayer.PlayerData.charinfo.firstname .. ' ' .. TargetPlayer.PlayerData.charinfo.lastname)
-            or GetPlayerName(targetId),
+        label = (charinfo and charinfo.firstname) and (charinfo.firstname .. ' ' .. charinfo.lastname) or GetPlayerName(targetId),
         maxweight = TargetPlayer.PlayerData.weight,
         slots = TargetPlayer.PlayerData.slots,
-        inventory = targetItems
+        inventory = TargetPlayer.PlayerData.items,
     }
-    Wait(1500)
-    Player(targetId).state.inv_busy = true
-    TriggerClientEvent('rsg-inventory:client:openInventory', source, playerItems, formattedInventory)
+    Player(source).state.inv_busy = true
+    OpenedInventories[source] = formattedInventory.name
+    TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items, formattedInventory)
 end
 
 exports('OpenInventoryById', Inventory.OpenInventoryById)
@@ -486,12 +489,8 @@ exports('ClearStash', Inventory.ClearStash)
 -- Save a given stash
 --- @param identifier string
 Inventory.SaveStash = function(identifier)
-    if not identifier then return end
-    local inventory = Inventories[identifier]
-    if not inventory then return end
-    local items = json.encode(inventory.items)
-    MySQL.prepare("INSERT INTO inventories (identifier, items) VALUES (?, ?) ON DUPLICATE KEY UPDATE items = ?",
-        { identifier, items, items })
+    local inventory = identifier and Inventories[identifier]
+    if inventory then Inventory.PersistStash(identifier, inventory) end
 end
 
 exports("SaveStash", Inventory.SaveStash)
@@ -506,6 +505,7 @@ Inventory.OpenInventory = function (source, identifier, data)
 
     if not identifier then
         Player(source).state.inv_busy = true
+        OpenedInventories[source] = nil
         Inventory.CheckPlayerItemsDecay(RSGPlayer)
         TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items)
         return
@@ -517,8 +517,8 @@ Inventory.OpenInventory = function (source, identifier, data)
 
     local inventory = Inventories[identifier]
 
-    if inventory and inventory.isOpen then
-        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.access_denied') or locale('error.error'), type = 'error', duration = 5000 })
+    if inventory and inventory.isOpen and inventory.isOpen ~= source then
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.inventory_in_use'), type = 'error', duration = 5000 })
         return
     end
 
@@ -542,6 +542,7 @@ Inventory.OpenInventory = function (source, identifier, data)
     }
     
     Player(source).state.inv_busy = true
+    OpenedInventories[source] = identifier
     Inventory.CheckPlayerItemsDecay(RSGPlayer)
     TriggerClientEvent('rsg-inventory:client:openInventory', source, RSGPlayer.PlayerData.items, formattedInventory)
 end
@@ -553,16 +554,13 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return false end
 
-    local ped = GetPlayerPed(source)
-    local coords = GetEntityCoords(ped)
-
-    -- Get item info
+    local coords = GetEntityCoords(GetPlayerPed(source))
     local itemInfo = RSGCore.Shared.Items[item:lower()]
     if not itemInfo then return false end
 
     -- Create item data
     local itemData = {
-        name = item,
+        name = itemInfo.name,
         amount = amount,
         info = info or {},
         slot = 1,
@@ -577,8 +575,8 @@ Inventory.ForceDropItem = function(source, item, amount, info, reason)
         combinable = itemInfo.combinable
     }
 
-    -- Use the shared drop creation function
-    local networkId = Helpers.CreateItemDrop(coords, itemData, false, nil)
+    -- Spawn the bag via the shared drop helper
+    local networkId = Helpers.CreateItemDrop(coords, itemData)
 
     if not networkId then
         TriggerClientEvent('ox_lib:notify', source, {
@@ -608,271 +606,196 @@ end
 
 exports('ForceDropItem', Inventory.ForceDropItem)
 
---- Adds an item to the player's inventory or a specific inventory.
---- @param identifier string The identifier of the player or inventory.
---- @param item string The name of the item to add.
---- @param amount number The amount of the item to add.
---- @param slot number (optional) The slot to add the item to. If not provided, it will find the first available slot.
---- @param info table (optional) Additional information about the item.
---- @param reason string (optional) The reason for adding the item.
---- @return boolean Returns true if the item was successfully added, false otherwise.
-Inventory.AddItem = function(identifier, item, amount, slot, info, reason)
-    amount = tonumber(amount) or 1
-    if amount <= 0 then
-        return false
+local function isValidAmount(amount)
+    return type(amount) == 'number' and amount > 0 and amount == math.floor(amount) and amount < 2^31
+end
+
+local function resolveInventory(identifier)
+    local player = RSGCore.Functions.GetPlayer(identifier)
+    if player then
+        return player.PlayerData.items, player.PlayerData.weight, player.PlayerData.slots, player, 1
+    elseif Inventories[identifier] then
+        local inv = Inventories[identifier]
+        return inv.items, inv.maxweight or config.StashSize.maxweight, inv.slots or config.StashSize.slots, nil, Helpers.ParseDecayRate(identifier) or 1
+    elseif Drops[identifier] then
+        local drop = Drops[identifier]
+        return drop.items, drop.maxweight or config.DropSize.maxweight, drop.slots or config.DropSize.slots, nil, 1
     end
+end
+
+local function generateSerial()
+    return RSGCore.Shared.RandomInt(2) .. RSGCore.Shared.RandomStr(3) .. RSGCore.Shared.RandomInt(1) ..
+        RSGCore.Shared.RandomStr(2) .. RSGCore.Shared.RandomInt(3) .. RSGCore.Shared.RandomStr(4)
+end
+
+local function logChange(title, colour, identifier, isPlayer, slot, item, amount, reason)
+    local invName = isPlayer and ('%s (%s)'):format(GetPlayerName(identifier), identifier) or tostring(identifier)
+    TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', title, colour,
+        ('**Inventory:** %s (Slot: %s)\n**Item:** %s\n**Amount:** %s\n**Reason:** %s\n**Resource:** %s')
+            :format(invName, slot, item, amount, reason or 'No reason specified', GetInvokingResource() or 'rsg-inventory'))
+end
+
+--- Adds an item to a player, stash or drop.
+--- @param identifier number|string Player source or inventory identifier.
+--- @param item string Item name.
+--- @param amount number Amount (positive integer, defaults to 1).
+--- @param slot number|nil Preferred slot. Falls back to a free slot if it cannot hold the item.
+--- @param info table|nil Item metadata.
+--- @param reason string|nil Log reason.
+--- @param noForceDrop boolean|nil When true, a full player inventory returns false instead of dropping the item on the ground.
+--- @return boolean success, string|nil 'dropped' when the item was placed on the ground because the player was full.
+Inventory.AddItem = function(identifier, item, amount, slot, info, reason, noForceDrop)
+    amount = tonumber(amount) or 1
+    if type(item) ~= 'string' or not isValidAmount(amount) then return false end
 
     local itemInfo = RSGCore.Shared.Items[item:lower()]
-    if not itemInfo then
-        return false
-    end
+    if not itemInfo then return false end
+    item = itemInfo.name
 
-    local inventory, inventoryWeight, inventorySlots
-    local player = RSGCore.Functions.GetPlayer(identifier)
+    local inventory, maxWeight, maxSlots, player, decayRate = resolveInventory(identifier)
+    if not inventory then return false end
 
-    if player then
-        inventory = player.PlayerData.items
-        inventoryWeight = player.PlayerData.weight
-        inventorySlots = player.PlayerData.slots
-    elseif Inventories[identifier] then
-        local decayRate = Helpers.ParseDecayRate(identifier)
-        inventory = Inventories[identifier].items
-        inventoryWeight = Inventories[identifier].maxweight
-        inventorySlots = Inventories[identifier].slots
-    elseif Drops[identifier] then
-        inventory = Drops[identifier].items
-        inventoryWeight = Drops[identifier].maxweight
-        inventorySlots = Drops[identifier].slots
-    end
+    Inventory.CheckItemsDecay(inventory, decayRate)
 
-    if not inventory then
-        return false
-    end
-    
-    Inventory.CheckItemsDecay(inventory, decayRate or 1)
-    
-    local totalWeight = Inventory.GetTotalWeight(inventory)
-    if totalWeight + (itemInfo.weight * amount) > inventoryWeight then
-        if player then
-            Inventory.ForceDropItem(identifier, item, amount, info, reason or 'inventory full - weight')
-        end
-        return false
-    end
-
-    info = info or {}
+    info = type(info) == 'table' and lib.table.deepclone(info) or {}
     if itemInfo.decay then
         info.quality = info.quality or 100
         info.lastUpdate = info.lastUpdate or os.time()
     end
+    info = lib.table.merge(lib.table.deepclone(itemInfo.info or {}), info, false)
 
-    local defaultInfo = itemInfo.info or {}
+    local function fail(why)
+        if player and not noForceDrop and Inventory.ForceDropItem(identifier, item, amount, info, reason or why) then
+            return true, 'dropped'
+        end
+        return false
+    end
 
-    info = lib.table.merge(defaultInfo, info, false)
+    if Inventory.GetTotalWeight(inventory) + (itemInfo.weight * amount) > maxWeight then
+        return fail('inventory full - weight')
+    end
 
-    local updated = false
+    slot = tonumber(slot)
+    if slot and (slot < 1 or slot > maxSlots or slot ~= math.floor(slot)) then slot = nil end
+
+    -- Try to stack onto an existing matching stack
     if not itemInfo.unique then
-        if not slot then
+        local stackSlot = slot
+        if not stackSlot then
             if itemInfo.decay or info.quality then
-                slot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality)
+                stackSlot = Inventory.GetFirstSlotByItemWithQuality(inventory, item, info.quality)
             else
-                slot = Inventory.GetFirstSlotByItem(inventory, item)
+                stackSlot = Inventory.GetFirstSlotByItem(inventory, item)
             end
         end
-        if slot then
-            for _, invItem in pairs(inventory) do
-                if invItem.slot == slot and info.quality == invItem.info.quality then
-                    invItem.amount = invItem.amount + amount
-                    updated = true
-                    break
-                end
-            end
+        local existing = stackSlot and inventory[stackSlot]
+        if existing and existing.name == item and existing.info.quality == info.quality then
+            existing.amount = existing.amount + amount
+            if player then player.Functions.SetPlayerData('items', inventory) end
+            logChange('Item Added', 'green', identifier, player, stackSlot, item, amount, reason)
+            return true
         end
     end
 
-    if not updated then
-        slot = slot or Inventory.GetFirstFreeSlot(inventory, inventorySlots)
-        if not slot then
-            if player then
-                Inventory.ForceDropItem(identifier, item, amount, info, reason or 'inventory full - slots')
-            end
-            return false
-        end
-
-        inventory[slot] = {
-            name = item,
-            amount = amount,
-            info = info,
-            label = itemInfo.label,
-            description = itemInfo.description or '',
-            weight = itemInfo.weight,
-            type = itemInfo.type,
-            unique = itemInfo.unique,
-            useable = itemInfo.useable,
-            image = itemInfo.image,
-            shouldClose = itemInfo.shouldClose,
-            slot = slot,
-            combinable = itemInfo.combinable
-        }
-
-        if itemInfo.type == 'weapon' then
-            if not inventory[slot].info.serie then
-                inventory[slot].info.serie = tostring(
-                    RSGCore.Shared.RandomInt(2) .. 
-                    RSGCore.Shared.RandomStr(3) .. 
-                    RSGCore.Shared.RandomInt(1) .. 
-                    RSGCore.Shared.RandomStr(2) .. 
-                    RSGCore.Shared.RandomInt(3) .. 
-                    RSGCore.Shared.RandomStr(4)
-                )
-            end
-            if not inventory[slot].info.quality then
-                inventory[slot].info.quality = 100
-            end
-        end
+    -- Never overwrite an occupied slot
+    if slot and inventory[slot] then slot = nil end
+    slot = slot or Inventory.GetFirstFreeSlot(inventory, maxSlots)
+    if not slot then
+        return fail('inventory full - slots')
     end
+
+    if itemInfo.type == 'weapon' then
+        info.serie = info.serie or generateSerial()
+        info.quality = info.quality or 100
+    end
+
+    inventory[slot] = {
+        name = item,
+        amount = amount,
+        info = info,
+        label = itemInfo.label,
+        description = itemInfo.description or '',
+        weight = itemInfo.weight,
+        type = itemInfo.type,
+        unique = itemInfo.unique,
+        useable = itemInfo.useable,
+        image = itemInfo.image,
+        shouldClose = itemInfo.shouldClose,
+        slot = slot,
+        combinable = itemInfo.combinable
+    }
 
     if player then player.Functions.SetPlayerData('items', inventory) end
-    local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
-    local addReason = reason or 'No reason specified'
-    local resourceName = GetInvokingResource() or 'rsg-inventory'
-    TriggerEvent(
-        'rsg-log:server:CreateLog',
-        'playerinventory',
-        'Item Added',
-        'green',
-        '**Inventory:** ' .. invName .. ' (Slot: ' .. slot .. ')\n' ..
-        '**Item:** ' .. item .. '\n' ..
-        '**Amount:** ' .. amount .. '\n' ..
-        '**Reason:** ' .. addReason .. '\n' ..
-        '**Resource:** ' .. resourceName
-    )
+    logChange('Item Added', 'green', identifier, player, slot, item, amount, reason)
     return true
 end
 
 exports('AddItem', Inventory.AddItem)
 
--- Removes an item from a player's inventory.
---- @param identifier string - The identifier of the player.
---- @param item string - The name of the item to remove.
---- @param amount number - The amount of the item to remove.
---- @param slot number - The slot number of the item in the inventory. If not provided, it will find the first slot with the item.
---- @param reason string - The reason for removing the item. Defaults to 'No reason specified' if not provided.
---- @return boolean - Returns true if the item was successfully removed, false otherwise.
+--- Removes an item from a player, stash or drop.
+--- @param identifier number|string Player source or inventory identifier.
+--- @param item string Item name.
+--- @param amount number Amount (positive integer, defaults to 1).
+--- @param slot number|nil Slot to remove from. If omitted, removes across all matching stacks.
+--- @param reason string|nil Log reason.
+--- @param isMove boolean|nil Whether the item is being moved (unequips weapons).
+--- @return boolean success
 Inventory.RemoveItem = function(identifier, item, amount, slot, reason, isMove)
-    if not RSGCore.Shared.Items[item:lower()] then
-        return false
-    end
-
-    local inventory
-    local player = RSGCore.Functions.GetPlayer(identifier)
-    local inventoryItem = nil
-
-    if player then
-        inventory = player.PlayerData.items
-    elseif Inventories[identifier] then
-        local decayRate = Helpers.ParseDecayRate(identifier)
-        inventory = Inventories[identifier].items
-    elseif Drops[identifier] then
-        inventory = Drops[identifier].items
-    end
-
-    if not inventory then
-        return false
-    end
-    
-    Inventory.CheckItemsDecay(inventory, decayRate or 1)
-
     amount = tonumber(amount) or 1
-    
+    if type(item) ~= 'string' or not isValidAmount(amount) then return false end
+
+    local itemInfo = RSGCore.Shared.Items[item:lower()]
+    if not itemInfo then return false end
+    item = item:lower()
+
+    local inventory, _, _, player, decayRate = resolveInventory(identifier)
+    if not inventory then return false end
+
+    Inventory.CheckItemsDecay(inventory, decayRate)
+
+    local removedInfo
+    slot = tonumber(slot)
     if slot then
-        slot = tonumber(slot)
-        local itemKey = nil
-
-        for key, invItem in pairs(inventory) do
-            if invItem.slot == slot then
-                inventoryItem = invItem
-                itemKey = key
-                break
-            end
-        end
-
-        if not inventoryItem or inventoryItem.name:lower() ~= item:lower() then
+        local invItem = inventory[slot]
+        if not invItem or invItem.name:lower() ~= item or invItem.amount < amount then
             return false
         end
-
-        if inventoryItem.amount < amount then
-            return false
-        end
-
-        inventoryItem.amount = inventoryItem.amount - amount
-        if inventoryItem.amount <= 0 then
-            inventory[itemKey] = nil
-        else
-            inventory[itemKey] = inventoryItem
-        end
-
+        removedInfo = invItem.info
+        invItem.amount = invItem.amount - amount
+        if invItem.amount <= 0 then inventory[slot] = nil end
     else
-        local totalRemoved = 0
+        -- Verify the full amount exists before touching anything
+        local total = 0
+        for _, invItem in pairs(inventory) do
+            if invItem.name:lower() == item then total = total + invItem.amount end
+        end
+        if total < amount then return false end
 
-        for itemKey, invItem in pairs(inventory) do
-            if invItem.name:lower() == item:lower() then
-                local available = invItem.amount
-                local removeAmount = math.min(available, amount - totalRemoved)
-                invItem.amount = invItem.amount - removeAmount
-                totalRemoved = totalRemoved + removeAmount
-                inventoryItem = invItem
-
-                if invItem.amount <= 0 then
-                    inventory[itemKey] = nil
-                else
-                    inventory[itemKey] = invItem
-                end
-
-                if totalRemoved >= amount then
-                    break
-                end
+        local remaining = amount
+        for key, invItem in pairs(inventory) do
+            if invItem.name:lower() == item then
+                local take = math.min(invItem.amount, remaining)
+                invItem.amount = invItem.amount - take
+                remaining = remaining - take
+                removedInfo = invItem.info
+                if invItem.amount <= 0 then inventory[key] = nil end
+                if remaining <= 0 then break end
             end
         end
-
-        if totalRemoved < amount then
-            return false
-        end
-
         slot = 'Multiple'
     end
 
-    if RSGCore.Shared.Items[item:lower()]['type'] == 'weapon' and player and isMove then
-        TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
-    end
-
-    if player then 
+    if player then
+        if itemInfo.type == 'weapon' and isMove then
+            TriggerClientEvent('rsg-core:client:RemoveWeaponFromTab', identifier, item)
+        end
         player.Functions.SetPlayerData('items', inventory)
-        -- Trigger event hook for external resources to handle custom 'after removal' logic
-        -- This event is not registered in rsg-inventory itself - it's for third-party resources
-        local data = {
-            amount = amount,
-            slot = slot,
-            info = inventoryItem.info
-        }
-        TriggerEvent("rsg-inventory:server:itemRemovedFromPlayerInventory", identifier, item, data, reason, isMove)
+        -- Hook for third-party resources (not handled by rsg-inventory itself)
+        TriggerEvent('rsg-inventory:server:itemRemovedFromPlayerInventory', identifier, item,
+            { amount = amount, slot = slot, info = removedInfo }, reason, isMove)
     end
 
-    local invName = player and GetPlayerName(identifier) .. ' (' .. identifier .. ')' or identifier
-    local removeReason = reason or 'No reason specified'
-    local resourceName = GetInvokingResource() or 'rsg-inventory'
-
-    TriggerEvent(
-        'rsg-log:server:CreateLog',
-        'playerinventory',
-        'Item Removed',
-        'red',
-        '**Inventory:** ' .. invName .. ' (Slot: ' .. slot .. ')\n' ..
-        '**Item:** ' .. item .. '\n' ..
-        '**Amount:** ' .. amount .. '\n' ..
-        '**Reason:** ' .. removeReason .. '\n' ..
-        '**Resource:** ' .. resourceName
-    )
-
+    logChange('Item Removed', 'red', identifier, player, slot, item, amount, reason)
     return true
 end
 
@@ -893,7 +816,8 @@ exports('GetInventory', Inventory.GetInventory)
 --- @param identifier string - The identifier of the inventory.
 --- @param data table - The data of the inventory
 Inventory.CreateInventory = function (identifier, data)
-    if Inventories[identifier] then 
+    data = data or {}
+    if Inventories[identifier] then
         if data.label then
             Inventories[identifier].label = data.label
         end
@@ -906,7 +830,7 @@ Inventory.CreateInventory = function (identifier, data)
             Inventories[identifier].slots = data.slots
         end
     else
-        Inventories[identifier] = Inventory.InitializeInventory(identifier, data)
+        Inventory.InitializeInventory(identifier, data)
     end
 end
 
