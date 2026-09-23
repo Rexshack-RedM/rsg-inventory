@@ -3,16 +3,18 @@ local RSGCore = exports['rsg-core']:GetCoreObject()
 RegisterNetEvent('rsg-inventory:client:tradeRequest', function(initiatorId, initiatorName)
     lib.registerContext({
         id = 'trade_request',
-        title = 'Trade Request',
+        title = locale('trade.request_title'),
         options = {
             {
-                title = 'Accept trade from ' .. initiatorName,
+                title = locale('trade.accept_from', initiatorName),
+                icon = 'check',
                 onSelect = function()
                     TriggerServerEvent('rsg-inventory:server:acceptTradeRequest', initiatorId)
                 end
             },
             {
-                title = 'Decline trade from ' .. initiatorName,
+                title = locale('trade.decline_from', initiatorName),
+                icon = 'xmark',
                 onSelect = function()
                     TriggerServerEvent('rsg-inventory:server:declineTradeRequest', initiatorId)
                 end
@@ -23,17 +25,13 @@ RegisterNetEvent('rsg-inventory:client:tradeRequest', function(initiatorId, init
 end)
 
 RegisterNetEvent('rsg-inventory:client:tradeRequestCancelled', function()
-
     lib.hideContext()
 end)
 
-RegisterNetEvent('rsg-inventory:client:openTrade', function(tradeId, partnerId, partnerName, items, partnerData)
-
+RegisterNetEvent('rsg-inventory:client:openTrade', function(tradeId, partnerId, partnerName, items)
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     local Player = RSGCore.Functions.GetPlayerData()
-    local config = require 'shared.config'
-
     if not IsNuiFocused() then
         SetNuiFocus(true, true)
     end
@@ -60,7 +58,6 @@ RegisterNetEvent('rsg-inventory:client:openTrade', function(tradeId, partnerId, 
 end)
 
 RegisterNetEvent('rsg-inventory:client:updateTrade', function(tradeData)
-
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     SendNUIMessage({
@@ -72,7 +69,6 @@ RegisterNetEvent('rsg-inventory:client:updateTrade', function(tradeData)
 end)
 
 RegisterNetEvent('rsg-inventory:client:cancelTrade', function()
-
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     SendNUIMessage({
@@ -83,7 +79,6 @@ RegisterNetEvent('rsg-inventory:client:cancelTrade', function()
 end)
 
 RegisterNetEvent('rsg-inventory:client:completeTrade', function()
-
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     SendNUIMessage({

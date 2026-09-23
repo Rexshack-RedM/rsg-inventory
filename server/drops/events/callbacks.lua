@@ -1,112 +1,114 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
--- Callback to get all current item drops
-lib.callback.register('rsg-inventory:server:GetCurrentDrops', function(source)
-    return Drops -- return the table containing all active drops
+local config = require 'shared.config'
+
+--- Only network ids are sent to clients (not drop contents)
+lib.callback.register('rsg-inventory:server:GetCurrentDrops', function()
+    local list = {}
+    for dropId, drop in pairs(Drops) do
+        list[dropId] = drop.entityId
+    end
+    return list
 end)
 
--- Shared function to create drops (eliminates code duplication)
-local function CreateItemDrop(coords, itemData, shouldRemoveFromInventory, source)
-    local config = require 'shared.config'
+--- Builds a clean drop item from server-side item definitions
+local function buildDropItem(name, amount, info)
+    local itemInfo = RSGCore.Shared.Items[name:lower()]
+    if not itemInfo then return end
+    return {
+        name = itemInfo.name,
+        amount = amount,
+        info = info or {},
+        slot = 1,
+        label = itemInfo.label,
+        description = itemInfo.description or '',
+        weight = itemInfo.weight,
+        type = itemInfo.type,
+        unique = itemInfo.unique,
+        useable = itemInfo.useable,
+        image = itemInfo.image,
+        shouldClose = itemInfo.shouldClose,
+        combinable = itemInfo.combinable,
+    }
+end
 
-    -- Create the bag entity first (before removing from inventory)
-    local bag = CreateObjectNoOffset(
-        config.ItemDropObject,
-        coords.x + 0.5,
-        coords.y + 0.5,
-        coords.z,
-        true, true, false
-    )
+--- Spawns a bag and registers a drop containing itemData.
+--- @param coords vector3
+--- @param itemData table built by buildDropItem
+--- @return number|false networkId
+local function CreateItemDrop(coords, itemData)
+    local bag = CreateObjectNoOffset(config.ItemDropObject, coords.x + 0.5, coords.y + 0.5, coords.z, true, true, false)
 
-    -- Wait for entity to spawn with timeout
     local timeout = 100
     while not DoesEntityExist(bag) and timeout > 0 do
         Wait(50)
         timeout -= 1
     end
-
     if not DoesEntityExist(bag) then return false end
 
-    -- Remove item from inventory only after confirming the drop entity exists
-    if shouldRemoveFromInventory and source then
-        -- Fetch the real item server-side by slot (don't trust client metadata)
-        local realItem = Inventory.GetItemBySlot(source, itemData.fromSlot)
-        if not realItem or realItem.name:lower() ~= itemData.name:lower() or realItem.amount < itemData.amount then
-            DeleteEntity(bag)
-            return false
-        end
-
-        -- Use server-side item data for the drop payload
-        itemData.name   = realItem.name
-        itemData.amount = itemData.amount
-        itemData.info   = realItem.info or {}
-        itemData.type   = realItem.type
-        itemData.label  = realItem.label
-        itemData.weight = realItem.weight
-
-        local isMove = realItem.type == 'weapon'
-        if isMove then
-            Inventory.CheckWeapon(source, itemData)
-        end
-
-        if not Inventory.RemoveItem(source, realItem.name, itemData.amount, itemData.fromSlot, 'dropped item', isMove) then
-            DeleteEntity(bag)
-            return false
-        end
-
-        -- Play pickup animation
-        local playerPed = GetPlayerPed(source)
-        TaskPlayAnim(playerPed, 'pickup_object', 'pickup_low', 8.0, -8.0, 2000, 0, 0, false, false, false)
-    end
-
-    -- Get network ID and create drop ID
     local networkId = NetworkGetNetworkIdFromEntity(bag)
-    local newDropId = Helpers.CreateDropId(networkId)
+    local dropId = Helpers.CreateDropId(networkId)
+    itemData.slot = 1
 
-    -- Create itemsTable
-    local itemsTable = { itemData }
+    Drops[dropId] = {
+        name = dropId,
+        label = locale('info.drop_label'),
+        items = { [1] = itemData },
+        entityId = networkId,
+        createdTime = os.time(),
+        coords = coords,
+        maxweight = config.DropSize.maxweight,
+        slots = config.DropSize.slots,
+        isOpen = false,
+    }
 
-    -- Create or update drop
-    if not Drops[newDropId] then
-        Drops[newDropId] = {
-            name = newDropId,
-            label = 'Drop',
-            items = itemsTable,
-            entityId = networkId,
-            createdTime = os.time(),
-            coords = coords,
-            maxweight = config.DropSize.maxweight,
-            slots = config.DropSize.slots,
-            isOpen = false
-        }
-
-        -- Setup client target
-        TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
-    else
-        -- Add to existing drop
-        table.insert(Drops[newDropId].items, itemData)
-    end
-
+    TriggerClientEvent('rsg-inventory:client:setupDropTarget', -1, networkId)
     return networkId
 end
 
-Helpers.CreateItemDrop = CreateItemDrop
+--- Shared helper (used by ForceDropItem): accepts a pre-built server item table
+Helpers.CreateItemDrop = function(coords, itemData)
+    local clean = buildDropItem(itemData.name, itemData.amount, itemData.info)
+    if not clean then return false end
+    return CreateItemDrop(coords, clean)
+end
 
--- Rate limiting for drop creation
 local dropCooldowns = {}
+AddEventHandler('playerDropped', function() dropCooldowns[source] = nil end)
 
--- Callback to create a new item drop
-lib.callback.register('rsg-inventory:server:createDrop', function(source, item)
+--- Player drops an item from their inventory onto the ground
+lib.callback.register('rsg-inventory:server:createDrop', function(source, data)
     local Player = RSGCore.Functions.GetPlayer(source)
-    if not Player then return false end
+    if not Player or type(data) ~= 'table' then return false end
 
-    -- Rate limit
-    local now = os.time()
-    if dropCooldowns[source] and now - dropCooldowns[source] < 1 then return false end
+    local now = GetGameTimer()
+    if dropCooldowns[source] and now - dropCooldowns[source] < 1000 then return false end
     dropCooldowns[source] = now
 
-    local playerPed = GetPlayerPed(source)
-    local playerCoords = GetEntityCoords(playerPed)
+    local fromSlot, amount = tonumber(data.fromSlot), tonumber(data.amount)
+    if not fromSlot or not amount or amount < 1 or amount ~= math.floor(amount) then return false end
 
-    -- Use shared drop creation function
-    return CreateItemDrop(playerCoords, item, true, source)
+    -- Real item from the server; client only chooses slot + amount
+    local realItem = Inventory.GetItemBySlot(source, fromSlot)
+    if not realItem or realItem.amount < amount then return false end
+
+    local itemData = buildDropItem(realItem.name, amount, realItem.info)
+    if not itemData then return false end
+
+    local isWeapon = realItem.type == 'weapon'
+    if isWeapon then Inventory.CheckWeapon(source, realItem.name) end
+
+    -- Remove first so a failed spawn can be refunded instead of duplicating
+    if not Inventory.RemoveItem(source, realItem.name, amount, fromSlot, 'dropped item', isWeapon) then return false end
+
+    local networkId = CreateItemDrop(GetEntityCoords(GetPlayerPed(source)), itemData)
+    if not networkId then
+        Inventory.AddItem(source, itemData.name, amount, fromSlot, itemData.info, 'drop failed refund', true)
+        return false
+    end
+
+    -- The new drop becomes the player's open secondary inventory in the UI
+    local dropId = Helpers.CreateDropId(networkId)
+    Drops[dropId].isOpen = source
+    OpenedInventories[source] = dropId
+    return networkId
 end)

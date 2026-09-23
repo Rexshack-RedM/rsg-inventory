@@ -16,7 +16,6 @@ end)
 
 -- Close the inventory UI
 RegisterNetEvent('rsg-inventory:client:closeInv', function()
-
     local invToken = GenerateInventoryCbToken()
     SendNUIMessage({
         action = 'close',
@@ -26,7 +25,6 @@ end)
 
 -- Update the player's inventory UI with current items
 RegisterNetEvent('rsg-inventory:client:updateInventory', function()
-
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     local playerData = RSGCore.Functions.GetPlayerData() -- fetch current player data
@@ -44,7 +42,6 @@ end)
 -- @param type: string, type of update ('add', 'remove', 'info', etc.)
 -- @param amount: number of items affected
 RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount)
-
     local function sendItemBox()
         local invToken = GenerateInventoryCbToken()
         SendNUIMessage({
@@ -81,10 +78,20 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(itemData, type, amount
     LocalPlayer.state.lastItemBoxCall = lastItemBoxCall
 end)
 
+-- Resync both inventory panes after the server rejected a move
+RegisterNetEvent('rsg-inventory:client:refreshInventory', function(items, otherItems)
+    SendNUIMessage({
+        action = 'refresh',
+        inventory = items,
+        otherInventory = otherItems,
+        token = exports['rsg-core']:GenerateCSRFToken(),
+        invToken = GenerateInventoryCbToken(),
+    })
+end)
+
 -- Update hotbar UI with new items
 -- @param items: table of items to display
 RegisterNetEvent('rsg-inventory:client:updateHotbar', function(items)
-
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     SendNUIMessage({
@@ -97,6 +104,7 @@ end)
 
 local function L(k, d) return locale(k) or d end
 
+---@return table labels localized UI strings for the NUI
 function buildLabels()
     return {
         title   = L('ui.title', 'RSG Inventory'),
@@ -127,7 +135,8 @@ function buildLabels()
         waiting  = L('ui.waiting', 'Waiting for other player...'),
         cancel   = L('ui.cancel', 'Cancel'),
         accepted = L('ui.accepted', 'Accepted'),
-        no_items_offered = L('ui.no_items_offered', 'No items offered')
+        no_items_offered = L('ui.no_items_offered', 'No items offered'),
+        no_description = L('ui.no_description', 'No description available.')
     }
 end
 
@@ -138,8 +147,6 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
     local token = exports['rsg-core']:GenerateCSRFToken()
     local invToken = GenerateInventoryCbToken()
     local Player = RSGCore.Functions.GetPlayerData()
-    local config = require 'shared.config'
-    local function L(k, d) return locale(k) or d end
     local labels = buildLabels()
     SetNuiFocus(true, true) -- focus mouse and keyboard on NUI
 
@@ -155,7 +162,6 @@ RegisterNetEvent('rsg-inventory:client:openInventory', function(items, other)
         other     = other,
         token     = token,
         invToken  = invToken,
-        closeKey  = config.Keybinds.Close,
         cash      = Player.money.cash,
         labels    = labels
     })

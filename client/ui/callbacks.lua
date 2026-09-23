@@ -1,24 +1,19 @@
 -- CSRF token for NUI callbacks (JS → Lua direction)
 local callbackToken = nil
 
+-- A single token is kept for the lifetime of the resource so rapid NUI messages can't race each other
 local function generateToken()
-    callbackToken = tostring(math.random(100000, 999999)) .. tostring(GetGameTimer())
+    callbackToken = callbackToken or (tostring(math.random(100000, 999999)) .. tostring(GetGameTimer()))
     return callbackToken
 end
 
 local function validateToken(token)
-    if not token or not callbackToken or token ~= callbackToken then return false end
-    return true
+    return token ~= nil and callbackToken ~= nil and token == callbackToken
 end
 
--- Shared functions for events.lua / trade_callbacks.lua (same-resource, no exports needed)
-_G.GenerateInventoryCbToken = function()
-    return generateToken()
-end
-
-_G.ValidateInventoryCbToken = function(token)
-    return validateToken(token)
-end
+-- Shared with the other client files (same resource)
+GenerateInventoryCbToken = generateToken
+ValidateInventoryCbToken = validateToken
 
 --- Returns the local player ID for a given server ID
 ---@param serverId number The server ID of the player
@@ -52,7 +47,7 @@ local function GetNearbyPlayers(maxDistance)
                     local playerName = lib.callback.await('rsg-inventory:server:getPlayerName', false, sid)
                     options[#options+1] = {
                         value = sid,
-                        label = playerName or "Player : " .. sid,
+                        label = ('%s (%s)'):format(playerName or locale('ui.player'), sid),
                     }
                 end
             end
@@ -97,9 +92,6 @@ RegisterNUICallback('CloseInventory', function(data, cb)
     if not validateToken(data and data.token) then cb('ok') return end
     SetNuiFocus(false, false)
     if data and data.name then
-        if data.name:find('trunk-') then
-            CloseTrunk()
-        end
         TriggerServerEvent('rsg-inventory:server:closeInventory', data.name)
     elseif LocalPlayer.state.currentDrop then
         TriggerServerEvent('rsg-inventory:server:closeInventory', LocalPlayer.state.currentDrop)
@@ -155,7 +147,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
         if pid ~= -1 and dist < 3.0 then
             local targetSid = GetPlayerServerId(pid)
             local success = lib.callback.await('rsg-inventory:server:giveItem', false,
-                targetSid, data.item.name, data.amount, data.slot, data.info
+                targetSid, data.item.name, data.amount, data.slot
             )
             cb(success)
         else
@@ -175,7 +167,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
         local pid, dist = GetClosestPlayerWithin(3.0)
         if pid ~= -1 and dist < 3.0 and GetPlayerServerId(pid) == typedSid then
             local success = lib.callback.await('rsg-inventory:server:giveItem', false,
-                typedSid, data.item.name, data.amount, data.slot, data.info
+                typedSid, data.item.name, data.amount, data.slot
             )
             cb(success)
         else
@@ -201,7 +193,7 @@ RegisterNUICallback('GiveItem', function(data, cb)
         local dist = #(GetEntityCoords(GetPlayerPed(selectedPid)) - GetEntityCoords(cache.ped))
         if dist < 3.0 then
             local success = lib.callback.await('rsg-inventory:server:giveItem', false,
-                selectedSid, data.item.name, data.amount, data.slot, data.info
+                selectedSid, data.item.name, data.amount, data.slot
             )
             cb(success)
         else
@@ -217,11 +209,8 @@ end)
 RegisterNUICallback('GiveItemAmount', function(data, cb)
     if not validateToken(data and data.token) then cb(0) return end
     local input = lib.inputDialog(locale('info.enter_amount'), {
-        { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
+        { type = 'number', label = locale('info.number_input'), icon = 'hashtag', min = 1, precision = 0, required = true },
     })
-    if input and input[1] then
-        cb(math.abs(tonumber(input[1])))
-    else
-        cb(0)
-    end
+    local amount = input and tonumber(input[1])
+    cb(amount and amount >= 1 and math.floor(amount) or 0)
 end)

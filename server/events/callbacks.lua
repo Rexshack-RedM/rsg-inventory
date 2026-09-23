@@ -1,80 +1,75 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 
+local function isBlocked(Player)
+    local meta = Player.PlayerData.metadata
+    return meta.isdead or meta.inlaststand or meta.ishandcuffed
+end
+
 lib.callback.register('rsg-inventory:server:getPlayerName', function(source, targetId)
+    targetId = tonumber(targetId)
+    if not targetId then return end
+    -- Only resolve names of players standing near the requester
+    local srcPed, targetPed = GetPlayerPed(source), GetPlayerPed(targetId)
+    if not DoesEntityExist(targetPed) or #(GetEntityCoords(srcPed) - GetEntityCoords(targetPed)) > 10.0 then return end
     local Player = RSGCore.Functions.GetPlayer(targetId)
-    if not Player then return GetPlayerName(targetId) end
-    local char = Player.PlayerData.charinfo
+    local char = Player and Player.PlayerData.charinfo
     if char and char.firstname then
         return char.firstname .. ' ' .. char.lastname
     end
     return GetPlayerName(targetId)
 end)
 
--- Register a server callback for giving an item from one player to another
-lib.callback.register('rsg-inventory:server:giveItem', function(source, target, item, amount, slot, info)
-    -- Get the player object for the source (the giver)
+local giveCooldowns = {}
+AddEventHandler('playerDropped', function() giveCooldowns[source] = nil end)
+
+--- Give an item from one player to another
+lib.callback.register('rsg-inventory:server:giveItem', function(source, target, item, amount, slot)
+    local now = GetGameTimer()
+    if giveCooldowns[source] and now - giveCooldowns[source] < 500 then return false end
+    giveCooldowns[source] = now
+
+    target, amount, slot = tonumber(target), tonumber(amount), tonumber(slot)
+    if not target or target == source or type(item) ~= 'string' or not slot then return false end
+    if not amount or amount < 1 or amount ~= math.floor(amount) then return false end
+
     local player = RSGCore.Functions.GetPlayer(source)
-    -- Check if the source player exists and is not dead, in last stand, or handcuffed
-    if not player or player.PlayerData.metadata.isdead or player.PlayerData.metadata.inlaststand or player.PlayerData.metadata.ishandcuffed then
-        return false
-    end
-
-    -- Get the player object for the target (the receiver)
     local Target = RSGCore.Functions.GetPlayer(target)
-    -- Check if the target player exists and is not dead, in last stand, or handcuffed
-    if not Target or Target.PlayerData.metadata.isdead or Target.PlayerData.metadata.inlaststand or Target.PlayerData.metadata.ishandcuffed then
+    if not player or not Target or isBlocked(player) or isBlocked(Target) then return false end
+
+    local targetPed = GetPlayerPed(target)
+    if not DoesEntityExist(targetPed) or #(GetEntityCoords(GetPlayerPed(source)) - GetEntityCoords(targetPed)) > Inventory.MAX_DIST then
         return false
     end
 
-    -- Check if the distance between source and target is within 5 units
-    if #(GetEntityCoords(GetPlayerPed(source)) - GetEntityCoords(GetPlayerPed(target))) > Inventory.MAX_DIST then
-        return false
-    end
-
-    -- Get item information from the shared items list
-    local itemInfo = RSGCore.Shared.Items[item:lower()]
-    if not itemInfo then
-        return false
-    end
-
-    -- Fetch the real item from the source's inventory by slot (don't trust client-sent info/metadata)
+    -- Use the server-side item in that slot (never trust client name/metadata)
     local invItem = Inventory.GetItemBySlot(source, slot)
-    if not invItem or invItem.name:lower() ~= item:lower() or invItem.amount <= 0 or tonumber(amount) > invItem.amount then
+    if not invItem or invItem.name:lower() ~= item:lower() or amount > invItem.amount then return false end
+    local itemInfo = RSGCore.Shared.Items[invItem.name]
+    if not itemInfo then return false end
+
+    if not Inventory.CanAddItem(target, invItem.name, amount) then
+        TriggerClientEvent('ox_lib:notify', source, { title = locale('error.error'), description = locale('error.target_cannot_carry'), type = 'error', duration = 5000 })
         return false
     end
 
-    -- Use server-side item info (prevents serial/quality forgery)
     local serverInfo = invItem.info or {}
+    local isWeapon = itemInfo.type == 'weapon'
+    if isWeapon then Inventory.CheckWeapon(source, invItem.name) end
 
-    -- Initialize a flag to track if the item is a weapon
-    local isMove = false
-    if itemInfo.type == 'weapon' then
-        isMove = true
-        Inventory.CheckWeapon(source, item)
+    if not Inventory.RemoveItem(source, invItem.name, amount, slot, ('Item given to ID #%s'):format(target), isWeapon) then
+        return false
     end
-
-    -- Remove from source first, then add to target (prevents duplication)
-    if not Inventory.RemoveItem(source, item, amount, slot, ('Item given to ID #%s'):format(target), isMove) then
+    if not Inventory.AddItem(target, invItem.name, amount, false, serverInfo, ('Item given from ID #%s'):format(source), true) then
+        Inventory.AddItem(source, invItem.name, amount, slot, serverInfo, 'rollback give item')
         return false
     end
 
-    if not Inventory.AddItem(target, item, amount, false, serverInfo, ('Item given from ID #%s'):format(source)) then
-        -- Rollback: give item back to source if add to target fails
-        Inventory.AddItem(source, item, amount, false, serverInfo, 'rollback give item')
-        return false
-    end
-
-    -- Trigger give animation for both players
     TriggerClientEvent('rsg-inventory:client:giveAnim', source)
     TriggerClientEvent('rsg-inventory:client:ItemBox', source, itemInfo, 'remove', amount)
     TriggerClientEvent('rsg-inventory:client:giveAnim', target)
     TriggerClientEvent('rsg-inventory:client:ItemBox', target, itemInfo, 'add', amount)
-
-    -- Update the target's inventory if they are marked as busy
     if Player(target).state.inv_busy then
         TriggerClientEvent('rsg-inventory:client:updateInventory', target)
     end
-
-    -- Return true to indicate success
     return true
 end)

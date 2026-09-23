@@ -14,27 +14,11 @@ function Drops.ResetPlayerState()
     LocalPlayer.state.heldDrop      = nil
 end
 
----Fetches all current world drops from the server and adds a target interaction
----(`ox_target`) for each entity that still exists.
+---Fetches all current world drops from the server and adds ox_target interactions to each bag.
 function Drops.GetDrops()
     local drops = lib.callback.await('rsg-inventory:server:GetCurrentDrops', false)
     if not drops then return end
-
-    for k, v in pairs(drops) do
-        local bag = NetworkGetEntityFromNetworkId(v.entityId)
-        if DoesEntityExist(bag) then
-            exports.ox_target:addLocalEntity(bag, {
-                {
-                    name     = 'open_drop_' .. k,
-                    icon     = 'fas fa-backpack',
-                    label    = locale('info.o_bag'),
-                    distance = 2.5,
-                    onSelect = function()
-                        TriggerServerEvent('rsg-inventory:server:openDrop', k)
-                        LocalPlayer.state.currentDrop = k
-                    end
-                }
-            })
-        end
+    for _, netId in pairs(drops) do
+        CreateThread(function() Drops.SetupTarget(netId) end)
     end
 end

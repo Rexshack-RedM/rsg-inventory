@@ -59,7 +59,7 @@ CreateThread(function()
                     local success = lib.callback.await('rsg-inventory:updateDrop', false, LocalPlayer.state.heldDrop, dropCoords)
                     if not success then
                         lib.notify({
-                            title       = locale('error.Error'),
+                            title       = locale('error.error'),
                             description = locale('error.bagcannotplace'),
                             type        = 'error',
                             duration    = 4000

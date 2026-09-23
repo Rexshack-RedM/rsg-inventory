@@ -1,61 +1,48 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local config = require 'shared.config'
 
-
 lib.callback.register('rsg-inventory:client:isInMelee', function()
-    local ped = cache.ped
-    return IsPedInMeleeCombat(ped)
+    return IsPedInMeleeCombat(cache.ped)
 end)
 
--- Thread to using ox_target
+-- Vending machines (ox_target)
 CreateThread(function()
     local models = config.VendingObjects
-    if not models or #models == 0 then return end -- exit if no vending models defined
+    if not models or #models == 0 then return end
 
     exports.ox_target:addModel(models, {
-        label = locale('info.vending'),             -- label displayed in the target menu
-        icon = 'fa-solid fa-cash-register',        -- icon for the interaction
-        distance = 2.5,                             -- maximum distance to interact
-        onSelect = function(data)                   -- function triggered when player selects the vending machine
-            data.coords = GetEntityCoords(data.entity) -- get the coords of the vending machine entity
-            TriggerServerEvent('rsg-inventory:server:openVending', data) -- request the vending inventory from server
+        label = locale('info.vending'),
+        icon = 'fa-solid fa-cash-register',
+        distance = 2.5,
+        onSelect = function(data)
+            TriggerServerEvent('rsg-inventory:server:openVending', { coords = GetEntityCoords(data.entity) })
         end,
     })
 end)
 
--- Thread to handle keybinds for inventory and hotbar
+-- Keybinds for inventory, hotbar and hotbar slots
 CreateThread(function()
-    -- Mapping of keys to commands and whether the key is disabled (hold vs press)
-    local commands = {
-        [config.Keybinds.Open]             = { command = "inventory", disabled = false }, -- open inventory
-        [config.Keybinds.Hotbar]           = { command = "hotbar",    disabled = false }, -- toggle hotbar
-        [RSGCore.Shared.Keybinds["1"]]     = { command = "slot_1",    disabled = true  }, -- use slot 1 (hold)
-        [RSGCore.Shared.Keybinds["2"]]     = { command = "slot_2",    disabled = true  }, -- use slot 2 (hold)
-        [RSGCore.Shared.Keybinds["3"]]     = { command = "slot_3",    disabled = true  }, -- use slot 3 (hold)
-        [RSGCore.Shared.Keybinds["4"]]     = { command = "slot_4",    disabled = true  }, -- use slot 4 (hold)
-        [RSGCore.Shared.Keybinds["5"]]     = { command = "slot_5",    disabled = true  }, -- use slot 5 (hold)
+    local openKeys = {
+        [config.Keybinds.Open]   = 'inventory',
+        [config.Keybinds.Hotbar] = 'hotbar',
     }
+    local slotKeys = {}
+    for i = 1, 5 do
+        slotKeys[RSGCore.Shared.Keybinds[tostring(i)]] = 'slot_' .. i
+    end
 
-    -- Main loop to check key inputs every frame
     while true do
         Wait(0)
-        for control, meta in pairs(commands) do
-            if meta.disabled then
-                -- If the key is disabled, prevent default behavior
+        if not IsNuiFocused() and not IsPauseMenuActive() then
+            for control, command in pairs(slotKeys) do
                 DisableControlAction(0, control, true)
-                if IsDisabledControlPressed(0, control) then
-                    if Inventory.CanPlayerUseInventory() then -- check if player can interact with inventory
-                        ExecuteCommand(meta.command)        -- execute the associated command
-                    end
-                    break
+                if IsDisabledControlJustPressed(0, control) and Inventory.CanPlayerUseInventory() then
+                    ExecuteCommand(command)
                 end
-            else
-                -- If the key is enabled, execute command on key release
-                if IsControlJustReleased(0, control) then
-                    if Inventory.CanPlayerUseInventory() then
-                        ExecuteCommand(meta.command)
-                    end
-                    break
+            end
+            for control, command in pairs(openKeys) do
+                if IsControlJustReleased(0, control) and Inventory.CanPlayerUseInventory() then
+                    ExecuteCommand(command)
                 end
             end
         end

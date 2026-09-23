@@ -26,13 +26,13 @@ local function openErrorNotify()
     local meta = getMeta()
     if meta.isdead then
         lib.notify({
-            title       = 'rsg-inventory',
+            title       = locale('ui.title'),
             description = locale('error.openinverror'),
             type        = 'error'
         })
     elseif meta.ishandcuffed then
         lib.notify({
-            title       = 'rsg-inventory',
+            title       = locale('ui.title'),
             description = locale('error.cuffopeninv'),
             type        = 'error'
         })
@@ -66,13 +66,12 @@ RegisterCommand('trade', function()
         return
     end
 
-    local config = require 'shared.config'
     local input = lib.inputDialog(locale('info.enter_player_id'), {
         { type = 'number', label = locale('info.number_input'), icon = 'hashtag' },
     })
     if not input or not input[1] then return end
     local targetId = tonumber(input[1])
-    if targetId then
+    if targetId and targetId ~= cache.serverId then
         TriggerServerEvent('rsg-inventory:server:initiateTrade', targetId)
     end
 end, false)

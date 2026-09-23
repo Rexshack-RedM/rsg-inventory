@@ -1,3 +1,5 @@
+local config = require 'shared.config'
+
 ---Handles initialisation of drop system and resetting player drop state
 ---when the resource starts/restarts.
 AddEventHandler('onResourceStart', function(resourceName)
@@ -15,19 +17,32 @@ end)
 
 ---Removes the target interaction from a dropped bag entity.
 ---@param dropId number Network ID of the entity that needs to have its ox_target removed
+--- Waits (max ~5s) for a networked entity to exist locally
+local function waitForEntity(netId)
+    local timeout = GetGameTimer() + 5000
+    while not NetworkDoesNetworkIdExist(netId) do
+        if GetGameTimer() > timeout then return end
+        Wait(50)
+    end
+    local entity = NetworkGetEntityFromNetworkId(netId)
+    while not DoesEntityExist(entity) do
+        if GetGameTimer() > timeout then return end
+        Wait(50)
+        entity = NetworkGetEntityFromNetworkId(netId)
+    end
+    return entity
+end
+
 RegisterNetEvent('rsg-inventory:client:removeDropTarget', function(dropId)
-    repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
-    local bag = NetworkGetEntityFromNetworkId(dropId)
-    repeat Wait(10) until DoesEntityExist(bag)
-    exports.ox_target:removeLocalEntity(bag)
+    local bag = waitForEntity(dropId)
+    if bag then exports.ox_target:removeLocalEntity(bag) end
 end)
 
 ---Adds ox_target interactions (open / pickup) to a dropped bag entity.
 ---@param dropId number Network ID of the bag entity
-RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
-    repeat Wait(10) until NetworkDoesNetworkIdExist(dropId)
-    local bag = NetworkGetEntityFromNetworkId(dropId)
-    repeat Wait(10) until DoesEntityExist(bag)
+function Drops.SetupTarget(dropId)
+    local bag = waitForEntity(dropId)
+    if not bag then return end
 
     local newDropId = Helpers.CreateDropId(dropId)
 
@@ -50,7 +65,7 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
             label    = locale('info.Pickup_bag'),
             distance = 2.5,
             onSelect = function()
-                local weapon = GetPedCurrentHeldWeapon(PlayerPedId())
+                local weapon = GetPedCurrentHeldWeapon(cache.ped)
 
                 -- Prevent picking up while holding weapon or another drop
                 if weapon ~= `WEAPON_UNARMED` then
@@ -71,17 +86,16 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
                 end
 
                 -- Play pickup animation
-                Citizen.InvokeNative(0x524B54361229154F, PlayerPedId(), GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
+                TaskStartScenarioInPlaceHash(cache.ped, GetHashKey("RANSACK_FALLBACK_PICKUP_CROUCH"), 0, 1, GetHashKey("RANSACK_PICKUP_H_0m0_FALLBACK_CROUCH"), -1.0, 0)
 
                 Wait(1000)
 
                 -- Attach bag to player's bone
-                local config    = require 'shared.config'
-                local boneIndex = GetEntityBoneIndexByName(PlayerPedId(), config.ItemDropObjectBone)
+                local boneIndex = GetEntityBoneIndexByName(cache.ped, config.ItemDropObjectBone)
 
                 AttachEntityToEntity(
                     bag,
-                    PlayerPedId(),
+                    cache.ped,
                     boneIndex,
                     config.ItemDropObjectOffset[1].x,
                     config.ItemDropObjectOffset[1].y,
@@ -99,4 +113,6 @@ RegisterNetEvent('rsg-inventory:client:setupDropTarget', function(dropId)
             end
         }
     })
-end)
+end
+
+RegisterNetEvent('rsg-inventory:client:setupDropTarget', Drops.SetupTarget)

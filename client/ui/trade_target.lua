@@ -1,26 +1,19 @@
 CreateThread(function()
-    Wait(5000)
-
-    local ok = pcall(function()
-        return exports.ox_target.addGlobalPlayer
-    end)
-    if not ok then return end
+    if GetResourceState('ox_target') ~= 'started' then return end
 
     exports.ox_target:addGlobalPlayer({
         {
-            name = 'trade',
-            label = 'Trade',
+            name = 'rsg_inventory_trade',
+            label = locale('ui.trade'),
             icon = 'fas fa-handshake',
+            distance = 2.5,
             onSelect = function(data)
-                local entity = data.entity
-                if IsPedAPlayer(entity) then
-                    local playerIndex = NetworkGetPlayerIndexFromPed(entity)
-                    local serverId = GetPlayerServerId(playerIndex)
-                    if serverId then
-                        TriggerServerEvent('rsg-inventory:server:initiateTrade', serverId)
-                    end
+                if not IsPedAPlayer(data.entity) then return end
+                local serverId = GetPlayerServerId(NetworkGetPlayerIndexFromPed(data.entity))
+                if serverId and serverId > 0 then
+                    TriggerServerEvent('rsg-inventory:server:initiateTrade', serverId)
                 end
             end,
         },
-    }, 2.5)
+    })
 end)
