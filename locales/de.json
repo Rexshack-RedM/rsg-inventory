@@ -61,5 +61,8 @@
     "info_quality": "Qualität",
     "cmd_param_target": "Server-ID des Spielers",
     "cmd_param_item": "Gegenstandsname",
-    "cmd_param_amount": "Menge (Standard 1)"
+    "cmd_param_amount": "Menge (Standard 1)",
+    "itembox_received": "Erhalten",
+    "itembox_removed": "Entfernt",
+    "itembox_used": "Benutzt"
 }

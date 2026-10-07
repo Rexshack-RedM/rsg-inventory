@@ -1,5 +1,7 @@
 Config = {}
 
+Config.ItemBox       = true     -- show the item image box when items are added / removed / used
+Config.ItemBoxPosition = 'right' -- 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'left', 'right'
 Config.Notifications = false    -- set true to show ox_lib notifications from the inventory
 Config.Debug          = false    -- print why moves / shop purchases are rejected to the server console
 

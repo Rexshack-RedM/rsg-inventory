@@ -730,7 +730,12 @@ function API.UseItem(a, b, c)
     local data = RSGCore.Functions.CanUseItem(name)
     local cb = type(data) == 'function' and data
         or (type(data) == 'table' and (rawget(data, '__cfx_functionReference') and data or data.cb or data.callback))
-    if cb then cb(src, item) end
+    if not cb then return end
+    local ok, err = pcall(cb, src, item)
+    if not ok then
+        print(('^1[rsg-inventory] usable item "%s" errored in its own resource: %s^7'):format(
+            tostring(name), type(err) == 'table' and json.encode(err) or tostring(err)))
+    end
 end
 
 local weaponEvents = {

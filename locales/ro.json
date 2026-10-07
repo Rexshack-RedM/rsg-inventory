@@ -61,5 +61,8 @@
     "info_quality": "Calitate",
     "cmd_param_target": "ID-ul jucătorului pe server",
     "cmd_param_item": "Numele obiectului",
-    "cmd_param_amount": "Cantitate (implicit 1)"
+    "cmd_param_amount": "Cantitate (implicit 1)",
+    "itembox_received": "Primit",
+    "itembox_removed": "Eliminat",
+    "itembox_used": "Folosit"
 }
