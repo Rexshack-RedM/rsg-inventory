@@ -61,5 +61,8 @@
     "info_quality": "品質",
     "cmd_param_target": "プレイヤーのサーバーID",
     "cmd_param_item": "アイテム名",
-    "cmd_param_amount": "数量 (既定 1)"
+    "cmd_param_amount": "数量 (既定 1)",
+    "itembox_received": "受け取った",
+    "itembox_removed": "削除した",
+    "itembox_used": "使用した"
 }

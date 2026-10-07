@@ -117,7 +117,20 @@ local itemBoxStyle = {
 
 RegisterNetEvent('rsg-inventory:client:ItemBox', function(item, kind, amount)
     local style = item and itemBoxStyle[kind]
-    if not style or not Config.Notifications then return end
+    if not style then return end
+    -- image item box (old inventory style)
+    if Config.ItemBox ~= false then
+        local labels = { add = locale('itembox_received'), remove = locale('itembox_removed'), use = locale('itembox_used') }
+        Send('itembox', {
+            item = { name = item.name, label = item.label or item.name, image = item.image },
+            kind = kind,
+            text = labels[kind],
+            amount = amount or 1,
+            imagePath = Config.ImagePath,
+            position = Config.ItemBoxPosition or 'bottom',
+        })
+    end
+    if not Config.Notifications then return end
     lib.notify({
         title = locale('inventory'),
         description = kind == 'use' and locale(style.key, item.label or item.name)

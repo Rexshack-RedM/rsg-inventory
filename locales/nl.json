@@ -61,5 +61,8 @@
     "info_quality": "Kwaliteit",
     "cmd_param_target": "Server-ID van speler",
     "cmd_param_item": "Voorwerpnaam",
-    "cmd_param_amount": "Aantal (standaard 1)"
+    "cmd_param_amount": "Aantal (standaard 1)",
+    "itembox_received": "Ontvangen",
+    "itembox_removed": "Verwijderd",
+    "itembox_used": "Gebruikt"
 }

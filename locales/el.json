@@ -61,5 +61,8 @@
     "info_quality": "Ποιότητα",
     "cmd_param_target": "ID παίκτη στον server",
     "cmd_param_item": "Όνομα αντικειμένου",
-    "cmd_param_amount": "Ποσότητα (προεπιλογή 1)"
+    "cmd_param_amount": "Ποσότητα (προεπιλογή 1)",
+    "itembox_received": "Λήφθηκε",
+    "itembox_removed": "Αφαιρέθηκε",
+    "itembox_used": "Χρησιμοποιήθηκε"
 }

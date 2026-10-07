@@ -466,6 +466,33 @@ function showHotbar(items) {
     hotbarTimer = setTimeout(() => bar.classList.add('hidden'), 3000);
 }
 
+/* ------------------------------------------------------------------ item box */
+const itemBoxRecent = {};
+function showItemBox(d) {
+    if (!d || !d.item) return;
+    // de-dupe: scripts often call RemoveItem AND trigger their own ItemBox, and the
+    // inventory also sends a 'use' box — show one box per item/action burst
+    const now = Date.now(), name = d.item.name;
+    const seen = (k) => now - (itemBoxRecent[name + ':' + k] || 0) < 1000;
+    if (seen(d.kind)) return;
+    if (d.kind === 'use' && seen('remove')) return;
+    if (d.kind === 'remove' && seen('use')) return;
+    itemBoxRecent[name + ':' + d.kind] = now;
+    if (d.imagePath) state.imagePath = d.imagePath;
+    const box = document.createElement('div');
+    box.className = `itembox itembox-${d.kind}`;
+    const qty = d.kind === 'use' ? '' : `${d.amount}x `;
+    box.innerHTML = `<div class="itembox-action">${esc(d.text || d.kind)}</div>
+        <img src="${esc(imgSrc(d.item))}" onerror="this.style.visibility='hidden'">
+        <div class="itembox-label">${esc(qty + (d.item.label || d.item.name))}</div>`;
+    const c = $('itembox-container');
+    c.className = 'pos-' + (d.position || 'bottom');
+    c.appendChild(box);
+    while (c.children.length > 5) c.firstChild.remove();
+    setTimeout(() => box.classList.add('out'), 2600);
+    setTimeout(() => box.remove(), 3000);
+}
+
 /* ------------------------------------------------------------------ messages */
 window.addEventListener('message', ({ data: msg }) => {
     const d = msg.data || {};
@@ -504,6 +531,9 @@ window.addEventListener('message', ({ data: msg }) => {
         case 'hotbar':
             state.imagePath = d.imagePath || state.imagePath;
             showHotbar(d.items);
+            break;
+        case 'itembox':
+            showItemBox(d);
             break;
     }
 });
