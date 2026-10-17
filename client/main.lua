@@ -230,7 +230,8 @@ CreateThread(function()
             end
             for i, key in ipairs(Config.Keys.Slots) do
                 if i > Config.HotbarSlots then break end
-                if IsControlJustReleased(0, key) and not IsNuiFocused() and GetGameTimer() - lastHotbar > Config.UseCooldown then
+                DisableControlAction(0, key, true) -- stop 1-5 also quick-selecting weapons
+                if IsDisabledControlJustReleased(0, key) and not IsNuiFocused() and GetGameTimer() - lastHotbar > Config.UseCooldown then
                     lastHotbar = GetGameTimer()
                     if (PlayerItems()[i] or PlayerItems()[tostring(i)]) and CanUse() then
                         TriggerServerEvent('rsg-inventory:server:useItem', i)
