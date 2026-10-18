@@ -142,8 +142,11 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(item, kind, amount)
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
-    lib.requestAnimDict('mp_common')
-    TaskPlayAnim(cache.ped, 'mp_common', 'givetake1_a', 8.0, -8.0, 1500, 0, 0, false, false, false)
+    local dict, anim = 'mech_inventory@item@fallbacks@tonic_potent@offhand', 'use_quick'
+    if not DoesAnimDictExist(dict) then return end
+    lib.requestAnimDict(dict)
+    TaskPlayAnim(cache.ped, dict, anim, 8.0, -8.0, 1500, 31, 0, false, false, false)
+    RemoveAnimDict(dict)
 end)
 
 --------------------------------------------------------------------------------
