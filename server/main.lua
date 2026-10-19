@@ -703,6 +703,14 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
     if not same then
         Commit(to)
         if from.type ~= 'drop' and to.type ~= 'drop' then PendingSave[src] = true end
+        -- stash <-> player: write both rows right now so a crash can't leave the
+        -- item saved in the stash AND on the player (dupe)
+        if from.type == 'stash' or to.type == 'stash' then
+            if from.type == 'stash' then SaveStash(fromId) end
+            if to.type == 'stash' then SaveStash(toId) end
+            if from.type == 'player' then SavePlayer(fromId) end
+            if to.type == 'player' then SavePlayer(toId) end
+        end
         if from.type == 'player' and from.items[fromSlot] ~= item then CheckWeapon(fromId, item) end
         if to.type == 'player' and dest and from.items[fromSlot] == dest then CheckWeapon(toId, dest) end
         Log('Move', ('%s moved %sx %s from %s to %s'):format(GetPlayerName(src), amount, item.name, tostring(fromId), tostring(toId)))
