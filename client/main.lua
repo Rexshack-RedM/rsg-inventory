@@ -1,5 +1,4 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
 
 local isOpen     = false
 local loggedIn   = LocalPlayer.state.isLoggedIn or false
@@ -43,6 +42,32 @@ local function UiLabels()
     return labels
 end
 
+local function Notify(key, kind, ...)
+    RSGCore.Functions.Notify({ title = locale('inventory'), description = locale(key, ...), type = kind or 'error', duration = 4000 })
+end
+
+local function LoadModel(model, timeout)
+    if not IsModelInCdimage(model) then return false end
+    RequestModel(model)
+    local deadline = GetGameTimer() + (timeout or 5000)
+    while not HasModelLoaded(model) do
+        if GetGameTimer() > deadline then return false end
+        Wait(10)
+    end
+    return true
+end
+
+local function LoadAnimDict(dict, timeout)
+    if not DoesAnimDictExist(dict) then return false end
+    RequestAnimDict(dict)
+    local deadline = GetGameTimer() + (timeout or 5000)
+    while not HasAnimDictLoaded(dict) do
+        if GetGameTimer() > deadline then return false end
+        Wait(10)
+    end
+    return true
+end
+
 local function Close()
     if not isOpen then return end
     isOpen = false
@@ -55,7 +80,7 @@ local function CanUse()
     local pd = RSGCore.Functions.GetPlayerData()
     local meta = pd and pd.metadata or {}
     if meta.isdead or meta.ishandcuffed or meta.inlaststand then return false end
-    local ped = cache.ped or PlayerPedId()
+    local ped = PlayerPedId()
     if IsEntityDead(ped) or IsPedDeadOrDying(ped, true) or GetEntityHealth(ped) <= 0 then return false end
     return true
 end
@@ -65,7 +90,7 @@ local function CanOpen()
 end
 
 local function NearestDrop()
-    local pc = GetEntityCoords(cache.ped)
+    local pc = GetEntityCoords(PlayerPedId())
     local best, bestDist
     for id, d in pairs(Drops) do
         local dist = #(pc - d.coords)
@@ -100,19 +125,19 @@ RegisterNetEvent('rsg-inventory:client:close', Close)
 
 -- a weapon left the inventory: holster it if it is in the player's hands
 RegisterNetEvent('rsg-inventory:client:checkWeapon', function(weaponName)
-    local hash = joaat(weaponName)
-    local _, current = GetCurrentPedWeapon(cache.ped, true, 0, true)
+    local ped, hash = PlayerPedId(), joaat(weaponName)
+    local _, current = GetCurrentPedWeapon(ped, true, 0, true)
     if current == hash then
-        RemoveWeaponFromPed(cache.ped, hash, true, 0)
+        RemoveWeaponFromPed(ped, hash, true, 0)
         TriggerEvent('rsg-weapons:client:UseWeapon', { name = weaponName }, false)
     end
 end)
 
--- item added / removed / used feedback (ox_lib notify)
+-- item added / removed / used feedback (NUI item box + optional rsg-core toast)
 local itemBoxStyle = {
-    add    = { key = 'item_received', type = 'success', icon = 'plus' },
-    remove = { key = 'item_removed',  type = 'error',   icon = 'minus' },
-    use    = { key = 'item_used',     type = 'inform',  icon = 'hand' },
+    add    = { key = 'item_received', type = 'success', icon = 'fa-solid fa-plus' },
+    remove = { key = 'item_removed',  type = 'error',   icon = 'fa-solid fa-minus' },
+    use    = { key = 'item_used',     type = 'inform',  icon = 'fa-solid fa-hand' },
 }
 
 RegisterNetEvent('rsg-inventory:client:ItemBox', function(item, kind, amount)
@@ -130,8 +155,8 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(item, kind, amount)
             position = Config.ItemBoxPosition or 'bottom',
         })
     end
-    if not Config.Notifications then return end
-    lib.notify({
+    if not Config.ItemNotifications then return end
+    RSGCore.Functions.Notify({
         title = locale('inventory'),
         description = kind == 'use' and locale(style.key, item.label or item.name)
             or locale(style.key, amount or 1, item.label or item.name),
@@ -143,9 +168,8 @@ end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
     local dict, anim = 'mech_inventory@item@fallbacks@tonic_potent@offhand', 'use_quick'
-    if not DoesAnimDictExist(dict) then return end
-    lib.requestAnimDict(dict)
-    TaskPlayAnim(cache.ped, dict, anim, 8.0, -8.0, 1500, 31, 0, false, false, false)
+    if not LoadAnimDict(dict) then return end
+    TaskPlayAnim(PlayerPedId(), dict, anim, 8.0, -8.0, 1500, 31, 0, false, false, false)
     RemoveAnimDict(dict)
 end)
 
@@ -169,11 +193,10 @@ end)
 CreateThread(function()
     while true do
         Wait(1000)
-        local pc = GetEntityCoords(cache.ped)
+        local pc = GetEntityCoords(PlayerPedId())
         for _, d in pairs(Drops) do
             local near = #(pc - d.coords) < Config.Drop.RenderDistance
-            if near and not d.obj then
-                lib.requestModel(Config.Drop.Prop)
+            if near and not d.obj and LoadModel(Config.Drop.Prop) then
                 d.obj = CreateObject(Config.Drop.Prop, d.coords.x, d.coords.y, d.coords.z - 1.0, false, false, false)
                 PlaceObjectOnGroundProperly(d.obj)
                 FreezeEntityPosition(d.obj, true)
@@ -207,9 +230,9 @@ RegisterNUICallback('drop', function(data, cb)
 end)
 
 RegisterNUICallback('give', function(data, cb)
-    local player, dist = lib.getClosestPlayer(GetEntityCoords(cache.ped), Config.GiveDistance, false)
-    if not player then
-        if Config.Notifications then lib.notify({ title = locale('inventory'), description = locale('no_player'), type = 'error', duration = 4000 }) end
+    local player, dist = RSGCore.Functions.GetClosestPlayer()
+    if not player or player == -1 or dist < 0 or dist > Config.GiveDistance then
+        if Config.Notifications then Notify('no_player') end
         return cb('ok')
     end
     TriggerServerEvent('rsg-inventory:server:give', GetPlayerServerId(player), data.slot, data.amount)
@@ -253,7 +276,7 @@ end)
 --------------------------------------------------------------------------------
 local function Init()
     loggedIn = true
-    local list = lib.callback.await('rsg-inventory:server:getDrops', false) or {}
+    local list = RSGCore.Functions.AwaitCallback('rsg-inventory:server:getDrops', 10000) or {}
     for id, coords in pairs(list) do
         Drops[id] = { coords = vector3(coords.x, coords.y, coords.z) }
     end

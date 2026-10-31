@@ -1,5 +1,4 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
 
 --------------------------------------------------------------------------------
 -- State
@@ -8,7 +7,7 @@ local Inventories  = {}   -- [id] = { id, label, type = 'stash'|'drop'|'shop', s
 local OpenInv      = {}   -- [src] = secondary inventory the player has open (string id, player id or 'newdrop')
 local UseCooldown  = {}
 local GiveCooldown = {}
-local PendingSave  = {}   -- [src] = true when the player moved items into/out of another saved inventory
+local DropCooldown = {}
 local dropCount    = 0
 local API          = {}
 
@@ -16,9 +15,16 @@ local function SharedItem(name)
     return name and RSGCore.Shared.Items[tostring(name):lower()]
 end
 
+local function DeepClone(t)
+    if type(t) ~= 'table' then return t end
+    local out = {}
+    for k, v in pairs(t) do out[k] = DeepClone(v) end
+    return out
+end
+
 local function Notify(src, key, kind)
-    if not Config.Notifications then return end
-    TriggerClientEvent('ox_lib:notify', src, {
+    if not Config.Notifications or not src or src <= 0 then return end
+    TriggerClientEvent('RSGCore:Client:Notify', src, {
         title = locale('inventory'), description = locale(key), type = kind or 'error', duration = 4000,
     })
 end
@@ -208,7 +214,7 @@ local function AddTo(c, name, amount, info, slot)
         end
         if #free < amount then return false, 'no_space' end
         for i = 1, amount do
-            c.items[free[i]] = BuildItem(s.name, 1, WeaponDefaults(s, lib.table.deepclone(info)), free[i])
+            c.items[free[i]] = BuildItem(s.name, 1, WeaponDefaults(s, DeepClone(info)), free[i])
         end
         return true
     end
@@ -368,8 +374,14 @@ function API.CanCarry(target, name, amount)
         local free = 0
         for i = 1, c.slots do if not c.items[i] then free = free + 1 end end
         if free < amount then return false, 'no_space' end
-    elseif not FirstSlotByItem(c.items, s.name) and not FirstEmpty(c.items, c.slots) then
-        return false, 'no_space'
+    elseif not FirstEmpty(c.items, c.slots) then
+        -- no empty slot: only OK if a plain (no metadata) stack exists to merge into
+        local probe = { name = s.name, info = {} }
+        local canMerge = false
+        for _, sl in ipairs(SlotsByItem(c.items, s.name)) do
+            if CanStack(c.items[sl], probe) then canMerge = true break end
+        end
+        if not canMerge then return false, 'no_space' end
     end
     return true
 end
@@ -549,11 +561,20 @@ local function CanAccess(src, id)
     return true
 end
 
+-- Stash and player rows are written together so a server crash can't leave an
+-- item saved in both places (dupe) or in neither (loss).
+local function OnClosed(src)
+    local id = OpenInv[src]
+    OpenInv[src] = nil
+    if id then SaveStash(id) CleanupDropIfEmpty(id) end
+end
+
 local function OpenFor(src, otherId)
     local me = GetContainer(src)
     if not me then return false end
     local meta = me.player.PlayerData.metadata or {}
     if meta.isdead or meta.inlaststand or meta.ishandcuffed then return false end
+    if OpenInv[src] ~= nil and OpenInv[src] ~= otherId then OnClosed(src) end -- switching container: flush the old one
     local other
     if otherId == 'newdrop' then
         other = EmptyGround()
@@ -565,19 +586,6 @@ local function OpenFor(src, otherId)
     OpenInv[src] = otherId
     TriggerClientEvent('rsg-inventory:client:open', src, ClientInv(me), other)
     return true
-end
-
--- Stash and player rows are written together so a server crash can't leave an
--- item saved in both places (dupe) or in neither (loss).
-local function OnClosed(src)
-    local id = OpenInv[src]
-    OpenInv[src] = nil
-    if id then SaveStash(id) CleanupDropIfEmpty(id) end
-    if PendingSave[src] then
-        PendingSave[src] = nil
-        SavePlayer(src)
-        if type(id) == 'number' then SavePlayer(id) end -- searched player
-    end
 end
 
 function API.OpenStash(src, id, opts)
@@ -679,7 +687,7 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
             to.items[toSlot] = item
         else
             item.amount = item.amount - amount
-            to.items[toSlot] = BuildItem(item.name, amount, lib.table.deepclone(item.info), toSlot)
+            to.items[toSlot] = BuildItem(item.name, amount, DeepClone(item.info), toSlot)
         end
     elseif CanStack(dest, item) then
         if not same and TotalWeight(to.items) + moveWeight > to.maxWeight then return reject() end
@@ -702,10 +710,9 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
     Commit(from)
     if not same then
         Commit(to)
-        if from.type ~= 'drop' and to.type ~= 'drop' then PendingSave[src] = true end
-        -- stash <-> player: write both rows right now so a crash can't leave the
-        -- item saved in the stash AND on the player (dupe)
-        if from.type == 'stash' or to.type == 'stash' then
+        -- stash/player <-> player: write both rows right now so a crash can't leave the
+        -- item saved in both places (dupe) or in neither (loss). Drops are memory-only.
+        if from.type ~= 'drop' and to.type ~= 'drop' then
             if from.type == 'stash' then SaveStash(fromId) end
             if to.type == 'stash' then SaveStash(toId) end
             if from.type == 'player' then SavePlayer(fromId) end
@@ -779,7 +786,7 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(slot)
         end
         TriggerClientEvent(weaponEvents[item.type], src, item)
     else
-        if not RSGCore.Functions.CanUseItem(item.name) then return end
+        if not RSGCore.Functions.CanUseItem(item.name) then return end -- not a usable item: no 'used' box
         API.UseItem(item.name, src, item)
     end
     TriggerClientEvent('rsg-inventory:client:ItemBox', src, s, 'use', 1)
@@ -798,14 +805,15 @@ RegisterNetEvent('rsg-inventory:server:give', function(targetId, slot, amount)
     if not me or not them then return end
     local meta = me.player.PlayerData.metadata or {}
     if meta.isdead or meta.inlaststand or meta.ishandcuffed then return end
-    if Dist(src, GetEntityCoords(GetPlayerPed(targetId))) > Config.GiveDistance then return Notify(src, 'too_far') end
+    local tped = GetPlayerPed(targetId)
+    if tped == 0 or Dist(src, GetEntityCoords(tped)) > Config.GiveDistance then return Notify(src, 'too_far') end
 
     local item = me.items[slot]
     if not item then return end
     amount = math.tointeger(tonumber(amount)) or item.amount
     if amount < 1 or amount > item.amount then amount = item.amount end
 
-    local name, info = item.name, lib.table.deepclone(item.info)
+    local name, info = item.name, DeepClone(item.info)
     if not AddTo(them, name, amount, info) then return Notify(src, 'target_full') end
     RemoveFrom(me, name, amount, slot)
     Commit(me) Commit(them)
@@ -819,7 +827,6 @@ RegisterNetEvent('rsg-inventory:server:give', function(targetId, slot, amount)
 end)
 
 -- right-click "Drop": put items on the ground at the player's feet
-local DropCooldown = {}
 RegisterNetEvent('rsg-inventory:server:drop', function(slot, amount)
     local src = source
     slot = math.tointeger(tonumber(slot))
@@ -847,7 +854,7 @@ RegisterNetEvent('rsg-inventory:server:drop', function(slot, amount)
         if OpenInv[src] == 'newdrop' or OpenInv[src] == nil then OpenInv[src] = dropId end
     end
 
-    local name, info = item.name, lib.table.deepclone(item.info)
+    local name, info = item.name, DeepClone(item.info)
     if not AddTo(drop, name, amount, info) then
         CleanupDropIfEmpty(dropId)
         return Notify(src, 'too_heavy')
@@ -859,12 +866,12 @@ RegisterNetEvent('rsg-inventory:server:drop', function(slot, amount)
     Log('Drop', ('%s dropped %sx %s'):format(GetPlayerName(src), amount, name))
 end)
 
-lib.callback.register('rsg-inventory:server:getDrops', function()
+RSGCore.Functions.CreateCallback('rsg-inventory:server:getDrops', function(_, cb)
     local list = {}
     for id, inv in pairs(Inventories) do
         if inv.type == 'drop' then list[id] = inv.coords end
     end
-    return list
+    cb(list)
 end)
 
 --------------------------------------------------------------------------------
@@ -897,7 +904,7 @@ InvCore = {
     API = API, Inventories = Inventories, OpenInv = OpenInv,
     GetContainer = GetContainer, Commit = Commit, Refresh = Refresh, OpenFor = OpenFor,
     AddTo = AddTo, BuildItem = BuildItem, TotalWeight = TotalWeight, SharedItem = SharedItem,
-    RemoveDrop = RemoveDrop, Notify = Notify, Log = Log,
+    RemoveDrop = RemoveDrop, Notify = Notify, Log = Log, DeepClone = DeepClone,
 }
 
 --------------------------------------------------------------------------------
@@ -951,24 +958,26 @@ end)
 --------------------------------------------------------------------------------
 -- Admin commands
 --------------------------------------------------------------------------------
-lib.addCommand('giveitem', {
-    help = locale('cmd_giveitem'),
-    restricted = 'group.admin',
-    params = {
-        { name = 'target', type = 'playerId', help = locale('cmd_param_target') },
-        { name = 'item', type = 'string', help = locale('cmd_param_item') },
-        { name = 'amount', type = 'number', optional = true, help = locale('cmd_param_amount') },
-    },
-}, function(src, args)
-    local ok, err = API.AddItem(args.target, args.item, args.amount or 1, nil, nil, 'admin giveitem by ' .. src)
-    if src > 0 then Notify(src, ok and 'given' or (err or 'invalid_item'), ok and 'success' or 'error') end
-end)
+RSGCore.Commands.Add('giveitem', locale('cmd_giveitem'), {
+    { name = 'id', help = locale('cmd_param_target') },
+    { name = 'item', help = locale('cmd_param_item') },
+    { name = 'amount', help = locale('cmd_param_amount') },
+}, false, function(src, args)
+    local target, item = tonumber(args[1]), args[2] and tostring(args[2]):lower()
+    local amount = math.tointeger(tonumber(args[3] or 1))
+    if not target or not item or not amount or amount < 1 or not RSGCore.Functions.GetPlayer(target) then
+        return Notify(src, 'invalid_item')
+    end
+    local ok, err = API.AddItem(target, item, amount, nil, nil, 'admin giveitem by ' .. src)
+    Notify(src, ok and 'given' or (err or 'invalid_item'), ok and 'success' or 'error')
+end, 'admin')
 
-lib.addCommand('clearinv', {
-    help = locale('cmd_clearinv'),
-    restricted = 'group.admin',
-    params = { { name = 'target', type = 'playerId', help = locale('cmd_param_target') } },
-}, function(src, args)
-    API.ClearInventory(args.target)
-    if src > 0 then Notify(src, 'cleared', 'success') end
-end)
+RSGCore.Commands.Add('clearinv', locale('cmd_clearinv'), {
+    { name = 'id', help = locale('cmd_param_target') },
+}, true, function(src, args)
+    local target = tonumber(args[1])
+    if not target or not RSGCore.Functions.GetPlayer(target) then return Notify(src, 'no_inventory') end
+    API.ClearInventory(target)
+    SavePlayer(target)
+    Notify(src, 'cleared', 'success')
+end, 'admin')

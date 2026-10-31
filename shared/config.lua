@@ -2,7 +2,8 @@ Config = {}
 
 Config.ItemBox       = true     -- show the item image box when items are added / removed / used
 Config.ItemBoxPosition = 'right' -- 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'left', 'right'
-Config.Notifications = false    -- set true to show ox_lib notifications from the inventory
+Config.Notifications = true     -- rsg-core notifications for rejected actions (too heavy, no money, too far...)
+Config.ItemNotifications = false -- also show an rsg-core toast for every item added / removed / used
 Config.Debug          = false    -- print why moves / shop purchases are rejected to the server console
 
 Config.ImagePath      = 'nui://rsg-inventory/html/images/' -- item images folder
@@ -24,7 +25,7 @@ Config.UseCooldown    = 500      -- ms between item uses
 Config.Stash = {
     DefaultSlots     = 50,
     DefaultMaxWeight = 1000000,
-    MaxSlots         = 300,      -- clamp for stashes opened from client requests
+    MaxSlots         = 300,      -- upper clamp for any stash
     MaxWeight        = 10000000,
     SaveInterval     = 5,        -- minutes idle before a changed stash is saved
     UnloadAfter      = 30,       -- minutes idle before a stash is dropped from memory
@@ -56,4 +57,4 @@ Config.CategoryLabels = {
 }
 
 -- Shops (created by other resources via exports['rsg-inventory']:CreateShop)
-Config.ShopRestockCycle = '0 * * * *' -- cron: restock every hour
+Config.ShopRestockMinutes = 60 -- restock shops (and save persistent stock) every N minutes

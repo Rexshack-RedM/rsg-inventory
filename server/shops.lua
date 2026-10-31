@@ -21,6 +21,8 @@ end
 
 local function ShopId(name) return 'shop-' .. name end
 
+local function Clone(t) return InvCore.DeepClone(t or {}) end
+
 local function SetupItems(name, list, persistent)
     local items, slot = {}, 1
     for _, it in pairs(list or {}) do
@@ -130,7 +132,7 @@ function Shops.Buy(src, shop, slot, amount, toSlot)
         Debug(src, 'buy denied: RemoveMoney(%s, %s) failed', shop.currency, price)
         return notify(src, 'no_money')
     end
-    if not InvCore.API.AddItem(src, it.name, amount, lib.table.deepclone(it.info or {}), toSlot, 'shop-purchase ' .. shop.name) then
+    if not InvCore.API.AddItem(src, it.name, amount, Clone(it.info), toSlot, 'shop-purchase ' .. shop.name) then
         Player.Functions.AddMoney(shop.currency, price, 'shop-refund')
         return notify(src, 'too_heavy')
     end
@@ -201,18 +203,22 @@ MySQL.ready(function()
     end
 end)
 
-lib.cron.new(Config.ShopRestockCycle, function()
-    for _, inv in pairs(InvCore.Inventories) do
-        if inv.type == 'shop' then
-            for _, it in pairs(inv.items) do
-                if it.restock and it.amount and it.defaultstock then
-                    it.amount = math.min(it.defaultstock, it.amount + it.restock)
+CreateThread(function()
+    local interval = math.max(1, tonumber(Config.ShopRestockMinutes) or 60) * 60000
+    while true do
+        Wait(interval)
+        for _, inv in pairs(InvCore.Inventories) do
+            if inv.type == 'shop' then
+                for _, it in pairs(inv.items) do
+                    if it.restock and it.amount and it.defaultstock then
+                        it.amount = math.min(it.defaultstock, it.amount + it.restock)
+                    end
                 end
+                InvCore.Refresh(inv.id)
             end
-            InvCore.Refresh(inv.id)
         end
+        SaveStock()
     end
-    SaveStock()
 end)
 
 AddEventHandler('onResourceStop', function(res)

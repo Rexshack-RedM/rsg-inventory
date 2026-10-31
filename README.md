@@ -1,9 +1,9 @@
-# rsg-inventory (rewrite)
+# rsg-inventory
 
 Slot/weight inventory for RSG-Core with hotbar, persistent stashes, ground drops, shops and a legacy-compatible API.
 
 ## Install
-1. Start order: `oxmysql`, `ox_lib`, `rsg-core`, then `rsg-inventory`.
+1. Start order: `oxmysql`, `rsg-core`, then `rsg-inventory`. ox_lib is **not** required (locales load through `@rsg-core/shared/locale.lua`).
 2. Item images go in `html/images/` (same PNGs as the original rsg-inventory).
 3. The `inventories` and `shop_stock` tables are created automatically if missing (see `install.sql`).
 
@@ -28,7 +28,7 @@ Every 100 cents (and blood cents) in an inventory is automatically exchanged for
 Stacks only merge when their metadata (`info`) matches, so different qualities or serials stay separate.
 
 ## Saving & crash safety
-Player items are saved by rsg-core (on logout / every `UpdateInterval`). In addition, whenever a player moves items into or out of a stash or another player, their inventory is written to the database at the same moment the stash is saved (on close or disconnect). Gives save both players immediately. A server crash therefore can't leave an item saved in two places or in none.
+Player items are saved by rsg-core (on logout / every `UpdateInterval`). In addition, every move between a player and a stash or another player (search, give) writes both sides to the database immediately. Stashes are also saved on close, after `Config.Stash.SaveInterval` minutes idle, on resource stop and on txAdmin shutdown. A server crash therefore can't leave an item saved in two places or in none.
 
 ## Server exports
 `target` = player server id (number) or stash/drop id (string).
@@ -78,10 +78,22 @@ rsg-core bridge: `LoadInventory`, `SaveInventory`, `GetTotalWeight`, `GetSlotsBy
 Stashes can only be opened from the server (`OpenStash` / `OpenInventory`); there is no client event for it, so players can't open arbitrary stashes.
 
 ## Events
-- Client: `rsg-inventory:client:ItemBox (item, 'add'|'remove'|'use', amount)` — shown as an ox_lib notification (no NUI popups).
+- Client: `rsg-inventory:client:ItemBox (item, 'add'|'remove'|'use', amount)` shows the NUI item box (position `Config.ItemBoxPosition`). Set `Config.ItemNotifications = true` to also show an rsg-core toast.
 
 ## Commands
-`/giveitem [id] [item] [amount]`, `/clearinv [id]` (group.admin).
+| Command | Permission |
+|---|---|
+| `/giveitem [id] [item] [amount]` | admin |
+| `/clearinv [id]` | admin |
 
 ## Config highlights (`shared/config.lua`)
-Player fallbacks, keybinds, use cooldown, stash limits (`MaxSlots`, `MaxWeight`, `SaveInterval`, `UnloadAfter`), drop settings, give distance and shop restock cron.
+- `Config.Notifications` rsg-core notifications for rejected actions (too heavy, no money, too far…), `Config.ItemNotifications` toast per item change
+- Player fallbacks, keybinds, `UseCooldown`
+- Stash limits (`MaxSlots`, `MaxWeight`, `SaveInterval`, `UnloadAfter`), drop settings, `GiveDistance`
+- `Config.ShopRestockMinutes` restock interval (replaces the old ox_lib cron string `ShopRestockCycle`)
+- `Config.CoinConversion`, `Config.CategoryLabels`
+
+## Locales
+`en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro` in `locales/`. Language follows the `rsg:locale` convar.
+
+Support: https://buymeacoffee.com/rexshack

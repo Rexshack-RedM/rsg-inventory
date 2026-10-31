@@ -194,12 +194,15 @@ function requestedAmount(item, half, key) {
     return v;
 }
 
-function firstFreeSlot(key, name) {
+const sameInfo = (a, b) => JSON.stringify(a || {}) === JSON.stringify(b || {});
+
+// prefer a stack the server will actually merge into (same name + same metadata)
+function firstFreeSlot(key, item) {
     const inv = state[key];
     if (!inv) return null;
     for (let s = 1; s <= inv.slots; s++) {
         const it = inv.map[s];
-        if (it && it.name === name && !it.unique) return s;
+        if (it && it.name === item.name && !it.unique && sameInfo(it.info, item.info)) return s;
     }
     for (let s = 1; s <= inv.slots; s++) if (!inv.map[s]) return s;
     return null;
@@ -227,7 +230,7 @@ document.addEventListener('mousedown', (e) => {
     if (e.ctrlKey) { // quick move
         const target = key === 'player' ? 'other' : 'player';
         if (!state[target]) return;
-        const to = state[target].type === 'shop' ? 1 : firstFreeSlot(target, item.name);
+        const to = state[target].type === 'shop' ? 1 : firstFreeSlot(target, item);
         if (to) move(key, slot, target, to, requestedAmount(item, e.shiftKey, key));
         return;
     }
@@ -345,7 +348,7 @@ function buildMenu(key, slot, item) {
 
     if (isShop) {
         entries.push({ label: L('ui_buy', 'Buy'), sub: amountSub(item, (n) => {
-            const to = firstFreeSlot('player', item.name);
+            const to = firstFreeSlot('player', item);
             if (to) move('other', slot, 'player', to, n);
         }, { max: item.amount || 1000, noAll: !item.amount, noHalf: true }) });
         return entries;
@@ -363,7 +366,7 @@ function buildMenu(key, slot, item) {
         const label = key === 'player' ? L('ui_move_to', 'Move to') + ' ' + (other.label || L('ui_ground', 'Ground'))
                                        : L('ui_take', 'Take');
         entries.push({ label, sub: amountSub(item, (n) => {
-            const to = firstFreeSlot(otherKey, item.name);
+            const to = firstFreeSlot(otherKey, item);
             if (to) move(key, slot, otherKey, to, n);
         }) });
     } else if (key === 'player' && other && other.type === 'shop') {
