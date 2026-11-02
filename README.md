@@ -1,99 +1,137 @@
 # rsg-inventory
 
-Slot/weight inventory for RSG-Core with hotbar, persistent stashes, ground drops, shops and a legacy-compatible API.
+Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent stashes, ground drops, shops with persistent stock, category filters, automatic coin exchange and a legacy-compatible API so existing RSG scripts keep working.
 
-## Install
-1. Start order: `oxmysql`, `rsg-core`, then `rsg-inventory`. ox_lib is **not** required (locales load through `@rsg-core/shared/locale.lua`).
-2. Item images go in `html/images/` (same PNGs as the original rsg-inventory).
-3. The `inventories` and `shop_stock` tables are created automatically if missing (see `install.sql`).
+**Version:** 3.1.0 · **Requires:** `rsg-core`, `oxmysql` · **ox_lib:** not required
 
-Player items stay in `players.inventory` and stashes in `inventories`, so existing data loads as-is.
+> Developers: see **[DOCS.md](DOCS.md)** for the full API, data formats and integration examples.
 
-## Controls
+---
+
+## Features
+
+- **Slot + weight inventory** — player slots/weight come from rsg-core PlayerData (fallbacks in config).
+- **Hotbar** — first 5 slots, shown with `Z`, used with `1`–`5`.
+- **Drag & drop** — move, swap, merge, split (amount box), Shift-drag for half, Ctrl-click quick move.
+- **Right-click menu** — Use, Give, Drop, Move to / Take, Split, Buy / Sell, Copy serial — each with One / Half / All / Amount….
+- **Give** — to the nearest player within `Config.GiveDistance`, with an animation.
+- **Ground drops** — dropping creates a bag prop (`p_bag01x`) other players can open; empty or expired drops are removed automatically.
+- **Persistent stashes** — stored in the `inventories` table, saved on close, when idle, on resource stop and on txAdmin shutdown; idle stashes are unloaded from memory.
+- **Player search** — open another player's inventory from the server (e.g. lawman / robbery scripts).
+- **Shops** — created by other resources; buy by dragging out, sell by dragging in; optional persistent stock, restocking, max stock, quality-scaled sell price and minimum quality.
+- **Category filter chips** — based on each item's `category` in rsg-core shared items.
+- **Coin exchange** — every 100 cents / blood cents become 1 dollar / blood dollar automatically.
+- **Metadata-aware stacking** — stacks only merge when `info` matches (quality, serial, etc.).
+- **Weapons** — serial and quality added automatically; using a weapon hands off to rsg-weapons; a weapon leaving your inventory is removed from your hands.
+- **Crash-safe** — player ↔ stash / player ↔ player moves write both sides at once, so a crash can't duplicate or lose an item.
+- **Server-authoritative** — distance, dead / last stand / handcuffed checks, cooldowns; players can't open stashes from the client.
+- **Item box** — NUI popup for added / removed / used items, position configurable.
+- **Logging** through `rsg-log`.
+- **Localised:** en, de, el, es, fr, ja, nl, pl, pt-br, ro.
+- **Auto-creates its database tables** (manual SQL still provided).
+
+---
+
+## Installation
+
+1. Download and place `rsg-inventory` in your resources folder (replace any older rsg-inventory).
+2. Ensure start order in `server.cfg`:
+   ```cfg
+   ensure oxmysql
+   ensure rsg-core
+   ensure rsg-inventory
+   ```
+3. Put item images (PNG, named after the item's `image` field) in `html/images/`.
+4. **Database** — the `inventories` and `shop_stock` tables are created automatically on first start. For a manual install, run `install.sql`.
+5. Restart the server.
+
+Existing data loads as-is: player items stay in `players.inventory`, stashes in `inventories`.
+
+---
+
+## Configuration
+
+All options are in `shared/config.lua`.
+
+| Option | Default | Description |
+|---|---|---|
+| `Config.ItemBox` | `true` | Show the item image box on add / remove / use |
+| `Config.ItemBoxPosition` | `'right'` | `top`, `bottom`, `top-left`, `top-right`, `bottom-left`, `bottom-right`, `left`, `right` |
+| `Config.Notifications` | `true` | rsg-core notifications for rejected actions (too heavy, no money, too far…) |
+| `Config.ItemNotifications` | `false` | Also show a toast for every item change |
+| `Config.Debug` | `false` | Print why moves / purchases are rejected to the server console |
+| `Config.ImagePath` | `nui://rsg-inventory/html/images/` | Item image folder |
+| `Config.PlayerSlots` / `PlayerMaxWeight` | `25` / `35000` | Fallbacks if PlayerData has no slots / weight |
+| `Config.HotbarSlots` | `5` | First N slots are the hotbar |
+| `Config.Keys` | I, Z, 1–5 | RedM control hashes for open, hotbar and slot keys |
+| `Config.UseCooldown` | `500` | ms between item uses |
+| `Config.Stash.DefaultSlots` / `DefaultMaxWeight` | `50` / `1000000` | Defaults for new stashes |
+| `Config.Stash.MaxSlots` / `MaxWeight` | `300` / `10000000` | Upper clamp for any stash |
+| `Config.Stash.SaveInterval` | `5` | Minutes idle before a changed stash is saved |
+| `Config.Stash.UnloadAfter` | `30` | Minutes idle before a stash is unloaded from memory |
+| `Config.Drop.Slots` / `MaxWeight` | `30` / `1000000` | Ground drop capacity |
+| `Config.Drop.Prop` | `p_bag01x` | Drop prop model |
+| `Config.Drop.OpenDistance` | `2.0` | Distance to see a drop when opening the inventory |
+| `Config.Drop.RenderDistance` | `50.0` | Prop spawn distance |
+| `Config.Drop.Lifetime` | `15` | Minutes before an untouched drop is removed |
+| `Config.GiveDistance` | `3.0` | Max distance for giving items |
+| `Config.CoinConversion` | cent→dollar, blood_cent→blood_dollar | Set `false` to disable |
+| `Config.CategoryLabels` | `{}` | Display names for categories (e.g. `ammo_pistol = 'Pistol Ammo'`) |
+| `Config.ShopRestockMinutes` | `60` | Shop restock + stock save interval |
+
+---
+
+## How to use
+
+### Controls
 | Input | Action |
 |---|---|
-| `I` | Open / close |
+| `I` | Open / close inventory |
 | `Z` | Show hotbar |
 | `1`–`5` | Use hotbar slot |
 | Drag | Move / swap / merge (amount box, `0` = whole stack) |
 | Shift-drag | Move half a stack |
 | Ctrl-click | Quick move to the other panel |
-| Right-click | Options menu: Use, Give, Drop, Move to / Take, Split, Buy / Sell, Copy serial (each with One / Half / All / Amount…) |
-| Double-click | Use |
+| Right-click | Options menu |
+| Double-click | Use item |
 | Drag onto **Use** / **Give** | Use, or give to the nearest player |
 
-Opening near a drop shows it; otherwise the right panel is the ground and dropping items there creates a bag.
-Category chips above each grid filter it by the item's `category` (from rsg-core shared items); they only appear when an inventory holds more than one category. Rename categories with `Config.CategoryLabels`.
-Every 100 cents (and blood cents) in an inventory is automatically exchanged for 1 dollar (`Config.CoinConversion`).
-Stacks only merge when their metadata (`info`) matches, so different qualities or serials stay separate.
+### Ground
+Opening the inventory near a drop shows that drop on the right. Otherwise the right panel is the ground — drop items there to create a bag.
 
-## Saving & crash safety
-Player items are saved by rsg-core (on logout / every `UpdateInterval`). In addition, every move between a player and a stash or another player (search, give) writes both sides to the database immediately. Stashes are also saved on close, after `Config.Stash.SaveInterval` minutes idle, on resource stop and on txAdmin shutdown. A server crash therefore can't leave an item saved in two places or in none.
+### Shops
+Drag an item out of the shop to buy it (amount box, default 1). Drag an item onto the shop to sell it, if the shop buys that item. Sell price scales with item quality.
 
-## Server exports
-`target` = player server id (number) or stash/drop id (string).
+### Commands
+| Command | Permission | Description |
+|---|---|---|
+| `/giveitem [id] [item] [amount]` | admin | Give an item to a player |
+| `/clearinv [id]` | admin | Clear a player's inventory |
 
-| Export | Returns |
-|---|---|
-| `AddItem(target, name, amount?, info?, slot?, reason?)` | `ok, err` (`too_heavy` / `no_space` / `invalid_item`) |
-| `RemoveItem(target, name, amount?, slot?, reason?)` | `ok` |
-| `HasItem(target, 'name' \| {'a','b'} \| {a = 2}, amount?)` | `bool` |
-| `GetItemCount(target, name \| {names})` | `number` |
-| `CanCarry(target, name, amount?)` | `ok, err` |
-| `GetItemBySlot(target, slot)` / `GetItemByName(target, name)` | item |
-| `SetItemInfo(target, slot, info)` | `ok` |
-| `GetInventory(target)` | player items, or the stash table |
-| `ClearInventory(target, keep?)` | `ok` |
-| `RegisterStash(id, {label, slots, maxWeight})` / `SaveStash(id)` | |
-| `OpenStash(src, id, opts?)` | `ok` |
-| `OpenInventory(src, id?, {label, maxweight, slots}?)` | `ok` |
-| `OpenPlayerInventory(src, targetId)` | `ok` (search another player) |
-| `CloseInventory(src)` | |
-| `CreateDrop(coords, items?)` | drop id |
-| `UseItem(itemName, src, item)` | |
+---
 
-AddItem also accepts the legacy order `(target, name, amount, slot, info, reason)`.
+## Quick developer examples
 
-## Shops
 ```lua
-exports['rsg-inventory']:CreateShop({
-    name = 'general', label = 'General Store', coords = vector3(...), -- coords optional
-    persistentStock = true, currency = 'cash',
-    items = {
-        { name = 'bread', price = 0.5, amount = 50, restock = 10, buyPrice = 0.2, maxStock = 100 },
-    },
-})
-exports['rsg-inventory']:OpenShop(source, 'general')
+-- give / take items
+exports['rsg-inventory']:AddItem(src, 'bread', 2)
+exports['rsg-inventory']:RemoveItem(src, 'bread', 1)
+
+-- open a stash
+exports['rsg-inventory']:OpenStash(src, 'house_12', { label = 'House Storage', slots = 50, maxWeight = 200000 })
+
+-- create and open a shop
+exports['rsg-inventory']:CreateShop({ name = 'general', label = 'General Store',
+    items = { { name = 'bread', price = 0.5, amount = 50 } } })
+exports['rsg-inventory']:OpenShop(src, 'general')
 ```
-Also `RestockShop(name, percent?)` and `DoesShopExist(name)`. Drag from the shop to buy (amount box, default 1); drag onto the shop to sell items it has a `buyPrice` for.
 
-## Legacy compatibility (`server/compat.lua`)
-`CanAddItem`, `OpenInventoryById`, `GetItemsByName`, `GetSlots`, `GetFreeWeight`, `SetInventory`, `SetItemData`, `GetItemWeight`, `CreateInventory`, `DeleteInventory`, `ClearStash`, `ForceDropItem`, plus `Player.Functions.AddItem / RemoveItem / GetItemBySlot / GetItemByName / GetItemsByName / ClearInventory / SetInventory`.
+Full reference: **[DOCS.md](DOCS.md)**.
 
-rsg-core bridge: `LoadInventory`, `SaveInventory`, `GetTotalWeight`, `GetSlotsByItem`, `GetFirstSlotByItem`.
-
-## Client exports
-`HasItem(items, amount?)`, `GetItemCount(name)`, `CloseInventory()`, `IsOpen()`.
-
-Stashes can only be opened from the server (`OpenStash` / `OpenInventory`); there is no client event for it, so players can't open arbitrary stashes.
-
-## Events
-- Client: `rsg-inventory:client:ItemBox (item, 'add'|'remove'|'use', amount)` shows the NUI item box (position `Config.ItemBoxPosition`). Set `Config.ItemNotifications = true` to also show an rsg-core toast.
-
-## Commands
-| Command | Permission |
-|---|---|
-| `/giveitem [id] [item] [amount]` | admin |
-| `/clearinv [id]` | admin |
-
-## Config highlights (`shared/config.lua`)
-- `Config.Notifications` rsg-core notifications for rejected actions (too heavy, no money, too far…), `Config.ItemNotifications` toast per item change
-- Player fallbacks, keybinds, `UseCooldown`
-- Stash limits (`MaxSlots`, `MaxWeight`, `SaveInterval`, `UnloadAfter`), drop settings, `GiveDistance`
-- `Config.ShopRestockMinutes` restock interval (replaces the old ox_lib cron string `ShopRestockCycle`)
-- `Config.CoinConversion`, `Config.CategoryLabels`
+---
 
 ## Locales
 `en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro` in `locales/`. Language follows the `rsg:locale` convar.
 
-Support: https://buymeacoffee.com/rexshack
+## Support
+If you like this script: https://buymeacoffee.com/rexshack
