@@ -21,6 +21,15 @@ Config.Keys = {
 }
 Config.UseCooldown    = 500      -- ms between item uses
 
+-- While inventory is open, block game controls but allow push-to-talk.
+-- Uses SetNuiFocusKeepInput + DisableAllControlActions, then re-enables only these.
+-- Keymapped voice (e.g. pma-voice RegisterKeyMapping) also works with KeepInput.
+-- Add extra control hashes here if your voice resource uses a control instead of a keybind.
+Config.AllowPushToTalkWhileOpen = true
+Config.PushToTalkControls = {
+    0x4BC9DABB, -- INPUT_PUSH_TO_TALK (common)
+}
+
 -- Stashes
 Config.Stash = {
     DefaultSlots     = 50,

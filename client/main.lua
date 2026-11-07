@@ -71,6 +71,7 @@ end
 local function Close()
     if not isOpen then return end
     isOpen = false
+    SetNuiFocusKeepInput(false)
     SetNuiFocus(false, false)
     Send('close')
     TriggerServerEvent('rsg-inventory:server:close')
@@ -112,6 +113,10 @@ end
 RegisterNetEvent('rsg-inventory:client:open', function(player, other)
     isOpen = true
     SetNuiFocus(true, true)
+    -- Keep game input alive only so we can whitelist push-to-talk (everything else is disabled in the loop below)
+    if Config.AllowPushToTalkWhileOpen then
+        SetNuiFocusKeepInput(true)
+    end
     Send('open', { player = player, other = other, imagePath = Config.ImagePath, hotbarSlots = Config.HotbarSlots, labels = UiLabels(), categoryLabels = Config.CategoryLabels })
 end)
 
@@ -245,8 +250,8 @@ end)
 local lastHotbar = 0
 CreateThread(function()
     while true do
-        Wait(0)
         if loggedIn and not isOpen then
+            Wait(0)
             DisableControlAction(0, Config.Keys.Open, true)
             if IsDisabledControlJustReleased(0, Config.Keys.Open) then
                 OpenInventory()
@@ -264,8 +269,28 @@ CreateThread(function()
                     end
                 end
             end
+        elseif isOpen then
+            Wait(0)
+            if not CanUse() then
+                Close()
+            elseif Config.AllowPushToTalkWhileOpen then
+                -- Block movement / combat / look, but re-enable only push-to-talk controls
+                DisableAllControlActions(0)
+                DisableAllControlActions(1)
+                DisableAllControlActions(2)
+                local list = Config.PushToTalkControls
+                if list then
+                    for i = 1, #list do
+                        local control = list[i]
+                        EnableControlAction(0, control, true)
+                        EnableControlAction(1, control, true)
+                        EnableControlAction(2, control, true)
+                    end
+                end
+            else
+                Wait(250)
+            end
         else
-            if isOpen and not CanUse() then Close() end -- died or got cuffed with the bag open
             Wait(250)
         end
     end
@@ -294,6 +319,7 @@ end)
 
 AddEventHandler('onResourceStop', function(res)
     if res ~= GetCurrentResourceName() then return end
+    SetNuiFocusKeepInput(false)
     SetNuiFocus(false, false)
     for _, d in pairs(Drops) do DeleteDropObj(d) end
 end)
