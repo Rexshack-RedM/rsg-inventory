@@ -8,6 +8,7 @@ local OpenInv      = {}   -- [src] = secondary inventory the player has open (st
 local UseCooldown  = {}
 local GiveCooldown = {}
 local DropCooldown = {}
+local ActionCooldown = {}
 local dropCount    = 0
 local API          = {}
 
@@ -150,10 +151,25 @@ local function Commit(c)
     end
 end
 
+-- Extra header buttons a script can give a stash: { { id = 'sort', label = 'Sort' }, ... } (max 3)
+local function SanitizeActions(actions)
+    if type(actions) ~= 'table' then return nil end
+    local out = {}
+    for _, a in ipairs(actions) do
+        if #out >= 3 then break end
+        if type(a) == 'table' and type(a.id) == 'string' and #a.id <= 32 and a.id:match('^[%w_%-]+$')
+            and type(a.label) == 'string' and a.label ~= '' and #a.label <= 64 then
+            out[#out + 1] = { id = a.id, label = a.label }
+        end
+    end
+    return #out > 0 and out or nil
+end
+
 local function ClientInv(c)
     return {
         id = c.id, label = c.label, type = c.type, slots = c.slots,
         maxWeight = c.maxWeight, items = ItemList(c.items),
+        actions = c.type == 'stash' and c.actions or nil,
     }
 end
 
@@ -482,6 +498,7 @@ function API.RegisterStash(id, opts)
     inv.label     = opts.label or inv.label or id
     inv.slots     = math.min(tonumber(opts.slots) or inv.slots or Config.Stash.DefaultSlots, Config.Stash.MaxSlots)
     inv.maxWeight = math.min(tonumber(opts.maxWeight) or inv.maxWeight or Config.Stash.DefaultMaxWeight, Config.Stash.MaxWeight)
+    if opts.actions ~= nil then inv.actions = SanitizeActions(opts.actions) end -- false / {} removes the buttons
     return inv
 end
 
@@ -593,12 +610,12 @@ function API.OpenStash(src, id, opts)
     return OpenFor(src, id)
 end
 
---- OpenInventory(src)  or legacy  OpenInventory(src, stashId, { label, maxweight, slots })
+--- OpenInventory(src)  or legacy  OpenInventory(src, stashId, { label, maxweight, slots, actions })
 function API.OpenInventory(src, id, data)
     if not id then return OpenFor(src, nil) end
     if type(id) ~= 'string' then return false end
     data = data or {}
-    return API.OpenStash(src, id, { label = data.label, slots = data.slots, maxWeight = data.maxweight or data.maxWeight })
+    return API.OpenStash(src, id, { label = data.label, slots = data.slots, maxWeight = data.maxweight or data.maxWeight, actions = data.actions })
 end
 
 --- Lets src search another player's inventory.
@@ -624,6 +641,24 @@ end)
 
 RegisterNetEvent('rsg-inventory:server:close', function()
     OnClosed(source)
+end)
+
+-- A stash header button was clicked. Only fires for an action registered on the stash the
+-- player has open; the owning script listens with AddEventHandler('rsg-inventory:stashAction').
+RegisterNetEvent('rsg-inventory:server:stashAction', function(actionId)
+    local src = source
+    local id = OpenInv[src]
+    local inv = type(id) == 'string' and Inventories[id]
+    if type(actionId) ~= 'string' or not inv or inv.type ~= 'stash' or not inv.actions then return end
+    local now = GetGameTimer()
+    if ActionCooldown[src] and now - ActionCooldown[src] < 1000 then return end
+    for _, action in ipairs(inv.actions) do
+        if action.id == actionId then
+            ActionCooldown[src] = now
+            TriggerEvent('rsg-inventory:stashAction', src, id, actionId)
+            return
+        end
+    end
 end)
 
 --------------------------------------------------------------------------------
@@ -913,7 +948,7 @@ InvCore = {
 AddEventHandler('playerDropped', function()
     local src = source
     OnClosed(src)
-    UseCooldown[src], GiveCooldown[src], DropCooldown[src] = nil, nil, nil
+    UseCooldown[src], GiveCooldown[src], DropCooldown[src], ActionCooldown[src] = nil, nil, nil, nil
     for watcher, openId in pairs(OpenInv) do
         if openId == src then API.CloseInventory(watcher) end -- stop searches of this player
     end

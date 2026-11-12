@@ -2,7 +2,7 @@
 
 Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent stashes, ground drops, shops with persistent stock, category filters, automatic coin exchange and a legacy-compatible API so existing RSG scripts keep working.
 
-**Version:** 3.1.0 · **Requires:** `rsg-core`, `oxmysql` · **ox_lib:** not required
+**Version:** 3.2.0 · **Requires:** `rsg-core`, `oxmysql` · **ox_lib:** not required
 
 > Developers: see **[DOCS.md](DOCS.md)** for the full API, data formats and integration examples.
 
@@ -17,6 +17,7 @@ Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent
 - **Give** — to the nearest player within `Config.GiveDistance`, with an animation.
 - **Ground drops** — dropping creates a bag prop (`p_bag01x`) other players can open; empty or expired drops are removed automatically.
 - **Persistent stashes** — stored in the `inventories` table, saved on close, when idle, on resource stop and on txAdmin shutdown; idle stashes are unloaded from memory.
+- **Stash action buttons** — a script can add up to 3 of its own buttons to a stash header (e.g. "Bundle Sets" on an rsg-cards box) and handle the click on the server.
 - **Player search** — open another player's inventory from the server (e.g. lawman / robbery scripts).
 - **Shops** — created by other resources; buy by dragging out, sell by dragging in; optional persistent stock, restocking, max stock, quality-scaled sell price and minimum quality.
 - **Category filter chips** — based on each item's `category` in rsg-core shared items.
@@ -119,6 +120,13 @@ exports['rsg-inventory']:RemoveItem(src, 'bread', 1)
 
 -- open a stash
 exports['rsg-inventory']:OpenStash(src, 'house_12', { label = 'House Storage', slots = 50, maxWeight = 200000 })
+
+-- open a stash with a header button, and handle the click (server)
+exports['rsg-inventory']:OpenStash(src, 'crate_7', { label = 'Crate', actions = { { id = 'empty', label = 'Empty Crate' } } })
+AddEventHandler('rsg-inventory:stashAction', function(src, stashId, actionId)
+    if stashId ~= 'crate_7' or actionId ~= 'empty' then return end
+    -- your own checks, then do the work
+end)
 
 -- create and open a shop
 exports['rsg-inventory']:CreateShop({ name = 'general', label = 'General Store',

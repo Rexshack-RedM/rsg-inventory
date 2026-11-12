@@ -89,8 +89,8 @@ Called as `exports['rsg-inventory']:Name(...)`.
 | Export | Notes |
 |---|---|
 | `OpenInventory(src)` | Own inventory |
-| `OpenInventory(src, id, { label, maxweight, slots })` | Legacy stash open |
-| `OpenStash(src, id, { label, slots, maxWeight })` | Preferred stash open |
+| `OpenInventory(src, id, { label, maxweight, slots, actions })` | Legacy stash open |
+| `OpenStash(src, id, { label, slots, maxWeight, actions })` | Preferred stash open. `actions` adds header buttons, see [Stashes](#5-stashes) |
 | `OpenPlayerInventory(src, targetId)` | Search another player (within give distance) |
 | `CloseInventory(src)` | |
 
@@ -137,6 +137,32 @@ end)
 - `slots` / `maxWeight` are clamped to `Config.Stash.MaxSlots` / `MaxWeight`.
 - Use `RegisterStash` to set limits without opening; `SaveStash` to force a save.
 - **There is no client event to open a stash.** Always open from the server after your own checks.
+
+### Stash action buttons
+
+A script can put up to 3 of its own buttons in the header of a stash (under the stash name) and react when a player clicks one.
+
+```lua
+-- server: open the stash with a button
+exports['rsg-inventory']:OpenStash(src, 'crate_' .. crateId, {
+    label = 'Crate',
+    actions = {
+        { id = 'empty', label = locale('empty_crate') }, -- id: letters, numbers, _ and - (max 32); label: max 64 bytes
+    },
+})
+
+-- server: handle the click (a plain local event, NOT a net event - never RegisterNetEvent it)
+AddEventHandler('rsg-inventory:stashAction', function(src, stashId, actionId)
+    if actionId ~= 'empty' or not stashId:find('^crate_') then return end
+    -- your own access checks, then change the stash with AddItem / RemoveItem (the open UI refreshes itself)
+end)
+```
+
+- `actions` is accepted by `OpenStash`, `RegisterStash` and the legacy `OpenInventory`. It is remembered on the stash while it is loaded; pass `actions = false` to remove the buttons, leave it out to keep them unchanged.
+- The label is shown as given, so translate it yourself before passing it.
+- rsg-inventory only fires `rsg-inventory:stashAction` when the player currently has that stash open, the action id is registered on it, and at most once a second per player. Everything else (who may use the button, what it does) is up to your script.
+- The event goes to every resource, so always check `stashId` and `actionId` belong to you.
+- Stashes only: shops, drops and player searches never show action buttons.
 
 ## 6. Shops
 
@@ -250,6 +276,7 @@ Housekeeping runs every minute: saves idle dirty stashes, unloads stashes idle f
 - Cooldowns on use (`UseCooldown`), give (1 s), drop (0.5 s) and shop actions.
 - Amounts are integer-checked and clamped; shop buys limited to 1000 per action.
 - Stashes can only be opened by server exports.
+- Stash action buttons: the server only accepts an action id registered on the stash the player has open (1 s cooldown) and passes it on as a local server event; the click carries no other client data.
 - Actions are logged to `rsg-log` (`playerinventory`).
 
 **Your responsibility:** check job / ownership / distance in your own script *before* calling `OpenStash`, `OpenShop` or `OpenPlayerInventory`.

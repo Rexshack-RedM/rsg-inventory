@@ -224,6 +224,12 @@ RegisterNUICallback('move', function(data, cb)
     cb('ok')
 end)
 
+-- stash header button (registered by the script that opened the stash)
+RegisterNUICallback('action', function(data, cb)
+    if type(data.id) == 'string' then TriggerServerEvent('rsg-inventory:server:stashAction', data.id) end
+    cb('ok')
+end)
+
 RegisterNUICallback('use', function(data, cb)
     TriggerServerEvent('rsg-inventory:server:useItem', data.slot)
     cb('ok')

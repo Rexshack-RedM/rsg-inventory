@@ -147,8 +147,34 @@ function render() {
         $('other-sub').textContent = subs[other.type] || L('ui_drop_here', 'Drop items here');
         $('panel-other').querySelector('.weight').classList.toggle('hidden', other.type === 'shop');
         if (other.type !== 'shop') setWeight('other', other);
+        renderActions(other);
         renderGrid('other');
     }
+}
+
+// header buttons a script registered on this stash
+function renderActions(other) {
+    const box = $('other-actions');
+    const actions = other.type === 'stash' && other.actions ? Object.values(other.actions) : [];
+    const key = other.id + '|' + actions.map((a) => a && a.id + ':' + a.label).join('|');
+    if (box.dataset.key === key) return; // unchanged: keep the buttons (and their cooldown state)
+    box.dataset.key = key;
+    box.replaceChildren();
+    actions.forEach((a) => {
+        if (!a || !a.id || !a.label) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wood-btn';
+        btn.textContent = a.label;
+        btn.title = a.label;
+        btn.addEventListener('click', () => {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            setTimeout(() => { btn.disabled = false; }, 1000);
+            post('action', { id: a.id });
+        });
+        box.append(btn);
+    });
 }
 
 function setInv(key, data) {
@@ -505,6 +531,8 @@ window.addEventListener('message', ({ data: msg }) => {
             state.imagePath = d.imagePath || state.imagePath;
             state.hotbarSlots = d.hotbarSlots || 5;
             state.other = null;
+            $('other-actions').dataset.key = '';
+            $('other-actions').replaceChildren();
             if (d.labels) labels = d.labels;
             categoryLabels = d.categoryLabels || {};
             filters.other = 'all';
