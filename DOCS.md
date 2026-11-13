@@ -328,4 +328,4 @@ Player items use the existing `players.inventory` column.
 
 ---
 
-Support: https://buymeacoffee.com/rexshack
+Support the Project : https://rexshack.tebex.store/
