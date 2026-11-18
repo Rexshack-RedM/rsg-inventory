@@ -505,3 +505,183 @@ end)
 ---
 
 Support the Project : https://rexshack.tebex.store/
+
+<!-- BEGIN AUTO-REFERENCE (generated from the code; re-run the generator instead of editing by hand) -->
+
+## Technical reference
+
+Generated from the source of **rsg-inventory 3.3.0**. Names, arguments and defaults below are read straight from the code.
+
+### Dependencies
+
+`rsg-core`, `oxmysql`
+
+### Database
+
+Tables: `inventories`, `shop_stock`, `inventory_stash_log`, `inventory_drops`.
+
+Tables are created automatically on start while `Config.AutoDatabase = true` (default). Nothing is ever dropped or overwritten.
+For a manual install set `Config.AutoDatabase = false` and import `install.sql` once.
+
+```lua
+-- shared/config.lua
+Config.AutoDatabase = true -- false = import the SQL file yourself
+```
+
+### Configuration
+
+| Option | Default | Notes |
+|---|---|---|
+| `Config.ItemBox` | `true` | show the item image box when items are added / removed / used |
+| `Config.ItemBoxPosition` | `'right'` | 'top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'left', 'right' |
+| `Config.Notifications` | `true` | rsg-core notifications for rejected actions (too heavy, no money, too far...) |
+| `Config.ItemNotifications` | `false` | also show an rsg-core toast for every item added / removed / used |
+| `Config.Debug` | `false` | print why moves / shop purchases are rejected to the server console |
+| `Config.AutoDatabase` | `true` | create the database tables on start; set false to import install.sql manually |
+| `Config.ImagePath` | `'nui://rsg-inventory/html/images/'` | item images folder |
+| `Config.PlayerSlots` | `25` | Player defaults (fallbacks if rsg-core PlayerData has no slots/weight) |
+| `Config.PlayerMaxWeight` | `35000` |  |
+| `Config.HotbarSlots` | `5` | first N slots are the hotbar |
+| `Config.Keys` | `table` | Keybinds (RedM control hashes) |
+| `Config.Open` | `0xC1989F95` |  |
+| `Config.Hotbar` | `0x26E9DC00` |  |
+| `Config.Slots` | `{ 0xE6F612E4, 0x1CE6D9EB, 0x4F49CC4C, 0x8F9F9E58, 0xAB62E997 }` |  |
+| `Config.UseCooldown` | `500` | ms between item uses |
+| `Config.AllowPushToTalkWhileOpen` | `true` | Add extra control hashes here if your voice resource uses a control instead of a keybind. |
+| `Config.PushToTalkControls` | `table` |  |
+| `Config.Stash` | `table` | Stashes |
+| `Config.DefaultSlots` | `50` |  |
+| `Config.DefaultMaxWeight` | `1000000` |  |
+| `Config.MaxSlots` | `300` |  |
+| `Config.MaxWeight` | `10000000` |  |
+| `Config.SaveInterval` | `5` |  |
+| `Config.UnloadAfter` | `30` |  |
+| `Config.History` | `true` |  |
+| `Config.HistoryDays` | `14` |  |
+| `Config.Drop` | `table` | Ground drops |
+| `Config.Prop` | ``p_bag01x`` |  |
+| `Config.OpenDistance` | `2.0` |  |
+| `Config.RenderDistance` | `50.0` |  |
+| `Config.Lifetime` | `15` |  |
+| `Config.SyncDistance` | `120.0` |  |
+| `Config.SyncInterval` | `3` |  |
+| `Config.Persist` | `false` |  |
+| `Config.Capacity` | `table` | exports['rsg-inventory']:AddCapacityBonus. These caps apply to every single bonus. |
+| `Config.MaxBonusSlots` | `50` |  |
+| `Config.MaxBonusWeight` | `100000` |  |
+| `Config.Decay` | `table` | Only online players and loaded stashes decay; weapons are never touched. |
+| `Config.Enabled` | `false` |  |
+| `Config.Interval` | `10` |  |
+| `Config.Stashes` | `true` |  |
+| `Config.Items` | `table` |  |
+| `Config.Categories` | `table` |  |
+| `Config.GiveDistance` | `3.0` | players within this distance appear in the Give list (and the server re-checks it) |
+| `Config.GiveMaxPlayers` | `12` | most players shown in the Give list (closest first) |
+| `Config.Trash` | `table` | Trash: right-click > Trash permanently deletes items after a confirmation |
+| `Config.CoinConversion` | `table` | Set to false to disable. Pairs must match the money items in rsg-core. |
+| `Config.CategoryLabels` | `table` | Optional display names; any category not listed is shown prettified (ammo_pistol -> Ammo Pistol). |
+| `Config.ShopRestockMinutes` | `60` | restock shops (and save persistent stock) every N minutes |
+
+### Exports
+
+**Server**
+
+| Export | Arguments | File |
+|---|---|---|
+| `CanAddItem` | `` | `server/compat.lua` |
+| `OpenInventoryById` | `` | `server/compat.lua` |
+| `GetItemsByName` | `` | `server/compat.lua` |
+| `GetSlots` | `` | `server/compat.lua` |
+| `GetFreeWeight` | `` | `server/compat.lua` |
+| `SetInventory` | `` | `server/compat.lua` |
+| `SetItemData` | `` | `server/compat.lua` |
+| `GetItemWeight` | `` | `server/compat.lua` |
+| `CreateInventory` | `` | `server/compat.lua` |
+| `DeleteInventory` | `` | `server/compat.lua` |
+| `ClearStash` | `` | `server/compat.lua` |
+| `ForceDropItem` | `` | `server/compat.lua` |
+| `LoadInventory` | `` | `server/main.lua` |
+| `SaveInventory` | `` | `server/main.lua` |
+| `GetTotalWeight` | `` | `server/main.lua` |
+| `GetSlotsByItem` | `items, name` | `server/main.lua` |
+| `GetFirstSlotByItem` | `items, name` | `server/main.lua` |
+| `CreateShop` | `` | `server/shops.lua` |
+| `OpenShop` | `` | `server/shops.lua` |
+| `DoesShopExist` | `` | `server/shops.lua` |
+| `RestockShop` | `` | `server/shops.lua` |
+
+**Client**
+
+| Export | Arguments | File |
+|---|---|---|
+| `HasItem` | `items, amount` | `client/main.lua` |
+| `GetItemCount` | `name` | `client/main.lua` |
+| `CloseInventory` | `` | `client/main.lua` |
+| `IsOpen` | `` | `client/main.lua` |
+
+```lua
+-- example
+local result = exports['rsg-inventory']:CanAddItem()
+```
+
+### Callbacks
+
+| Callback | Side | Arguments | File |
+|---|---|---|---|
+| `rsg-inventory:server:getNearbyPlayers` | server | `src, cb` | `server/main.lua` |
+
+```lua
+-- client side
+RSGCore.Functions.TriggerCallback('rsg-inventory:server:getNearbyPlayers', function(result)
+    -- use result
+end)
+```
+
+### Events
+
+Server events can be fired by any client, so every handler re-validates the player, the arguments and any permission, distance or cooldown on the server. Never add a reward to a handler without those checks.
+
+| Event | Side | Arguments | File |
+|---|---|---|---|
+| `rsg-inventory:client:open` | client | `player, other` | `client/main.lua` |
+| `rsg-inventory:client:refresh` | client | `player, other` | `client/main.lua` |
+| `rsg-inventory:client:close` | client | `` | `client/main.lua` |
+| `rsg-inventory:client:checkWeapon` | client | `weaponName` | `client/main.lua` |
+| `rsg-inventory:client:ItemBox` | client | `item, kind, amount` | `client/main.lua` |
+| `rsg-inventory:client:giveAnim` | client | `` | `client/main.lua` |
+| `rsg-inventory:client:addDrop` | client | `id, coords` | `client/main.lua` |
+| `rsg-inventory:client:removeDrop` | client | `id` | `client/main.lua` |
+| `RSGCore:Client:OnPlayerLoaded` | client | `` | `client/main.lua` |
+| `RSGCore:Client:OnPlayerUnload` | client | `` | `client/main.lua` |
+| `rsg-inventory:server:open` | server | `dropId` | `server/main.lua` |
+| `rsg-inventory:server:close` | server | `` | `server/main.lua` |
+| `rsg-inventory:server:stashAction` | server | `actionId` | `server/main.lua` |
+| `rsg-inventory:server:move` | server | `data` | `server/main.lua` |
+| `rsg-inventory:server:sort` | server | `which` | `server/main.lua` |
+| `rsg-inventory:server:useItem` | server | `slot` | `server/main.lua` |
+| `rsg-inventory:server:give` | server | `targetId, slot, amount, itemName` | `server/main.lua` |
+| `rsg-inventory:server:trash` | server | `slot, amount, itemName` | `server/main.lua` |
+| `rsg-inventory:server:drop` | server | `slot, amount` | `server/main.lua` |
+| `rsg-inventory:server:syncDrops` | server | `` | `server/main.lua` |
+
+```lua
+-- from a client script
+TriggerServerEvent('rsg-inventory:server:open', dropId)
+-- from a server script
+TriggerClientEvent('rsg-inventory:client:open', source, player, other)
+```
+
+### Commands
+
+| Command | Notes | File |
+|---|---|---|
+| `/giveitem` | locale('cmd_giveitem') | `server/main.lua` |
+| `/clearinv` | locale('cmd_clearinv') | `server/main.lua` |
+| `/stashlog` | locale('cmd_stashlog') | `server/main.lua` |
+| `/viewinv` | locale('cmd_viewinv') | `server/main.lua` |
+
+### Locales
+
+Language files in `locales/`: `de`, `el`, `en`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`. Set the language with `setr rsg:locale "en"`.
+
+<!-- END AUTO-REFERENCE -->

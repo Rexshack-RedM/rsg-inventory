@@ -29,3 +29,7 @@
 
 ### Documentation
 - `README.md` and `DOCS.md` rewritten: configuration reference, commands, events and callbacks, security model, examples.
+
+### Documentation
+- `DOCS.md`: added a generated technical reference (dependencies, database, configuration, exports, callbacks, events, commands, items, locales) with code examples, read straight from the source.
+
