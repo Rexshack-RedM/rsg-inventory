@@ -62,11 +62,16 @@ local function CreateInventory(id, data)
     API.RegisterStash(id, { label = data.label, slots = data.slots, maxWeight = data.maxweight or data.maxWeight })
 end
 
+-- removes the stash from memory AND the database (a later stash with the same id starts empty)
 local function DeleteInventory(id)
+    if type(id) ~= 'string' then return false end
     local inv = InvCore.Inventories[id]
-    if not inv or inv.type ~= 'stash' then return false end
-    API.SaveStash(id)
+    if inv and inv.type ~= 'stash' then return false end
+    for watcher, openId in pairs(InvCore.OpenInv) do
+        if openId == id then API.CloseInventory(watcher) end
+    end
     InvCore.Inventories[id] = nil
+    MySQL.prepare('DELETE FROM inventories WHERE identifier = ?', { id })
     return true
 end
 

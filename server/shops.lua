@@ -55,6 +55,8 @@ local function Register(name, data)
         shop.items, shop.slots = items, math.max(count, 1)
         if data.label then shop.label = data.label end
         if data.persistentStock ~= nil then shop.persistentStock = data.persistentStock end
+        if data.currency then shop.currency = data.currency end
+        if data.coords then shop.shopCoords = vector3(data.coords.x, data.coords.y, data.coords.z) end
         return shop
     end
     shop = {
@@ -83,8 +85,7 @@ function Shops.OpenShop(src, name)
     local shop = name and InvCore.Inventories[ShopId(name)]
     if not shop then return false end
     if shop.shopCoords and #(GetEntityCoords(GetPlayerPed(src)) - shop.shopCoords) > 10.0 then return false end
-    InvCore.OpenFor(src, shop.id)
-    return true
+    return InvCore.OpenFor(src, shop.id)
 end
 
 function Shops.DoesShopExist(name)
@@ -100,6 +101,7 @@ function Shops.RestockShop(name, percentage)
             it.amount = math.min(it.defaultstock, it.amount + math.floor(it.defaultstock * mult + 0.5))
         end
     end
+    shop.stockDirty = true
     InvCore.Refresh(shop.id)
     return true
 end
@@ -136,7 +138,7 @@ function Shops.Buy(src, shop, slot, amount, toSlot)
         Player.Functions.AddMoney(shop.currency, price, 'shop-refund')
         return notify(src, 'too_heavy')
     end
-    if it.amount then it.amount = it.amount - amount end
+    if it.amount then it.amount = it.amount - amount shop.stockDirty = true end
     Debug(src, 'bought %sx %s for %s', amount, it.name, price)
 end
 
@@ -144,8 +146,8 @@ function Shops.Sell(src, shop, playerSlot, amount)
     if OnCooldown(src) or not InRange(src, shop) then return end
     local item = InvCore.API.GetItemBySlot(src, playerSlot)
     if not item then return end
-    amount = math.tointeger(tonumber(amount)) or item.amount
-    if amount < 1 or amount > item.amount then amount = item.amount end
+    if amount == nil then amount = item.amount else amount = math.tointeger(tonumber(amount)) end
+    if not amount or amount < 1 or amount > item.amount then return end
 
     local entry
     for _, it in pairs(shop.items) do
@@ -160,7 +162,7 @@ function Shops.Sell(src, shop, playerSlot, amount)
     local payout = math.floor(entry.buyPrice * amount * (quality / 100) * 100 + 0.5) / 100
     if payout <= 0 then return notify(src, 'shop_wont_buy') end
     if not InvCore.API.RemoveItem(src, item.name, amount, playerSlot, 'shop-sell ' .. shop.name) then return end
-    if entry.amount then entry.amount = entry.amount + amount end
+    if entry.amount then entry.amount = entry.amount + amount shop.stockDirty = true end
     local Player = RSGCore.Functions.GetPlayer(src)
     if Player then Player.Functions.AddMoney(shop.currency, payout, 'shop-sell') end
 end
@@ -171,7 +173,8 @@ end
 local function SaveStock()
     local rows = {}
     for _, inv in pairs(InvCore.Inventories) do
-        if inv.type == 'shop' and inv.persistentStock then
+        if inv.type == 'shop' and inv.persistentStock and inv.stockDirty then
+            inv.stockDirty = false
             for _, it in pairs(inv.items) do
                 if it.amount then rows[#rows + 1] = { inv.name, it.name, it.amount } end
             end
@@ -183,14 +186,7 @@ local function SaveStock()
 end
 
 MySQL.ready(function()
-    MySQL.query.await([[
-        CREATE TABLE IF NOT EXISTS `shop_stock` (
-            `shop_name` VARCHAR(100) NOT NULL,
-            `item_name` VARCHAR(100) NOT NULL,
-            `stock` INT NOT NULL DEFAULT 0,
-            PRIMARY KEY (`shop_name`, `item_name`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    ]])
+    if not InvCore.WaitForDatabase() then return end -- tables are created in server/main.lua
     for _, row in ipairs(MySQL.query.await('SELECT shop_name, item_name, stock FROM shop_stock') or {}) do
         StockCache[row.shop_name] = StockCache[row.shop_name] or {}
         StockCache[row.shop_name][row.item_name] = tonumber(row.stock)
@@ -210,8 +206,9 @@ CreateThread(function()
         for _, inv in pairs(InvCore.Inventories) do
             if inv.type == 'shop' then
                 for _, it in pairs(inv.items) do
-                    if it.restock and it.amount and it.defaultstock then
+                    if it.restock and it.amount and it.defaultstock and it.amount < it.defaultstock then
                         it.amount = math.min(it.defaultstock, it.amount + it.restock)
+                        inv.stockDirty = true
                     end
                 end
                 InvCore.Refresh(inv.id)

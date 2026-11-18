@@ -5,6 +5,7 @@ Config.ItemBoxPosition = 'right' -- 'top', 'bottom', 'top-left', 'top-right', 'b
 Config.Notifications = true     -- rsg-core notifications for rejected actions (too heavy, no money, too far...)
 Config.ItemNotifications = false -- also show an rsg-core toast for every item added / removed / used
 Config.Debug          = false    -- print why moves / shop purchases are rejected to the server console
+Config.AutoDatabase   = true     -- create the database tables on start; set false to import install.sql manually
 
 Config.ImagePath      = 'nui://rsg-inventory/html/images/' -- item images folder
 
@@ -38,6 +39,8 @@ Config.Stash = {
     MaxWeight        = 10000000,
     SaveInterval     = 5,        -- minutes idle before a changed stash is saved
     UnloadAfter      = 30,       -- minutes idle before a stash is dropped from memory
+    History          = true,     -- log who put / took what in every stash (table inventory_stash_log)
+    HistoryDays      = 14,       -- days of stash history to keep
 }
 
 -- Ground drops
@@ -48,9 +51,41 @@ Config.Drop = {
     OpenDistance = 2.0,          -- distance to see a drop when opening inventory
     RenderDistance = 50.0,       -- prop spawn distance
     Lifetime     = 15,           -- minutes before an untouched drop is removed
+    SyncDistance = 120.0,        -- drops are only sent to players this close (keep above RenderDistance)
+    SyncInterval = 3,            -- seconds between nearby-drop updates
+    Persist      = false,        -- true = drops survive a restart (saved to inventory_drops, timer restarts on load)
 }
 
-Config.GiveDistance   = 3.0
+-- Extra carrying capacity granted by other resources (satchels, horses, wagons...) through
+-- exports['rsg-inventory']:AddCapacityBonus. These caps apply to every single bonus.
+Config.Capacity = {
+    MaxBonusSlots  = 50,
+    MaxBonusWeight = 100000,
+}
+
+-- Item decay: items listed here lose `rate` quality points every Interval minutes (info.quality, 100 = fresh).
+-- New items start at quality 100. The quality bar, shop sell price and minQuality already use it.
+-- Only online players and loaded stashes decay; weapons are never touched.
+Config.Decay = {
+    Enabled    = false,
+    Interval   = 10,             -- minutes between decay ticks
+    Stashes    = true,           -- also decay items inside loaded stashes
+    Items      = {
+        -- bread    = { rate = 2 },                   -- by item name
+        -- raw_meat = { rate = 5, remove = true },    -- remove = delete the item once quality hits 0
+    },
+    Categories = {
+        -- food = { rate = 1 },                       -- by rsg-core item category
+    },
+}
+
+Config.GiveDistance   = 3.0     -- players within this distance appear in the Give list (and the server re-checks it)
+Config.GiveMaxPlayers = 12      -- most players shown in the Give list (closest first)
+
+-- Trash: right-click > Trash permanently deletes items after a confirmation
+Config.Trash = {
+    Enabled = true,
+}
 
 -- Every 100 cents in an inventory is automatically exchanged for 1 dollar.
 -- Set to false to disable. Pairs must match the money items in rsg-core.

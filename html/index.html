@@ -23,6 +23,10 @@
                     <div class="bar"><div class="fill stat-good" id="player-bar"></div></div>
                 </div>
                 <div class="divider"><span>✦</span></div>
+                <div class="toolbar">
+                    <input type="text" class="search-input" id="search-player" data-inv="player" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Search…" data-l-placeholder="ui_search">
+                    <button type="button" class="wood-btn small" id="sort-player" data-sort="player" data-l="ui_sort">Sort</button>
+                </div>
                 <div class="filters" id="filter-player"></div>
                 <div class="grid" id="grid-player" data-inv="player"></div>
             </section>
@@ -54,6 +58,10 @@
                     <div class="bar"><div class="fill stat-good" id="other-bar"></div></div>
                 </div>
                 <div class="divider"><span>✦</span></div>
+                <div class="toolbar">
+                    <input type="text" class="search-input" id="search-other" data-inv="other" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Search…" data-l-placeholder="ui_search">
+                    <button type="button" class="wood-btn small hidden" id="sort-other" data-sort="other" data-l="ui_sort">Sort</button>
+                </div>
                 <div class="filters" id="filter-other"></div>
                 <div class="grid" id="grid-other" data-inv="other"></div>
             </section>
@@ -68,6 +76,42 @@
     <div id="ctx" class="ctx hidden">
         <div class="ctx-title" id="ctx-title"></div>
         <ul class="ctx-list" id="ctx-list"></ul>
+    </div>
+
+    <!-- trash: destructive confirmation -->
+    <div id="trash-modal" class="modal-wrap hidden">
+        <div class="modal trash-modal">
+            <div class="modal-title" data-l="ui_trash_title">Destroy item?</div>
+            <div class="trash-item" id="trash-item"></div>
+            <div class="trash-warning" id="trash-warning"></div>
+            <div class="modal-actions">
+                <button type="button" class="wood-btn muted" id="trash-cancel" data-trash="cancel" data-l="ui_cancel">Cancel</button>
+                <button type="button" class="wood-btn danger" id="trash-confirm" data-trash="confirm" data-l="ui_trash_confirm">Destroy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- give: choose a nearby player, then the quantity -->
+    <div id="give-modal" class="modal-wrap hidden">
+        <div class="modal give-modal">
+            <div class="modal-title" id="give-title"></div>
+            <div class="ink-divider"></div>
+            <div class="give-sub" id="give-sub"></div>
+            <div class="player-list" id="give-list"></div>
+            <div class="give-qty hidden" id="give-qty">
+                <label class="amount-label" data-l="ui_quantity">Quantity</label>
+                <div class="qty-row">
+                    <input type="number" min="1" id="give-qty-input" class="amount-input">
+                    <button type="button" class="wood-btn small" data-give="max" data-l="ui_max">Max</button>
+                </div>
+                <div class="modal-max" id="give-qty-max"></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="wood-btn muted" id="give-cancel" data-give="cancel" data-l="ui_cancel">Cancel</button>
+                <button type="button" class="wood-btn muted hidden" id="give-back" data-give="back" data-l="ui_back">Back</button>
+                <button type="button" class="wood-btn hidden" id="give-confirm" data-give="confirm" data-l="ui_confirm">Confirm</button>
+            </div>
+        </div>
     </div>
 
     <!-- amount prompt -->

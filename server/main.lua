@@ -8,7 +8,15 @@ local OpenInv      = {}   -- [src] = secondary inventory the player has open (st
 local UseCooldown  = {}
 local GiveCooldown = {}
 local DropCooldown = {}
+local TrashCooldown = {}
 local ActionCooldown = {}
+local MoveCooldown = {}
+local OpenCooldown = {}
+local SortCooldown = {}
+local NearbyCooldown = {}
+local AdminView    = {}   -- [admin src] = player id being viewed remotely (/viewinv)
+local CapacityBonus = {}  -- [src] = { [key] = { slots, weight } } extra capacity granted by other resources
+local DropSeen     = {}   -- [src] = { [dropId] = true } drops that client currently knows about
 local dropCount    = 0
 local API          = {}
 
@@ -32,6 +40,46 @@ end
 
 local function Log(title, msg)
     TriggerEvent('rsg-log:server:CreateLog', 'playerinventory', title, 'blue', msg)
+end
+
+-- dead, in last stand or handcuffed players cannot use, move, give or drop items
+local function IsIncapacitated(Player)
+    local meta = Player and Player.PlayerData.metadata or {}
+    return meta.isdead or meta.inlaststand or meta.ishandcuffed or false
+end
+
+local function EachConnected(fn)
+    for _, id in ipairs(GetPlayers()) do
+        local src = tonumber(id)
+        if src then fn(src) end
+    end
+end
+
+-- decay rule for a shared item or an inventory item (nil = does not decay)
+local function DecayRule(item)
+    local d = Config.Decay
+    if not d or not d.Enabled or not item or item.type == 'weapon' then return nil end
+    return (d.Items and d.Items[item.name]) or (item.category and d.Categories and d.Categories[item.category]) or nil
+end
+
+-- total extra slots / weight other resources granted to a player
+local function BonusFor(src)
+    local slots, weight = 0, 0
+    for _, b in pairs(CapacityBonus[src] or {}) do
+        slots, weight = slots + b.slots, weight + b.weight
+    end
+    return slots, weight
+end
+
+-- who put / took what in a stash
+local function LogStash(src, stashId, action, item, amount)
+    if not Config.Stash.History then return end
+    local Player = RSGCore.Functions.GetPlayer(src)
+    local pd = Player and Player.PlayerData
+    local ci = pd and pd.charinfo
+    local name = ci and ci.firstname and (ci.firstname .. ' ' .. (ci.lastname or '')) or GetPlayerName(src) or ''
+    MySQL.insert('INSERT INTO inventory_stash_log (stash, citizenid, name, action, item, amount) VALUES (?, ?, ?, ?, ?, ?)',
+        { stashId, pd and pd.citizenid or '', name, action, item, amount })
 end
 
 --------------------------------------------------------------------------------
@@ -124,12 +172,13 @@ local function GetContainer(id)
         local Player = RSGCore.Functions.GetPlayer(id)
         if not Player then return nil end
         local ci = Player.PlayerData.charinfo
+        local bonusSlots, bonusWeight = BonusFor(id)
         return {
             id = id, type = 'player', player = Player,
             label = ci and ci.firstname and (ci.firstname .. ' ' .. ci.lastname) or locale('player'),
             items = Normalize(Player.PlayerData.items),
-            slots = Player.PlayerData.slots or Config.PlayerSlots,
-            maxWeight = Player.PlayerData.weight or Config.PlayerMaxWeight,
+            slots = (Player.PlayerData.slots or Config.PlayerSlots) + bonusSlots,
+            maxWeight = (Player.PlayerData.weight or Config.PlayerMaxWeight) + bonusWeight,
         }
     end
     if type(id) ~= 'string' or id == 'newdrop' then return nil end
@@ -146,7 +195,7 @@ local function Commit(c)
     if c.type == 'player' then
         c.player.Functions.SetPlayerData('items', c.items)
     else
-        if c.type == 'stash' then c.dirty = true end
+        if c.type == 'stash' or c.type == 'drop' then c.dirty = true end
         c.touched = os.time()
     end
 end
@@ -219,6 +268,10 @@ local function AddTo(c, name, amount, info, slot)
     if not s or amount < 1 then return false, 'invalid_item' end
     if TotalWeight(c.items) + (s.weight or 0) * amount > c.maxWeight then return false, 'too_heavy' end
     info = type(info) == 'table' and info or {}
+    if info.quality == nil and DecayRule(s) then
+        info = DeepClone(info)
+        info.quality = 100 -- decaying items start fresh
+    end
     slot = math.tointeger(tonumber(slot))
 
     if s.unique then
@@ -392,7 +445,7 @@ function API.CanCarry(target, name, amount)
         if free < amount then return false, 'no_space' end
     elseif not FirstEmpty(c.items, c.slots) then
         -- no empty slot: only OK if a plain (no metadata) stack exists to merge into
-        local probe = { name = s.name, info = {} }
+        local probe = { name = s.name, info = DecayRule(s) and { quality = 100 } or {} }
         local canMerge = false
         for _, sl in ipairs(SlotsByItem(c.items, s.name)) do
             if CanStack(c.items[sl], probe) then canMerge = true break end
@@ -496,8 +549,8 @@ function API.RegisterStash(id, opts)
         end
     end
     inv.label     = opts.label or inv.label or id
-    inv.slots     = math.min(tonumber(opts.slots) or inv.slots or Config.Stash.DefaultSlots, Config.Stash.MaxSlots)
-    inv.maxWeight = math.min(tonumber(opts.maxWeight) or inv.maxWeight or Config.Stash.DefaultMaxWeight, Config.Stash.MaxWeight)
+    inv.slots     = math.max(1, math.min(tonumber(opts.slots) or inv.slots or Config.Stash.DefaultSlots, Config.Stash.MaxSlots))
+    inv.maxWeight = math.max(1, math.min(tonumber(opts.maxWeight) or inv.maxWeight or Config.Stash.DefaultMaxWeight, Config.Stash.MaxWeight))
     if opts.actions ~= nil then inv.actions = SanitizeActions(opts.actions) end -- false / {} removes the buttons
     return inv
 end
@@ -528,6 +581,50 @@ end
 --------------------------------------------------------------------------------
 -- Drops (memory only)
 --------------------------------------------------------------------------------
+-- Drops are only sent to players within Config.Drop.SyncDistance (instead of everyone).
+local function DropInRange(src, coords)
+    local ped = GetPlayerPed(src)
+    return ped ~= 0 and #(GetEntityCoords(ped) - coords) <= Config.Drop.SyncDistance
+end
+
+local function AnnounceDrop(id)
+    local inv = Inventories[id]
+    if not inv then return end
+    EachConnected(function(src)
+        local seen = DropSeen[src] or {}
+        DropSeen[src] = seen
+        if not seen[id] and DropInRange(src, inv.coords) then
+            seen[id] = true
+            TriggerClientEvent('rsg-inventory:client:addDrop', src, id, inv.coords)
+        end
+    end)
+end
+
+-- sends a client the drops that came into range and removes the ones that left it
+local function SyncDropsFor(src, drops)
+    local seen = DropSeen[src] or {}
+    DropSeen[src] = seen
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+    local pc = GetEntityCoords(ped)
+    local near = {}
+    for id, inv in pairs(drops or Inventories) do
+        if inv.type == 'drop' and #(pc - inv.coords) <= Config.Drop.SyncDistance then near[id] = inv.coords end
+    end
+    for id, coords in pairs(near) do
+        if not seen[id] then
+            seen[id] = true
+            TriggerClientEvent('rsg-inventory:client:addDrop', src, id, coords)
+        end
+    end
+    for id in pairs(seen) do
+        if not near[id] then
+            seen[id] = nil
+            TriggerClientEvent('rsg-inventory:client:removeDrop', src, id)
+        end
+    end
+end
+
 function API.CreateDrop(coords, items)
     dropCount = dropCount + 1
     local id = ('drop-%d-%d'):format(os.time(), dropCount)
@@ -536,14 +633,21 @@ function API.CreateDrop(coords, items)
         slots = Config.Drop.Slots, maxWeight = Config.Drop.MaxWeight,
         items = items or {}, coords = coords, touched = os.time(),
     }
-    TriggerClientEvent('rsg-inventory:client:addDrop', -1, id, coords)
+    Inventories[id].dirty = true
+    AnnounceDrop(id)
     return id
 end
 
 local function RemoveDrop(id)
     if not Inventories[id] or Inventories[id].type ~= 'drop' then return end
     Inventories[id] = nil
-    TriggerClientEvent('rsg-inventory:client:removeDrop', -1, id)
+    for src, seen in pairs(DropSeen) do
+        if seen[id] then
+            seen[id] = nil
+            TriggerClientEvent('rsg-inventory:client:removeDrop', src, id)
+        end
+    end
+    if Config.Drop.Persist then MySQL.prepare('DELETE FROM inventory_drops WHERE id = ?', { id }) end
     for src, openId in pairs(OpenInv) do
         if openId == id then
             OpenInv[src] = 'newdrop'
@@ -555,6 +659,111 @@ end
 local function CleanupDropIfEmpty(id)
     local inv = Inventories[id]
     if inv and inv.type == 'drop' and not next(inv.items) then RemoveDrop(id) end
+end
+
+-- optional persistence (Config.Drop.Persist): changed drops are written to inventory_drops
+local function SaveDrops()
+    if not Config.Drop.Persist then return end
+    for id, inv in pairs(Inventories) do
+        if inv.type == 'drop' and inv.dirty and next(inv.items) then
+            inv.dirty = false
+            MySQL.prepare('INSERT INTO inventory_drops (id, coords, items, touched) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE coords = VALUES(coords), items = VALUES(items), touched = VALUES(touched)',
+                { id, json.encode({ x = inv.coords.x, y = inv.coords.y, z = inv.coords.z }), Serialize(inv.items), inv.touched or os.time() })
+        end
+    end
+end
+
+local function LoadDrops()
+    if not Config.Drop.Persist then return end
+    local ok, rows = pcall(MySQL.query.await, 'SELECT id, coords, items FROM inventory_drops')
+    if not ok then
+        print(('^1[rsg-inventory] could not load saved drops: %s^7'):format(tostring(rows)))
+        return
+    end
+    local now, loaded = os.time(), 0
+    for _, row in ipairs(rows or {}) do
+        local c = row.coords and json.decode(row.coords)
+        local items = LoadItems(row.items and json.decode(row.items))
+        if c and c.x and next(items) then
+            Inventories[row.id] = {
+                id = row.id, type = 'drop', label = locale('ground'),
+                slots = Config.Drop.Slots, maxWeight = Config.Drop.MaxWeight,
+                items = items, coords = vector3(c.x, c.y, c.z), touched = now, dirty = true, -- lifetime restarts
+            }
+            loaded = loaded + 1
+        else
+            MySQL.prepare('DELETE FROM inventory_drops WHERE id = ?', { row.id })
+        end
+    end
+    if loaded > 0 then print(('^2[rsg-inventory] restored %d ground drops^7'):format(loaded)) end
+end
+
+--------------------------------------------------------------------------------
+-- Capacity bonuses: other resources (satchels, horses, wagons) add slots / weight
+--------------------------------------------------------------------------------
+-- items that no longer fit move into free slots; whatever is left goes on the ground
+local function EnforceCapacity(src)
+    local c = GetContainer(src)
+    if not c then return end
+    local over = {}
+    for slot in pairs(c.items) do
+        if slot > c.slots then over[#over + 1] = slot end
+    end
+    if #over == 0 then return end
+    table.sort(over)
+    local dropId, dropped
+    for _, slot in ipairs(over) do
+        local it = c.items[slot]
+        local free = FirstEmpty(c.items, c.slots)
+        if free then
+            c.items[slot] = nil
+            it.slot = free
+            c.items[free] = it
+        else
+            if not dropId then dropId = API.CreateDrop(GetEntityCoords(GetPlayerPed(src)), {}) end
+            if AddTo(Inventories[dropId], it.name, it.amount, DeepClone(it.info)) then
+                c.items[slot] = nil
+                CheckWeapon(src, it)
+                dropped = true
+            end
+        end
+    end
+    Commit(c)
+    if dropId then
+        Commit(Inventories[dropId])
+        CleanupDropIfEmpty(dropId)
+    end
+    if dropped then Notify(src, 'capacity_dropped', 'inform') end
+end
+
+--- AddCapacityBonus(src, key, slots, weight): `key` names the source (e.g. 'satchel'); calling again with
+--- the same key replaces it. Bonuses live in memory only: re-apply them when the player loads / equips.
+function API.AddCapacityBonus(src, key, slots, weight)
+    src = tonumber(src)
+    if not src or type(key) ~= 'string' or key == '' or not RSGCore.Functions.GetPlayer(src) then return false end
+    slots  = math.min(math.max(0, math.floor(tonumber(slots) or 0)), Config.Capacity.MaxBonusSlots)
+    weight = math.min(math.max(0, math.floor(tonumber(weight) or 0)), Config.Capacity.MaxBonusWeight)
+    CapacityBonus[src] = CapacityBonus[src] or {}
+    CapacityBonus[src][key] = { slots = slots, weight = weight }
+    EnforceCapacity(src)
+    Refresh(src)
+    return true
+end
+
+function API.RemoveCapacityBonus(src, key)
+    src = tonumber(src)
+    local set = src and CapacityBonus[src]
+    if not set or not set[key] then return false end
+    set[key] = nil
+    if not next(set) then CapacityBonus[src] = nil end
+    EnforceCapacity(src)
+    Refresh(src)
+    return true
+end
+
+--- GetCapacityBonus(src) -> extra slots, extra weight
+function API.GetCapacityBonus(src)
+    return BonusFor(tonumber(src))
 end
 
 --------------------------------------------------------------------------------
@@ -569,7 +778,9 @@ local function CanAccess(src, id)
     if id == nil or OpenInv[src] ~= id then return false end
     if type(id) == 'number' then
         local ped = GetPlayerPed(id)
-        return ped ~= 0 and Dist(src, GetEntityCoords(ped)) <= Config.GiveDistance + 2.0
+        if ped == 0 then return false end
+        if AdminView[src] == id then return true end -- /viewinv works from any distance
+        return Dist(src, GetEntityCoords(ped)) <= Config.GiveDistance + 2.0
     end
     if id == 'newdrop' then return true end
     local inv = Inventories[id]
@@ -583,14 +794,13 @@ end
 local function OnClosed(src)
     local id = OpenInv[src]
     OpenInv[src] = nil
+    AdminView[src] = nil
     if id then SaveStash(id) CleanupDropIfEmpty(id) end
 end
 
 local function OpenFor(src, otherId)
     local me = GetContainer(src)
-    if not me then return false end
-    local meta = me.player.PlayerData.metadata or {}
-    if meta.isdead or meta.inlaststand or meta.ishandcuffed then return false end
+    if not me or IsIncapacitated(me.player) then return false end
     if OpenInv[src] ~= nil and OpenInv[src] ~= otherId then OnClosed(src) end -- switching container: flush the old one
     local other
     if otherId == 'newdrop' then
@@ -632,6 +842,9 @@ end
 
 RegisterNetEvent('rsg-inventory:server:open', function(dropId)
     local src = source
+    local now = GetGameTimer()
+    if OpenCooldown[src] and now - OpenCooldown[src] < 250 then return end
+    OpenCooldown[src] = now
     local drop = type(dropId) == 'string' and Inventories[dropId]
     if drop and drop.type == 'drop' and Dist(src, drop.coords) <= Config.Drop.OpenDistance + 1.0 then
         return OpenFor(src, dropId)
@@ -667,6 +880,10 @@ end)
 RegisterNetEvent('rsg-inventory:server:move', function(data)
     local src = source
     if type(data) ~= 'table' then return end
+    local now = GetGameTimer()
+    if MoveCooldown[src] and now - MoveCooldown[src] < 50 then return Refresh(src) end -- every move can write to the database
+    MoveCooldown[src] = now
+    if IsIncapacitated(RSGCore.Functions.GetPlayer(src)) then return Refresh(src) end
     local fromId = data.from == 'player' and src or data.from
     local toId   = data.to   == 'player' and src or data.to
     local fromSlot, toSlot = math.tointeger(tonumber(data.fromSlot)), math.tointeger(tonumber(data.toSlot))
@@ -694,6 +911,7 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
     end
 
     if toId == 'newdrop' then
+        if toSlot < 1 or toSlot > Config.Drop.Slots then return Refresh(src) end -- don't create an empty drop for a bad slot
         toId = API.CreateDrop(GetEntityCoords(GetPlayerPed(src)), {})
         OpenInv[src] = toId
     end
@@ -703,10 +921,14 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
     if not to or toSlot < 1 or toSlot > to.slots or (same and fromSlot == toSlot) then return Refresh(src) end
 
     local item = from.items[fromSlot]
-    local amount = math.tointeger(tonumber(data.amount)) or item.amount
-    if amount < 1 or amount > item.amount then amount = item.amount end
+    local amount = data.amount == nil and item.amount or math.tointeger(tonumber(data.amount))
+    if not amount or amount < 1 or amount > item.amount then -- a bad quantity is refused, never widened to the whole stack
+        if toId ~= fromId and type(toId) == 'string' then CleanupDropIfEmpty(toId) end
+        return Refresh(src)
+    end
 
     local dest = to.items[toSlot]
+    local swapped = false
     local moveWeight = (item.weight or 0) * amount
     local function reject()
         Notify(src, 'too_heavy')
@@ -740,6 +962,7 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
         end
         from.items[fromSlot], to.items[toSlot] = dest, item
         dest.slot, item.slot = fromSlot, toSlot
+        swapped = true
     end
 
     Commit(from)
@@ -756,12 +979,83 @@ RegisterNetEvent('rsg-inventory:server:move', function(data)
         if from.type == 'player' and from.items[fromSlot] ~= item then CheckWeapon(fromId, item) end
         if to.type == 'player' and dest and from.items[fromSlot] == dest then CheckWeapon(toId, dest) end
         Log('Move', ('%s moved %sx %s from %s to %s'):format(GetPlayerName(src), amount, item.name, tostring(fromId), tostring(toId)))
+        if from.type == 'stash' then LogStash(src, fromId, 'take', item.name, amount) end
+        if to.type == 'stash' then LogStash(src, toId, 'put', item.name, amount) end
+        if swapped then -- the item that was in the destination slot travels the other way
+            if to.type == 'stash' then LogStash(src, toId, 'take', dest.name, dest.amount) end
+            if from.type == 'stash' then LogStash(src, fromId, 'put', dest.name, dest.amount) end
+        end
     end
 
     Refresh(src)
     if fromId ~= src then Refresh(fromId) end
     if toId ~= src and toId ~= fromId then Refresh(toId) end
     if type(fromId) == 'string' then CleanupDropIfEmpty(fromId) end
+end)
+
+--------------------------------------------------------------------------------
+-- Auto-stack + sort (own inventory or the open stash)
+--------------------------------------------------------------------------------
+-- merges stackable stacks, then orders by category and label. Slots below `from` are left alone.
+local function SortItems(c, from)
+    local list = {}
+    for slot, it in pairs(c.items) do
+        if slot >= from then
+            list[#list + 1] = it
+            c.items[slot] = nil
+        end
+    end
+    local merged = {}
+    for _, it in ipairs(list) do
+        local target
+        if not it.unique then
+            for _, m in ipairs(merged) do
+                if CanStack(m, it) then target = m break end
+            end
+        end
+        if target then target.amount = target.amount + it.amount else merged[#merged + 1] = it end
+    end
+    table.sort(merged, function(a, b)
+        local ca, cb = a.category or 'misc', b.category or 'misc'
+        if ca ~= cb then return ca < cb end
+        local la, lb = tostring(a.label or a.name):lower(), tostring(b.label or b.name):lower()
+        if la ~= lb then return la < lb end
+        if a.name ~= b.name then return a.name < b.name end
+        return a.amount > b.amount
+    end)
+    local slot = from
+    for _, it in ipairs(merged) do
+        while c.items[slot] do slot = slot + 1 end
+        it.slot = slot
+        c.items[slot] = it
+        slot = slot + 1
+    end
+end
+
+RegisterNetEvent('rsg-inventory:server:sort', function(which)
+    local src = source
+    local now = GetGameTimer()
+    if SortCooldown[src] and now - SortCooldown[src] < 1000 then return end
+    SortCooldown[src] = now
+    if IsIncapacitated(RSGCore.Functions.GetPlayer(src)) then return end
+
+    local id
+    if which == 'player' then
+        id = src
+    elseif which == 'other' then
+        id = OpenInv[src]
+        local inv = type(id) == 'string' and Inventories[id]
+        if not inv or inv.type ~= 'stash' or not CanAccess(src, id) then return end -- stashes only
+    else
+        return
+    end
+
+    local c = GetContainer(id)
+    if not c then return end
+    SortItems(c, id == src and Config.HotbarSlots + 1 or 1) -- the hotbar keeps its order
+    Commit(c)
+    Refresh(src)
+    if id ~= src then Refresh(id) end
 end)
 
 --------------------------------------------------------------------------------
@@ -801,9 +1095,7 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(slot)
     UseCooldown[src] = now
 
     local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
-    local meta = Player.PlayerData.metadata or {}
-    if meta.isdead or meta.inlaststand or meta.ishandcuffed then return end
+    if not Player or IsIncapacitated(Player) then return end
 
     slot = math.tointeger(tonumber(slot))
     local item = slot and Normalize(Player.PlayerData.items)[slot]
@@ -828,25 +1120,29 @@ RegisterNetEvent('rsg-inventory:server:useItem', function(slot)
     if s.shouldClose then API.CloseInventory(src) end
 end)
 
-RegisterNetEvent('rsg-inventory:server:give', function(targetId, slot, amount)
+--- The recipient is chosen by the player in the Give list. Everything is checked again here:
+--- the recipient must still be online and in range, the slot must still hold the item the
+--- player picked, and the quantity must be a whole number the player really has.
+RegisterNetEvent('rsg-inventory:server:give', function(targetId, slot, amount, itemName)
     local src = source
-    targetId, slot = tonumber(targetId), math.tointeger(tonumber(slot))
+    targetId, slot = math.tointeger(tonumber(targetId)), math.tointeger(tonumber(slot))
     if not targetId or not slot or targetId == src then return end
     local now = GetGameTimer()
     if GiveCooldown[src] and now - GiveCooldown[src] < 1000 then return end
     GiveCooldown[src] = now
 
     local me, them = GetContainer(src), GetContainer(targetId)
-    if not me or not them then return end
-    local meta = me.player.PlayerData.metadata or {}
-    if meta.isdead or meta.inlaststand or meta.ishandcuffed then return end
+    if not me or IsIncapacitated(me.player) then return end
+    if not them then return Notify(src, 'no_player') end -- chosen player left the server: cancel
     local tped = GetPlayerPed(targetId)
     if tped == 0 or Dist(src, GetEntityCoords(tped)) > Config.GiveDistance then return Notify(src, 'too_far') end
 
     local item = me.items[slot]
-    if not item then return end
-    amount = math.tointeger(tonumber(amount)) or item.amount
-    if amount < 1 or amount > item.amount then amount = item.amount end
+    if not item or (itemName ~= nil and item.name ~= tostring(itemName):lower()) then
+        return Notify(src, 'invalid_item') -- the slot changed while the player was choosing
+    end
+    amount = math.tointeger(tonumber(amount))
+    if not amount or amount < 1 or amount > item.amount then return Notify(src, 'invalid_amount') end
 
     local name, info = item.name, DeepClone(item.info)
     if not AddTo(them, name, amount, info) then return Notify(src, 'target_full') end
@@ -861,7 +1157,64 @@ RegisterNetEvent('rsg-inventory:server:give', function(targetId, slot, amount)
     Log('Give', ('%s gave %sx %s to %s'):format(GetPlayerName(src), amount, name, GetPlayerName(targetId)))
 end)
 
+-- Give list: players within Config.GiveDistance of the caller, closest first, with their character name
+RSGCore.Functions.CreateCallback('rsg-inventory:server:getNearbyPlayers', function(src, cb)
+    local now = GetGameTimer()
+    if NearbyCooldown[src] and now - NearbyCooldown[src] < 400 then return cb({}) end
+    NearbyCooldown[src] = now
+
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player or IsIncapacitated(Player) then return cb({}) end
+    local pc = GetEntityCoords(GetPlayerPed(src))
+    local list = {}
+    EachConnected(function(id)
+        local ped = id ~= src and GetPlayerPed(id) or 0
+        if ped == 0 then return end
+        local dist = #(pc - GetEntityCoords(ped))
+        if dist > Config.GiveDistance then return end
+        local other = RSGCore.Functions.GetPlayer(id)
+        if not other then return end -- no character loaded yet
+        local ci = other.PlayerData.charinfo
+        list[#list + 1] = {
+            id = id,
+            name = ci and ci.firstname and (ci.firstname .. ' ' .. (ci.lastname or '')) or GetPlayerName(id),
+            distance = math.floor(dist * 10 + 0.5) / 10,
+        }
+    end)
+    table.sort(list, function(a, b) return a.distance < b.distance end)
+    for i = #list, (tonumber(Config.GiveMaxPlayers) or 12) + 1, -1 do list[i] = nil end
+    cb(list)
+end)
+
 -- right-click "Drop": put items on the ground at the player's feet
+-- Trash: permanently destroys items from the player's own inventory (the client shows a confirmation first)
+RegisterNetEvent('rsg-inventory:server:trash', function(slot, amount, itemName)
+    local src = source
+    slot = math.tointeger(tonumber(slot))
+    if not slot then return end
+    local now = GetGameTimer()
+    if TrashCooldown[src] and now - TrashCooldown[src] < 500 then return end
+    TrashCooldown[src] = now
+    if not Config.Trash.Enabled then return end
+
+    local me = GetContainer(src)
+    if not me or IsIncapacitated(me.player) then return end
+    local item = me.items[slot]
+    if not item or (itemName ~= nil and item.name ~= tostring(itemName):lower()) then return Notify(src, 'invalid_item') end
+    amount = math.tointeger(tonumber(amount))
+    if not amount or amount < 1 or amount > item.amount then return Notify(src, 'invalid_amount') end
+
+    local name = item.name
+    RemoveFrom(me, name, amount, slot)
+    Commit(me)
+    SavePlayer(src)
+    if not me.items[slot] then CheckWeapon(src, item) end
+    Refresh(src)
+    TriggerClientEvent('rsg-inventory:client:ItemBox', src, SharedItem(name), 'remove', amount)
+    Notify(src, 'item_trashed')
+    Log('Trash', ('%s trashed %sx %s'):format(GetPlayerName(src), amount, name))
+end)
+
 RegisterNetEvent('rsg-inventory:server:drop', function(slot, amount)
     local src = source
     slot = math.tointeger(tonumber(slot))
@@ -871,14 +1224,12 @@ RegisterNetEvent('rsg-inventory:server:drop', function(slot, amount)
     DropCooldown[src] = now
 
     local me = GetContainer(src)
-    if not me then return end
-    local meta = me.player.PlayerData.metadata or {}
-    if meta.isdead or meta.inlaststand or meta.ishandcuffed then return end
+    if not me or IsIncapacitated(me.player) then return end
 
     local item = me.items[slot]
     if not item then return end
-    amount = math.tointeger(tonumber(amount)) or item.amount
-    if amount < 1 or amount > item.amount then amount = item.amount end
+    if amount == nil then amount = item.amount else amount = math.tointeger(tonumber(amount)) end
+    if not amount or amount < 1 or amount > item.amount then return Notify(src, 'invalid_amount') end
 
     -- reuse the ground pile the player has open, otherwise start a new one
     local dropId = OpenInv[src]
@@ -901,12 +1252,11 @@ RegisterNetEvent('rsg-inventory:server:drop', function(slot, amount)
     Log('Drop', ('%s dropped %sx %s'):format(GetPlayerName(src), amount, name))
 end)
 
-RSGCore.Functions.CreateCallback('rsg-inventory:server:getDrops', function(_, cb)
-    local list = {}
-    for id, inv in pairs(Inventories) do
-        if inv.type == 'drop' then list[id] = inv.coords end
-    end
-    cb(list)
+-- a client (re)started: forget what it knew and send the drops around it
+RegisterNetEvent('rsg-inventory:server:syncDrops', function()
+    local src = source
+    DropSeen[src] = {}
+    SyncDropsFor(src)
 end)
 
 --------------------------------------------------------------------------------
@@ -948,33 +1298,188 @@ InvCore = {
 AddEventHandler('playerDropped', function()
     local src = source
     OnClosed(src)
-    UseCooldown[src], GiveCooldown[src], DropCooldown[src], ActionCooldown[src] = nil, nil, nil, nil
+    UseCooldown[src], GiveCooldown[src], DropCooldown[src], ActionCooldown[src], TrashCooldown[src] = nil, nil, nil, nil, nil
+    MoveCooldown[src], OpenCooldown[src], SortCooldown[src], NearbyCooldown[src] = nil, nil, nil, nil
+    AdminView[src], CapacityBonus[src], DropSeen[src] = nil, nil, nil
     for watcher, openId in pairs(OpenInv) do
         if openId == src then API.CloseInventory(watcher) end -- stop searches of this player
     end
 end)
 
 AddEventHandler('onResourceStop', function(res)
-    if res == GetCurrentResourceName() then SaveAllStashes() end
+    if res == GetCurrentResourceName() then
+        SaveAllStashes()
+        SaveDrops()
+    end
 end)
-AddEventHandler('txAdmin:events:serverShuttingDown', SaveAllStashes)
+AddEventHandler('txAdmin:events:serverShuttingDown', function()
+    SaveAllStashes()
+    SaveDrops()
+end)
+
+-- bonuses belong to a character: they are re-applied by the resource that grants them when it loads
+AddEventHandler('RSGCore:Server:OnPlayerUnload', function(src)
+    CapacityBonus[src] = nil
+end)
+
+-- Tables are built on start (same schema as install.sql). Set Config.AutoDatabase = false to import install.sql by hand.
+local dbReady -- nil = not finished, true / false = result
+local schema = {
+    [[CREATE TABLE IF NOT EXISTS `inventories` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `identifier` VARCHAR(100) NOT NULL,
+        `items` LONGTEXT NULL,
+        PRIMARY KEY (`identifier`),
+        KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]],
+    [[CREATE TABLE IF NOT EXISTS `shop_stock` (
+        `shop_name` VARCHAR(100) NOT NULL,
+        `item_name` VARCHAR(100) NOT NULL,
+        `stock` INT NOT NULL DEFAULT 0,
+        PRIMARY KEY (`shop_name`, `item_name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]],
+    [[CREATE TABLE IF NOT EXISTS `inventory_stash_log` (
+        `id` BIGINT NOT NULL AUTO_INCREMENT,
+        `stash` VARCHAR(100) NOT NULL,
+        `citizenid` VARCHAR(50) NOT NULL DEFAULT '',
+        `name` VARCHAR(100) NOT NULL DEFAULT '',
+        `action` VARCHAR(8) NOT NULL,
+        `item` VARCHAR(100) NOT NULL,
+        `amount` INT NOT NULL DEFAULT 1,
+        `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        KEY `stash_idx` (`stash`, `id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]],
+    [[CREATE TABLE IF NOT EXISTS `inventory_drops` (
+        `id` VARCHAR(64) NOT NULL,
+        `coords` VARCHAR(120) NOT NULL,
+        `items` LONGTEXT NULL,
+        `touched` INT NOT NULL,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4]],
+}
+
+local function ensureDatabase()
+    if not Config.AutoDatabase then return true end
+    local ok, err = pcall(function()
+        for _, query in ipairs(schema) do MySQL.query.await(query) end
+    end)
+    if not ok then
+        print(('^1[rsg-inventory] could not create the database tables: %s^7'):format(tostring(err)))
+        return false
+    end
+    print('^2[rsg-inventory] database tables ready^7')
+    return true
+end
+
+-- server/shops.lua waits for this before reading shop_stock
+function InvCore.WaitForDatabase()
+    while dbReady == nil do Wait(50) end
+    return dbReady
+end
+
+-- keep the stash history table small
+local function PruneHistory()
+    if not Config.Stash.History then return end
+    local days = math.max(1, math.floor(tonumber(Config.Stash.HistoryDays) or 14))
+    local ok, err = pcall(MySQL.query.await, ('DELETE FROM inventory_stash_log WHERE `time` < NOW() - INTERVAL %d DAY'):format(days))
+    if not ok then print(('^1[rsg-inventory] could not prune the stash history: %s^7'):format(tostring(err))) end
+end
 
 MySQL.ready(function()
-    MySQL.query.await([[
-        CREATE TABLE IF NOT EXISTS `inventories` (
-            `id` INT(11) NOT NULL AUTO_INCREMENT,
-            `identifier` VARCHAR(100) NOT NULL,
-            `items` LONGTEXT NULL,
-            PRIMARY KEY (`identifier`),
-            KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    ]])
+    dbReady = ensureDatabase()
+    if dbReady then
+        PruneHistory()
+        LoadDrops()
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- Item decay
+--------------------------------------------------------------------------------
+-- lowers info.quality of every decaying item; returns whether anything changed and the labels of removed items
+local function DecayContainer(c)
+    local changed, spoiled = false, nil
+    for slot, it in pairs(c.items) do
+        local rule = DecayRule(it)
+        if rule then
+            local info = DeepClone(it.info or {})
+            local q = tonumber(info.quality) or 100
+            local nq = math.max(0, q - (tonumber(rule.rate) or 1))
+            if nq ~= q or info.quality == nil then
+                info.quality = nq
+                it.info = info
+                changed = true
+            end
+            if rule.remove and nq <= 0 then
+                spoiled = spoiled or {}
+                spoiled[#spoiled + 1] = slot
+            end
+        end
+    end
+    local labels
+    for _, slot in ipairs(spoiled or {}) do
+        labels = labels or {}
+        labels[#labels + 1] = c.items[slot].label
+        c.items[slot] = nil
+    end
+    return changed or labels ~= nil, labels
+end
+
+local function ApplyDecay()
+    EachConnected(function(src)
+        local c = GetContainer(src)
+        if not c then return end
+        local changed, labels = DecayContainer(c)
+        if not changed then return end
+        Commit(c)
+        Refresh(src)
+        for _, label in ipairs(labels or {}) do
+            if Config.Notifications then
+                TriggerClientEvent('RSGCore:Client:Notify', src, {
+                    title = locale('inventory'), description = locale('item_spoiled', label), type = 'warning', duration = 5000,
+                })
+            end
+        end
+    end)
+    if Config.Decay.Stashes then
+        for id, inv in pairs(Inventories) do
+            if inv.type == 'stash' and DecayContainer(inv) then
+                inv.dirty = true -- not Commit: decay must not keep an idle stash loaded
+                Refresh(id)
+            end
+        end
+    end
+end
+
+CreateThread(function()
+    while true do
+        Wait(math.max(1, tonumber(Config.Decay.Interval) or 10) * 60000)
+        if Config.Decay.Enabled then ApplyDecay() end
+    end
+end)
+
+-- nearby-drop sync: every player gets the drops around them and loses the ones they walked away from
+CreateThread(function()
+    while true do
+        Wait(math.max(1, tonumber(Config.Drop.SyncInterval) or 3) * 1000)
+        local drops, any = {}, false
+        for id, inv in pairs(Inventories) do
+            if inv.type == 'drop' then drops[id], any = inv, true end
+        end
+        EachConnected(function(src)
+            if any or next(DropSeen[src] or {}) then SyncDropsFor(src, drops) end -- nothing on the ground and nothing to forget: skip
+        end)
+    end
 end)
 
 -- housekeeping: save dirty stashes, expire old drops, unload idle stashes
+local minutes = 0
 CreateThread(function()
     while true do
         Wait(60000)
+        minutes = minutes + 1
+        if minutes % 1440 == 0 then PruneHistory() end
         local now = os.time()
         for id, inv in pairs(Inventories) do
             if inv.type ~= 'shop' and not IsOpenByAnyone(id) then
@@ -987,6 +1492,7 @@ CreateThread(function()
                 end
             end
         end
+        SaveDrops()
     end
 end)
 
@@ -1014,5 +1520,44 @@ RSGCore.Commands.Add('clearinv', locale('cmd_clearinv'), {
     if not target or not RSGCore.Functions.GetPlayer(target) then return Notify(src, 'no_inventory') end
     API.ClearInventory(target)
     SavePlayer(target)
+    Log('ClearInventory', ('%s cleared the inventory of %s'):format(src > 0 and GetPlayerName(src) or 'console', GetPlayerName(target)))
     Notify(src, 'cleared', 'success')
+end, 'admin')
+
+--------------------------------------------------------------------------------
+-- Stash history + admin inventory viewer
+--------------------------------------------------------------------------------
+--- GetStashHistory(stashId, limit?) -> { { citizenid, name, action = 'put'|'take', item, amount, time }, ... } newest first
+function API.GetStashHistory(id, limit)
+    if type(id) ~= 'string' then return {} end
+    limit = math.min(math.max(math.floor(tonumber(limit) or 20), 1), 200)
+    local ok, rows = pcall(MySQL.query.await,
+        ('SELECT citizenid, name, action, item, amount, UNIX_TIMESTAMP(`time`) AS time FROM inventory_stash_log WHERE stash = ? ORDER BY id DESC LIMIT %d'):format(limit), { id })
+    return ok and rows or {}
+end
+
+RSGCore.Commands.Add('stashlog', locale('cmd_stashlog'), {
+    { name = 'stash', help = locale('cmd_param_stash') },
+    { name = 'amount', help = locale('cmd_param_amount') },
+}, true, function(src, args)
+    local id = args[1]
+    local rows = API.GetStashHistory(id, args[2])
+    if #rows == 0 then return Notify(src, 'stash_log_empty') end
+    print(('^3[rsg-inventory] last %d actions in stash "%s" (newest first)^7'):format(#rows, id))
+    for _, r in ipairs(rows) do
+        print(('  %s  %s (%s) %s %sx %s'):format(os.date('%Y-%m-%d %H:%M:%S', tonumber(r.time) or 0), r.name, r.citizenid, r.action, r.amount, r.item))
+    end
+    Notify(src, 'stash_log_console', 'inform')
+end, 'admin')
+
+RSGCore.Commands.Add('viewinv', locale('cmd_viewinv'), {
+    { name = 'id', help = locale('cmd_param_target') },
+}, true, function(src, args)
+    local target = tonumber(args[1])
+    if src <= 0 or not target or target == src or not RSGCore.Functions.GetPlayer(target) then
+        return Notify(src, 'no_inventory')
+    end
+    if not API.OpenPlayerInventory(src, target) then return Notify(src, 'no_inventory') end
+    AdminView[src] = target -- set after opening: opening closes any previous container and clears it
+    Log('AdminView', ('%s opened the inventory of %s'):format(GetPlayerName(src), GetPlayerName(target)))
 end, 'admin')

@@ -11,6 +11,9 @@ function applyLabels() {
     document.querySelectorAll('[data-l-title]').forEach((el) => {
         if (labels[el.dataset.lTitle]) el.title = labels[el.dataset.lTitle];
     });
+    document.querySelectorAll('[data-l-placeholder]').forEach((el) => {
+        if (labels[el.dataset.lPlaceholder]) el.placeholder = labels[el.dataset.lPlaceholder];
+    });
 }
 
 const state = {
@@ -28,6 +31,10 @@ function post(name, data = {}) {
         headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         body: JSON.stringify(data),
     }).catch(() => {});
+}
+
+function postJson(name, data = {}) {
+    return post(name, data).then((r) => (r && r.json ? r.json() : null)).catch(() => null);
 }
 
 // Lua tables may arrive as arrays (with nulls) or objects keyed by slot
@@ -80,6 +87,7 @@ function slotEl(invKey, slot, item, showKey) {
 
 /* ------------------------------------------------------------------ category filter */
 const filters = { player: 'all', other: 'all' };
+const search = { player: '', other: '' };
 let categoryLabels = {};
 
 const categoryOf = (item) => item.category || 'misc';
@@ -109,18 +117,34 @@ function renderGrid(invKey) {
     if (!inv) return;
     renderFilters(invKey);
     const f = filters[invKey];
+    const q = search[invKey].trim().toLowerCase();
+    const filtered = f !== 'all' || q !== '';
+    const matches = (item) => (f === 'all' || categoryOf(item) === f)
+        && (!q || String(item.label || '').toLowerCase().includes(q) || String(item.name || '').toLowerCase().includes(q));
     let shown = 0;
     for (let s = 1; s <= inv.slots; s++) {
         const item = inv.map[s];
-        // filtered view: only matching items (empty slots hidden)
-        if (f !== 'all' && (!item || categoryOf(item) !== f)) continue;
+        // filtered view (category chip or search text): only matching items, empty slots hidden
+        if (filtered && (!item || !matches(item))) continue;
         grid.appendChild(slotEl(invKey, s, item, invKey === 'player' && s <= state.hotbarSlots));
         shown++;
     }
-    if (f !== 'all' && shown === 0) {
+    if (filtered && shown === 0) {
         grid.innerHTML = `<div class="grid-empty">${esc(L('ui_no_matches', 'No items in this category'))}</div>`;
     }
 }
+
+document.addEventListener('input', (e) => {
+    const box = e.target.closest('.search-input');
+    if (!box) return;
+    search[box.dataset.inv] = box.value;
+    renderGrid(box.dataset.inv);
+});
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-sort]');
+    if (btn) post('sort', { which: btn.dataset.sort });
+});
 
 document.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip[data-filter]');
@@ -146,6 +170,7 @@ function render() {
         };
         $('other-sub').textContent = subs[other.type] || L('ui_drop_here', 'Drop items here');
         $('panel-other').querySelector('.weight').classList.toggle('hidden', other.type === 'shop');
+        $('sort-other').classList.toggle('hidden', other.type !== 'stash'); // only stashes can be sorted
         if (other.type !== 'shop') setWeight('other', other);
         renderActions(other);
         renderGrid('other');
@@ -300,7 +325,10 @@ document.addEventListener('mouseup', (e) => {
     if (zone) {
         if (d.key !== 'player') return;
         if (zone.dataset.zone === 'use') post('use', { slot: d.slot });
-        if (zone.dataset.zone === 'give') post('give', { slot: d.slot, amount: d.amount });
+        if (zone.dataset.zone === 'give') {
+            const typed = parseInt($('amount').value, 10); // the amount box pre-fills the quantity (empty / 0 = 1)
+            openGive(d.item, d.slot, typed > 0 ? typed : 1);
+        }
         return;
     }
 
@@ -334,8 +362,15 @@ document.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') confirmAmountModal();
         return;
     }
+    if (trashOpen()) { if (e.key === 'Escape') closeTrash(); return; } // Enter never confirms a destructive action
+    if (!$('give-modal').classList.contains('hidden')) {
+        if (e.key === 'Escape') closeGive();
+        if (e.key === 'Enter' && giveState.target) confirmGive();
+        return;
+    }
     if (!$('ctx').classList.contains('hidden') && e.key === 'Escape') return closeMenu();
-    if (document.activeElement === $('amount') && e.key !== 'Escape') return;
+    const typing = document.activeElement;
+    if (typing && typing.tagName === 'INPUT' && e.key !== 'Escape') return; // typing in the amount / search box
     if (e.key === 'Escape' || e.key === 'Tab' || e.key.toLowerCase() === 'i') post('close');
 });
 
@@ -384,8 +419,9 @@ function buildMenu(key, slot, item) {
         if (item.useable || item.type === 'weapon' || item.type === 'weapon_thrown' || item.type === 'equipment') {
             entries.push({ label: L('ui_use', 'Use'), run: () => post('use', { slot }) });
         }
-        entries.push({ label: L('ui_give', 'Give'), sub: amountSub(item, (n) => post('give', { slot, amount: n })) });
+        entries.push({ label: L('ui_give', 'Give'), run: () => openGive(item, slot) });
         entries.push({ label: L('ui_drop', 'Drop'), sub: amountSub(item, (n) => post('drop', { slot, amount: n })) });
+        if (trashEnabled) entries.push({ label: L('ui_trash', 'Trash'), sub: amountSub(item, (n) => openTrash(item, slot, n)) });
     }
 
     if (other && other.type !== 'shop') {
@@ -483,6 +519,144 @@ document.addEventListener('click', (e) => {
     if (e.target.closest('[data-modal="cancel"]')) closeAmountModal();
 });
 
+/* ------------------------------------------------------------------ give: pick a nearby player, then the quantity */
+const giveState = { slot: null, item: null, target: null, players: [], timer: null, request: 0 };
+const giveOpen = () => !$('give-modal').classList.contains('hidden');
+
+function showGiveStep(step) {
+    const qty = step === 'qty';
+    $('give-list').classList.toggle('hidden', qty);
+    $('give-qty').classList.toggle('hidden', !qty);
+    $('give-cancel').classList.toggle('hidden', qty);
+    $('give-back').classList.toggle('hidden', !qty);
+    $('give-confirm').classList.toggle('hidden', !qty);
+    $('give-sub').textContent = qty
+        ? `${L('ui_give_to', 'Give to')} ${giveState.target.name} [${giveState.target.id}]`
+        : L('ui_choose_player', 'Choose who receives it');
+}
+
+function renderPlayers() {
+    const list = $('give-list');
+    list.replaceChildren();
+    if (!giveState.players.length) {
+        const empty = document.createElement('div');
+        empty.className = 'player-empty';
+        empty.textContent = L('ui_no_players', 'Nobody nearby');
+        list.append(empty);
+        return;
+    }
+    giveState.players.forEach((p) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'player-row';
+        row.dataset.id = p.id;
+        const name = document.createElement('span');
+        name.className = 'pname';
+        name.textContent = p.name; // player-controlled text: never innerHTML
+        const meta = document.createElement('span');
+        meta.className = 'pmeta';
+        meta.textContent = `[${p.id}] · ${Number(p.distance).toFixed(1)} m`;
+        row.append(name, meta);
+        row.addEventListener('click', () => chooseGiveTarget(p));
+        list.append(row);
+    });
+}
+
+function chooseGiveTarget(p) {
+    const item = getItem('player', giveState.slot);
+    if (!item || item.name !== giveState.item.name) return closeGive(); // the slot changed under us
+    giveState.target = p;
+    const max = item.amount || 1;
+    const input = $('give-qty-input');
+    input.max = max;
+    input.disabled = max <= 1;
+    input.value = Math.min(Math.max(1, giveState.preset || 1), max);
+    $('give-qty-max').textContent = `${L('ui_max', 'Max')}: ${max}`;
+    showGiveStep('qty');
+    setTimeout(() => { if (!input.disabled) { input.focus(); input.select(); } }, 0);
+}
+
+// the list is refreshed while the window is open: a chosen player who walks off (or leaves) cancels the choice
+async function refreshNearby() {
+    const token = ++giveState.request;
+    const res = await postJson('nearby');
+    if (!giveOpen() || token !== giveState.request) return;
+    giveState.players = Array.isArray(res) ? res : Object.values(res || {});
+    if (giveState.target && !giveState.players.some((p) => p.id === giveState.target.id)) {
+        giveState.target = null;
+        showGiveStep('players');
+        $('give-sub').textContent = L('ui_player_left', 'That player is no longer nearby');
+    }
+    if (!giveState.target) renderPlayers();
+}
+
+function openGive(item, slot, preset) {
+    if (!item) return;
+    closeMenu();
+    Object.assign(giveState, { slot, item, target: null, players: [], preset: preset || 1 });
+    $('give-title').textContent = item.label;
+    showGiveStep('players');
+    renderPlayers();
+    $('give-modal').classList.remove('hidden');
+    clearInterval(giveState.timer);
+    giveState.timer = setInterval(refreshNearby, 2000);
+    refreshNearby();
+}
+
+function closeGive() {
+    clearInterval(giveState.timer);
+    giveState.timer = null;
+    giveState.request++;
+    giveState.target = null;
+    $('give-modal').classList.add('hidden');
+}
+
+function confirmGive() {
+    const target = giveState.target;
+    const item = getItem('player', giveState.slot);
+    if (!target || !item || item.name !== giveState.item.name) return closeGive();
+    const n = parseInt($('give-qty-input').value, 10);
+    if (!(n >= 1) || n > item.amount) return; // keep the window open: fix the number
+    post('give', { id: target.id, slot: giveState.slot, amount: n, name: item.name });
+    closeGive();
+}
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-give]');
+    if (!btn) return;
+    const act = btn.dataset.give;
+    if (act === 'cancel') closeGive();
+    if (act === 'back') { giveState.target = null; showGiveStep('players'); renderPlayers(); }
+    if (act === 'max') $('give-qty-input').value = giveState.item ? (getItem('player', giveState.slot) || giveState.item).amount : 1;
+    if (act === 'confirm') confirmGive();
+});
+
+/* ------------------------------------------------------------------ trash (permanent delete, always confirmed) */
+let trashEnabled = true;
+const trashState = { slot: null, name: null, amount: 0 };
+const trashOpen = () => !$('trash-modal').classList.contains('hidden');
+function openTrash(item, slot, amount) {
+    if (!item) return;
+    closeMenu();
+    Object.assign(trashState, { slot, name: item.name, amount });
+    $('trash-item').textContent = `${amount}x ${item.label}`;
+    $('trash-warning').textContent = L('ui_trash_warning', 'This will permanently delete the item. It cannot be recovered.');
+    $('trash-modal').classList.remove('hidden');
+}
+function closeTrash() { $('trash-modal').classList.add('hidden'); }
+function confirmTrash() {
+    const item = getItem('player', trashState.slot);
+    if (item && item.name === trashState.name && trashState.amount >= 1 && trashState.amount <= item.amount) {
+        post('trash', { slot: trashState.slot, amount: trashState.amount, name: trashState.name });
+    }
+    closeTrash();
+}
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-trash]');
+    if (!btn) return;
+    if (btn.dataset.trash === 'confirm') confirmTrash(); else closeTrash();
+});
+
 /* ------------------------------------------------------------------ hotbar */
 let hotbarTimer = null;
 function showHotbar(items) {
@@ -530,12 +704,18 @@ window.addEventListener('message', ({ data: msg }) => {
             state.open = true;
             state.imagePath = d.imagePath || state.imagePath;
             state.hotbarSlots = d.hotbarSlots || 5;
+            trashEnabled = d.trash !== false;
             state.other = null;
+            closeGive();
+            closeTrash();
             $('other-actions').dataset.key = '';
             $('other-actions').replaceChildren();
             if (d.labels) labels = d.labels;
             categoryLabels = d.categoryLabels || {};
             filters.other = 'all';
+            search.player = '';
+            search.other = '';
+            document.querySelectorAll('.search-input').forEach((box) => { box.value = ''; });
             applyLabels();
             $('info-title').textContent = '—';
             $('info-meta').innerHTML = '';
@@ -554,6 +734,8 @@ window.addEventListener('message', ({ data: msg }) => {
         case 'close':
             closeMenu();
             closeAmountModal();
+            closeGive();
+            closeTrash();
             state.open = false;
             state.drag = null;
             $('ghost').classList.add('hidden');

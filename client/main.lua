@@ -18,8 +18,8 @@ end
 
 local function HotbarItems()
     local out = {}
-    for slot, it in pairs(PlayerItems()) do
-        slot = tonumber(slot)
+    for key, it in pairs(PlayerItems()) do
+        local slot = tonumber(key)
         if slot and slot <= Config.HotbarSlots then it.slot = slot out[#out + 1] = it end
     end
     return out
@@ -28,8 +28,9 @@ end
 local labelKeys = {
     'ui_satchel', 'ui_belongings', 'ui_ground', 'ui_drop_here', 'ui_storage', 'ui_shop_hint', 'ui_searching',
     'ui_amount', 'ui_use', 'ui_give', 'ui_hint', 'ui_inspect', 'ui_weight', 'ui_price', 'ui_sells_for',
-    'ui_all', 'ui_misc', 'ui_no_matches',
-    'ui_drop', 'ui_split', 'ui_take', 'ui_move_to', 'ui_buy', 'ui_sell', 'ui_copy_serial',
+    'ui_all', 'ui_misc', 'ui_no_matches', 'ui_sort', 'ui_search',
+    'ui_give_to', 'ui_choose_player', 'ui_no_players', 'ui_back', 'ui_quantity', 'ui_player_left',
+    'ui_drop', 'ui_trash', 'ui_trash_title', 'ui_trash_warning', 'ui_trash_confirm', 'ui_split', 'ui_take', 'ui_move_to', 'ui_buy', 'ui_sell', 'ui_copy_serial',
     'ui_one', 'ui_half', 'ui_all_amount', 'ui_enter_amount', 'ui_max', 'ui_cancel', 'ui_confirm',
     'ui_kg', 'ui_close', 'ui_amount_tip', 'info_serie', 'info_quality',
 }
@@ -42,16 +43,12 @@ local function UiLabels()
     return labels
 end
 
-local function Notify(key, kind, ...)
-    RSGCore.Functions.Notify({ title = locale('inventory'), description = locale(key, ...), type = kind or 'error', duration = 4000 })
-end
-
 local function LoadModel(model, timeout)
     if not IsModelInCdimage(model) then return false end
     RequestModel(model)
     local deadline = GetGameTimer() + (timeout or 5000)
     while not HasModelLoaded(model) do
-        if GetGameTimer() > deadline then return false end
+        if GetGameTimer() > deadline then SetModelAsNoLongerNeeded(model) return false end
         Wait(10)
     end
     return true
@@ -117,7 +114,7 @@ RegisterNetEvent('rsg-inventory:client:open', function(player, other)
     if Config.AllowPushToTalkWhileOpen then
         SetNuiFocusKeepInput(true)
     end
-    Send('open', { player = player, other = other, imagePath = Config.ImagePath, hotbarSlots = Config.HotbarSlots, labels = UiLabels(), categoryLabels = Config.CategoryLabels })
+    Send('open', { player = player, other = other, imagePath = Config.ImagePath, hotbarSlots = Config.HotbarSlots, trash = Config.Trash.Enabled, labels = UiLabels(), categoryLabels = Config.CategoryLabels })
 end)
 
 RegisterNetEvent('rsg-inventory:client:refresh', function(player, other)
@@ -139,6 +136,7 @@ RegisterNetEvent('rsg-inventory:client:checkWeapon', function(weaponName)
 end)
 
 -- item added / removed / used feedback (NUI item box + optional rsg-core toast)
+local itemBoxLabels
 local itemBoxStyle = {
     add    = { key = 'item_received', type = 'success', icon = 'fa-solid fa-plus' },
     remove = { key = 'item_removed',  type = 'error',   icon = 'fa-solid fa-minus' },
@@ -150,11 +148,11 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(item, kind, amount)
     if not style then return end
     -- image item box (old inventory style)
     if Config.ItemBox ~= false then
-        local labels = { add = locale('itembox_received'), remove = locale('itembox_removed'), use = locale('itembox_used') }
+        itemBoxLabels = itemBoxLabels or { add = locale('itembox_received'), remove = locale('itembox_removed'), use = locale('itembox_used') }
         Send('itembox', {
             item = { name = item.name, label = item.label or item.name, image = item.image },
             kind = kind,
-            text = labels[kind],
+            text = itemBoxLabels[kind],
             amount = amount or 1,
             imagePath = Config.ImagePath,
             position = Config.ItemBoxPosition or 'bottom',
@@ -199,9 +197,9 @@ CreateThread(function()
     while true do
         Wait(1000)
         local pc = GetEntityCoords(PlayerPedId())
-        for _, d in pairs(Drops) do
+        for id, d in pairs(Drops) do
             local near = #(pc - d.coords) < Config.Drop.RenderDistance
-            if near and not d.obj and LoadModel(Config.Drop.Prop) then
+            if near and not d.obj and LoadModel(Config.Drop.Prop) and Drops[id] == d then
                 d.obj = CreateObject(Config.Drop.Prop, d.coords.x, d.coords.y, d.coords.z - 1.0, false, false, false)
                 PlaceObjectOnGroundProperly(d.obj)
                 FreezeEntityPosition(d.obj, true)
@@ -230,8 +228,21 @@ RegisterNUICallback('action', function(data, cb)
     cb('ok')
 end)
 
+-- sort button: which = 'player' | 'other' (the open stash); the server re-checks everything
+RegisterNUICallback('sort', function(data, cb)
+    if data.which == 'player' or data.which == 'other' then TriggerServerEvent('rsg-inventory:server:sort', data.which) end
+    cb('ok')
+end)
+
 RegisterNUICallback('use', function(data, cb)
     TriggerServerEvent('rsg-inventory:server:useItem', data.slot)
+    cb('ok')
+end)
+
+RegisterNUICallback('trash', function(data, cb)
+    if type(data) == 'table' and data.slot and data.amount then
+        TriggerServerEvent('rsg-inventory:server:trash', data.slot, data.amount, data.name)
+    end
     cb('ok')
 end)
 
@@ -240,13 +251,18 @@ RegisterNUICallback('drop', function(data, cb)
     cb('ok')
 end)
 
+-- Give list: the server returns the players in range (name, id, distance) so the player picks the recipient
+RegisterNUICallback('nearby', function(_, cb)
+    RSGCore.Functions.TriggerCallback('rsg-inventory:server:getNearbyPlayers', function(list)
+        cb(list or {})
+    end)
+end)
+
+-- confirmed give: recipient id, slot, quantity and the item name the player picked (the server re-checks all of it)
 RegisterNUICallback('give', function(data, cb)
-    local player, dist = RSGCore.Functions.GetClosestPlayer()
-    if not player or player == -1 or dist < 0 or dist > Config.GiveDistance then
-        if Config.Notifications then Notify('no_player') end
-        return cb('ok')
+    if type(data) == 'table' and data.id and data.slot and data.amount then
+        TriggerServerEvent('rsg-inventory:server:give', data.id, data.slot, data.amount, data.name)
     end
-    TriggerServerEvent('rsg-inventory:server:give', GetPlayerServerId(player), data.slot, data.amount)
     cb('ok')
 end)
 
@@ -305,18 +321,22 @@ end)
 --------------------------------------------------------------------------------
 -- Lifecycle
 --------------------------------------------------------------------------------
+local function ClearDrops()
+    for _, d in pairs(Drops) do DeleteDropObj(d) end
+    Drops = {}
+end
+
 local function Init()
     loggedIn = true
-    local list = RSGCore.Functions.AwaitCallback('rsg-inventory:server:getDrops', 10000) or {}
-    for id, coords in pairs(list) do
-        Drops[id] = { coords = vector3(coords.x, coords.y, coords.z) }
-    end
+    ClearDrops() -- drops picked up / expired while we were away must not linger
+    TriggerServerEvent('rsg-inventory:server:syncDrops') -- the server sends the drops around us (and keeps doing so as we move)
 end
 
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', Init)
 RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
     Close()
     loggedIn = false
+    ClearDrops()
 end)
 
 AddEventHandler('onResourceStart', function(res)
@@ -327,7 +347,7 @@ AddEventHandler('onResourceStop', function(res)
     if res ~= GetCurrentResourceName() then return end
     SetNuiFocusKeepInput(false)
     SetNuiFocus(false, false)
-    for _, d in pairs(Drops) do DeleteDropObj(d) end
+    ClearDrops()
 end)
 
 --------------------------------------------------------------------------------
