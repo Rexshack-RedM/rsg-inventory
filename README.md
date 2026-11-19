@@ -34,7 +34,7 @@ Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent
 - **Server-authoritative** — distance, dead / last stand / handcuffed checks, cooldowns; players can't open stashes from the client.
 - **Item box** — NUI popup for added / removed / used items, position configurable.
 - **Logging** through `rsg-log`.
-- **Localised:** en, de, el, es, fr, ja, nl, pl, pt-br, ro.
+- **Localised:** en, de, el, es, fr, ja, nl, pl, pt-br, ro, ru.
 - **Auto-creates its database tables** (`Config.AutoDatabase`; manual `install.sql` still provided).
 
 ---
@@ -163,7 +163,7 @@ Full reference: **[DOCS.md](DOCS.md)**.
 ---
 
 ## Locales
-`en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro` in `locales/`. Language follows the `rsg:locale` convar.
+`en`, `de`, `el`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`, `ru` in `locales/`. Language follows the `rsg:locale` convar.
 
 ## Support
 If you like this script: https://buymeacoffee.com/rexshack

@@ -682,6 +682,6 @@ TriggerClientEvent('rsg-inventory:client:open', source, player, other)
 
 ### Locales
 
-Language files in `locales/`: `de`, `el`, `en`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`. Set the language with `setr rsg:locale "en"`.
+Language files in `locales/`: `de`, `el`, `en`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`, `ru`. Set the language with `setr rsg:locale "en"`.
 
 <!-- END AUTO-REFERENCE -->
