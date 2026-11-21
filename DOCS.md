@@ -33,7 +33,7 @@ Guide for server owners and developers. For a feature overview and installation 
 | `server/shops.lua` | Shop registration, buy / sell, stock persistence and restock |
 | `server/compat.lua` | Legacy exports, `Player.Functions.*` methods, export registration |
 | `server/versionchecker.lua` | Version check on start |
-| `client/main.lua` | Keybinds, NUI bridge, drop props, item box, client exports |
+| `client/main.lua` | Key mappings, NUI bridge, drop props, item box, client exports |
 | `html/` | NUI (index.html, style.css, app.js, images/) |
 | `locales/*.json` | Translations (loaded through `@rsg-core/shared/locale.lua`) |
 
@@ -371,7 +371,8 @@ Player items use the existing `players.inventory` column.
 
 - **Adding items:** define them in rsg-core shared items (with `category` for filtering) and add the PNG to `html/images/`.
 - **Bigger player inventory:** set slots/weight in rsg-core; the config values are only fallbacks.
-- **Change keys:** edit `Config.Keys` with RedM control hashes.
+- **Change default keys:** edit `Config.MappedKeys` (key names such as `'I'`). Players who already played keep their own binding; they rebind in the game's key settings.
+- **Mapping problems:** set `Config.UseKeyMapping = false` to go back to polling `Config.Keys` (control hashes).
 - **Disable coin exchange:** `Config.CoinConversion = false`.
 - **Translating:** edit or add files in `locales/`; set the language with `setr rsg:locale "de"`.
 - **Wiping a stash:** `DELETE FROM inventories WHERE identifier = 'house_12';` while it isn't loaded, or use `ClearStash('house_12')` in-game.
@@ -414,7 +415,10 @@ Everything lives in `shared/config.lua`.
 | `Config.ImagePath` | `nui://rsg-inventory/html/images/` | Item image folder |
 | `Config.PlayerSlots`, `PlayerMaxWeight` | `25`, `35000` | Fallbacks when PlayerData has no slots / weight |
 | `Config.HotbarSlots` | `5` | First N slots are the hotbar (also not moved by Sort) |
-| `Config.Keys` | I, Z, 1-5 | `Open`, `Hotbar`, `Slots` (RedM control hashes) |
+| `Config.UseKeyMapping` | `true` | Use `RegisterKeyMapping` (rsg-core `RegisterKey`, needs rsg-core 3.5.0+). `false` polls `Config.Keys` |
+| `Config.MappedKeys` | `I`, `Z`, `1`-`5` | Default key names: `Open`, `Hotbar`, `Slots`. Players rebind them in the game's key settings |
+| `Config.BlockNativeControls` | `true` | Keep disabling the native satchel menu (`I`) and weapon select (`1`-`5`) with a small per-frame loop. A key mapping does not block the game's own action |
+| `Config.Keys` | I, Z, 1-5 | `Open`, `Hotbar`, `Slots` (RedM control hashes): fallback polling and native blocking |
 | `Config.UseCooldown` | `500` | ms between item uses |
 | `Config.AllowPushToTalkWhileOpen`, `PushToTalkControls` | `true`, `{ 0x4BC9DABB }` | Keep push-to-talk working while the NUI has focus |
 | `Config.Stash` | see file | `DefaultSlots`, `DefaultMaxWeight`, `MaxSlots`, `MaxWeight`, `SaveInterval`, `UnloadAfter`, `History`, `HistoryDays` |
@@ -449,7 +453,7 @@ Config.Decay = {
 | `/stashlog [stash] [amount]` | `admin` | Print the last put / take actions of a stash to the server console |
 | `/viewinv [id]` | `admin` | Open another player's inventory from any distance (logged, in-game only) |
 
-Key `I` opens the inventory, `Z` shows the hotbar and `1`-`5` use the hotbar slots (all configurable in `Config.Keys`).
+Key `I` opens the inventory, `Z` shows the hotbar and `1`-`5` use the hotbar slots (defaults from `Config.MappedKeys`; players can rebind them in the game's key settings).
 
 ## 17. Events & callbacks
 
@@ -510,7 +514,7 @@ Support the Project : https://rexshack.tebex.store/
 
 ## Technical reference
 
-Generated from the source of **rsg-inventory 3.3.0**. Names, arguments and defaults below are read straight from the code.
+Generated from the source of **rsg-inventory 3.4.0**. Names, arguments and defaults below are read straight from the code.
 
 ### Dependencies
 
@@ -542,7 +546,10 @@ Config.AutoDatabase = true -- false = import the SQL file yourself
 | `Config.PlayerSlots` | `25` | Player defaults (fallbacks if rsg-core PlayerData has no slots/weight) |
 | `Config.PlayerMaxWeight` | `35000` |  |
 | `Config.HotbarSlots` | `5` | first N slots are the hotbar |
-| `Config.Keys` | `table` | Keybinds (RedM control hashes) |
+| `Config.UseKeyMapping` | `true` | Rebindable keys through rsg-core `RegisterKey` |
+| `Config.MappedKeys` | `table` | Default key names (`Open`, `Hotbar`, `Slots`) |
+| `Config.BlockNativeControls` | `true` | Keep blocking the game's own actions on those keys |
+| `Config.Keys` | `table` | Fallback RedM control hashes |
 | `Config.Open` | `0xC1989F95` |  |
 | `Config.Hotbar` | `0x26E9DC00` |  |
 | `Config.Slots` | `{ 0xE6F612E4, 0x1CE6D9EB, 0x4F49CC4C, 0x8F9F9E58, 0xAB62E997 }` |  |

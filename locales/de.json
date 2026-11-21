@@ -85,5 +85,8 @@
     "ui_trash_title": "Gegenstand zerstören?",
     "ui_trash_warning": "Der Gegenstand wird dauerhaft gelöscht und kann nicht wiederhergestellt werden.",
     "ui_trash_confirm": "Zerstören",
-    "item_trashed": "Gegenstand zerstört"
+    "item_trashed": "Gegenstand zerstört",
+    "key_open": "Inventar öffnen",
+    "key_hotbar": "Schnellleiste anzeigen",
+    "key_slot": "Schnellleisten-Platz %s benutzen"
 }

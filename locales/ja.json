@@ -85,5 +85,8 @@
     "ui_trash_title": "アイテムを破棄しますか？",
     "ui_trash_warning": "アイテムは完全に削除され、元に戻せません。",
     "ui_trash_confirm": "破棄する",
-    "item_trashed": "アイテムを破棄しました"
+    "item_trashed": "アイテムを破棄しました",
+    "key_open": "インベントリを開く",
+    "key_hotbar": "ホットバーを表示",
+    "key_slot": "ホットバー スロット%sを使用"
 }

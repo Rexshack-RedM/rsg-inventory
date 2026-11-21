@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.4.0
+
+### Added
+- **Rebindable keys:** open (`I`), hotbar (`Z`) and slots (`1`-`5`) are registered with rsg-core `RegisterKey`, so players can rebind them in the game's key settings. New `Config.UseKeyMapping`, `Config.MappedKeys` and `Config.BlockNativeControls`; new locale keys `key_open`, `key_hotbar`, `key_slot` in all 11 languages.
+
+### Changed
+- Requires rsg-core 3.5.0 or newer. With `Config.UseKeyMapping = false` the old control-hash polling still works.
+- The per-frame loop now only blocks the native satchel menu and weapon quick-select (a key mapping does not stop those). Set `Config.BlockNativeControls = false` to remove it.
+
 ## 3.3.0
 
 ### Added

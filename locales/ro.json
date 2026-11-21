@@ -85,5 +85,8 @@
     "ui_trash_title": "Distrugi obiectul?",
     "ui_trash_warning": "Obiectul va fi șters definitiv. Nu poate fi recuperat.",
     "ui_trash_confirm": "Distruge",
-    "item_trashed": "Obiect distrus"
+    "item_trashed": "Obiect distrus",
+    "key_open": "Deschide inventarul",
+    "key_hotbar": "Afișează bara rapidă",
+    "key_slot": "Folosește slotul %s al barei rapide"
 }

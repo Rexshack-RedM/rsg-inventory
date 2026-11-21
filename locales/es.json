@@ -85,5 +85,8 @@
     "ui_trash_title": "¿Destruir objeto?",
     "ui_trash_warning": "Esto eliminará el objeto de forma permanente. No se puede recuperar.",
     "ui_trash_confirm": "Destruir",
-    "item_trashed": "Objeto destruido"
+    "item_trashed": "Objeto destruido",
+    "key_open": "Abrir inventario",
+    "key_hotbar": "Mostrar barra rápida",
+    "key_slot": "Usar ranura %s de la barra rápida"
 }

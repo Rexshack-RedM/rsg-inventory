@@ -270,25 +270,53 @@ end)
 -- Input
 --------------------------------------------------------------------------------
 local lastHotbar = 0
+
+local function ShowHotbar()
+    if not loggedIn or isOpen then return end
+    Send('hotbar', { items = HotbarItems(), imagePath = Config.ImagePath })
+end
+
+local function UseHotbarSlot(i)
+    if not loggedIn or isOpen or IsNuiFocused() then return end
+    if GetGameTimer() - lastHotbar <= Config.UseCooldown then return end
+    lastHotbar = GetGameTimer()
+    if (PlayerItems()[i] or PlayerItems()[tostring(i)]) and CanUse() then
+        TriggerServerEvent('rsg-inventory:server:useItem', i)
+    end
+end
+
+-- Rebindable keys (rsg-core RegisterKey). Players change them in the game's key settings;
+-- Config.MappedKeys only holds the defaults. Set Config.UseKeyMapping = false to poll Config.Keys instead.
+local mapped = Config.UseKeyMapping == true
+if mapped then
+    RSGCore.Functions.RegisterKey('rsginventory_open', locale('key_open'), Config.MappedKeys.Open, nil, OpenInventory)
+    RSGCore.Functions.RegisterKey('rsginventory_hotbar', locale('key_hotbar'), Config.MappedKeys.Hotbar, nil, ShowHotbar)
+    for i = 1, Config.HotbarSlots do
+        local key = Config.MappedKeys.Slots[i]
+        if key then
+            RSGCore.Functions.RegisterKey('rsginventory_slot' .. i, locale('key_slot', i), key, nil, function() UseHotbarSlot(i) end)
+        end
+    end
+end
+
 CreateThread(function()
     while true do
         if loggedIn and not isOpen then
-            Wait(0)
-            DisableControlAction(0, Config.Keys.Open, true)
-            if IsDisabledControlJustReleased(0, Config.Keys.Open) then
-                OpenInventory()
-            end
-            if IsControlJustReleased(0, Config.Keys.Hotbar) then
-                Send('hotbar', { items = HotbarItems(), imagePath = Config.ImagePath })
-            end
-            for i, key in ipairs(Config.Keys.Slots) do
-                if i > Config.HotbarSlots then break end
-                DisableControlAction(0, key, true) -- stop 1-5 also quick-selecting weapons
-                if IsDisabledControlJustReleased(0, key) and not IsNuiFocused() and GetGameTimer() - lastHotbar > Config.UseCooldown then
-                    lastHotbar = GetGameTimer()
-                    if (PlayerItems()[i] or PlayerItems()[tostring(i)]) and CanUse() then
-                        TriggerServerEvent('rsg-inventory:server:useItem', i)
-                    end
+            if mapped and not Config.BlockNativeControls then
+                Wait(250) -- nothing to poll: the key mappings do the work
+            else
+                Wait(0)
+                -- a key mapping does not stop the game's own action on that key, so the native
+                -- satchel menu (I) and the weapon quick-select (1-5) are still blocked here
+                DisableControlAction(0, Config.Keys.Open, true)
+                if not mapped then
+                    if IsDisabledControlJustReleased(0, Config.Keys.Open) then OpenInventory() end
+                    if IsControlJustReleased(0, Config.Keys.Hotbar) then ShowHotbar() end
+                end
+                for i, key in ipairs(Config.Keys.Slots) do
+                    if i > Config.HotbarSlots then break end
+                    DisableControlAction(0, key, true)
+                    if not mapped and IsDisabledControlJustReleased(0, key) then UseHotbarSlot(i) end
                 end
             end
         elseif isOpen then

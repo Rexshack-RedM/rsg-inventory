@@ -85,5 +85,8 @@
     "ui_trash_title": "Destroy item?",
     "ui_trash_warning": "This will permanently delete the item. It cannot be recovered.",
     "ui_trash_confirm": "Destroy",
-    "item_trashed": "Item destroyed"
+    "item_trashed": "Item destroyed",
+    "key_open": "Open inventory",
+    "key_hotbar": "Show hotbar",
+    "key_slot": "Use hotbar slot %s"
 }

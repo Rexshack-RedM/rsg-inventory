@@ -14,7 +14,21 @@ Config.PlayerSlots    = 25
 Config.PlayerMaxWeight = 35000
 Config.HotbarSlots    = 5        -- first N slots are the hotbar
 
--- Keybinds (RedM control hashes)
+-- Keybinds
+-- Rebindable keys: registered with rsg-core RegisterKey (RegisterKeyMapping). The names below are only the
+-- defaults; players change them in the game's key settings. Requires rsg-core 3.5.0 or newer.
+Config.UseKeyMapping = true
+Config.MappedKeys = {
+    Open   = 'I',                          -- open the inventory
+    Hotbar = 'Z',                          -- show hotbar
+    Slots  = { '1', '2', '3', '4', '5' },  -- use hotbar slot 1-5
+}
+-- A key mapping does not stop the game's own action on that key (satchel menu on I, weapon select on 1-5).
+-- true = keep blocking those native controls (uses a small per-frame loop). false = no loop at all.
+Config.BlockNativeControls = true
+
+-- Fallback: RedM control hashes, polled every frame. Used when Config.UseKeyMapping = false,
+-- and for blocking the native actions above (when Config.BlockNativeControls is true).
 Config.Keys = {
     Open   = 0xC1989F95, -- I
     Hotbar = 0x26E9DC00, -- Z (show hotbar)

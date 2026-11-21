@@ -85,5 +85,8 @@
     "ui_trash_title": "Zniszczyć przedmiot?",
     "ui_trash_warning": "Przedmiot zostanie trwale usunięty. Nie można go odzyskać.",
     "ui_trash_confirm": "Zniszcz",
-    "item_trashed": "Przedmiot zniszczony"
+    "item_trashed": "Przedmiot zniszczony",
+    "key_open": "Otwórz ekwipunek",
+    "key_hotbar": "Pokaż pasek szybkiego dostępu",
+    "key_slot": "Użyj miejsca %s paska szybkiego dostępu"
 }

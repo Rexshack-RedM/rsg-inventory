@@ -2,7 +2,7 @@
 
 Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent stashes, ground drops, shops with persistent stock, category filters, automatic coin exchange and a legacy-compatible API so existing RSG scripts keep working.
 
-**Version:** 3.3.0 · **Requires:** `rsg-core`, `oxmysql` · **ox_lib:** not required
+**Version:** 3.4.0 · **Requires:** `rsg-core` 3.5.0 or newer, `oxmysql` · **ox_lib:** not required
 
 > Developers: see **[DOCS.md](DOCS.md)** for the full API, data formats and integration examples.
 
@@ -71,7 +71,10 @@ All options are in `shared/config.lua`.
 | `Config.ImagePath` | `nui://rsg-inventory/html/images/` | Item image folder |
 | `Config.PlayerSlots` / `PlayerMaxWeight` | `25` / `35000` | Fallbacks if PlayerData has no slots / weight |
 | `Config.HotbarSlots` | `5` | First N slots are the hotbar |
-| `Config.Keys` | I, Z, 1–5 | RedM control hashes for open, hotbar and slot keys |
+| `Config.UseKeyMapping` | `true` | Register the keys with `RegisterKeyMapping` so players can rebind them. `false` polls `Config.Keys` instead |
+| `Config.MappedKeys` | I, Z, 1–5 | Default key names for open, hotbar and slots |
+| `Config.BlockNativeControls` | `true` | Keep blocking the game's own satchel menu (`I`) and weapon select (`1`–`5`) |
+| `Config.Keys` | I, Z, 1–5 | RedM control hashes: fallback polling and native blocking |
 | `Config.UseCooldown` | `500` | ms between item uses |
 | `Config.Stash.DefaultSlots` / `DefaultMaxWeight` | `50` / `1000000` | Defaults for new stashes |
 | `Config.Stash.MaxSlots` / `MaxWeight` | `300` / `10000000` | Upper clamp for any stash |
@@ -104,6 +107,11 @@ All options are in `shared/config.lua`.
 | `I` | Open / close inventory |
 | `Z` | Show hotbar |
 | `1`–`5` | Use hotbar slot |
+
+The three keys above are defaults: players can rebind them in the game's key settings ("Open inventory", "Show hotbar", "Use hotbar slot N").
+
+| Input | Action |
+|---|---|
 | Drag | Move / swap / merge (amount box, `0` = whole stack) |
 | Shift-drag | Move half a stack |
 | Ctrl-click | Quick move to the other panel |

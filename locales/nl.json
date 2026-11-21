@@ -85,5 +85,8 @@
     "ui_trash_title": "Voorwerp vernietigen?",
     "ui_trash_warning": "Dit verwijdert het voorwerp definitief. Het kan niet worden hersteld.",
     "ui_trash_confirm": "Vernietigen",
-    "item_trashed": "Voorwerp vernietigd"
+    "item_trashed": "Voorwerp vernietigd",
+    "key_open": "Inventaris openen",
+    "key_hotbar": "Snelbalk tonen",
+    "key_slot": "Snelbalk-slot %s gebruiken"
 }

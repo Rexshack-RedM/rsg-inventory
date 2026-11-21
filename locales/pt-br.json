@@ -85,5 +85,8 @@
     "ui_trash_title": "Destruir item?",
     "ui_trash_warning": "Isto apagará o item permanentemente. Não é possível recuperá-lo.",
     "ui_trash_confirm": "Destruir",
-    "item_trashed": "Item destruído"
+    "item_trashed": "Item destruído",
+    "key_open": "Abrir inventário",
+    "key_hotbar": "Mostrar barra de atalhos",
+    "key_slot": "Usar espaço %s da barra de atalhos"
 }
