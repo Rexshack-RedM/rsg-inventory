@@ -88,5 +88,15 @@
     "item_trashed": "Item destroyed",
     "key_open": "Open inventory",
     "key_hotbar": "Show hotbar",
-    "key_slot": "Use hotbar slot %s"
+    "key_slot": "Use hotbar slot %s",
+    "ui_take_all": "Take all",
+    "ui_shop_pays": "Shop pays",
+    "ui_equipped": "Equipped",
+    "ui_stashes": "Stashes",
+    "ui_open": "Open",
+    "ui_history": "History",
+    "ui_nothing_found": "Nothing found",
+    "no_access": "You don't have access to this storage",
+    "carry_limit": "You can't carry any more of that",
+    "cmd_stashes": "Browse and open any stash (admin)"
 }

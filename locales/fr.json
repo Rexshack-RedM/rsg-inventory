@@ -88,5 +88,15 @@
     "item_trashed": "Objet détruit",
     "key_open": "Ouvrir l'inventaire",
     "key_hotbar": "Afficher la barre rapide",
-    "key_slot": "Utiliser l'emplacement %s de la barre rapide"
+    "key_slot": "Utiliser l'emplacement %s de la barre rapide",
+    "ui_take_all": "Tout prendre",
+    "ui_shop_pays": "Le magasin paie",
+    "ui_equipped": "Équipé",
+    "ui_stashes": "Coffres",
+    "ui_open": "Ouvrir",
+    "ui_history": "Historique",
+    "ui_nothing_found": "Rien trouvé",
+    "no_access": "Tu n'as pas accès à ce coffre",
+    "carry_limit": "Tu ne peux pas porter plus de cela",
+    "cmd_stashes": "Parcourir et ouvrir n'importe quel coffre (admin)"
 }

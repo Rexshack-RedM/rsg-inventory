@@ -25,6 +25,32 @@ local function HotbarItems()
     return out
 end
 
+-- slots holding the weapon the ped has in their hands (shown as "equipped" in the inventory and hotbar)
+local function EquippedSlots()
+    local _, current = GetCurrentPedWeapon(PlayerPedId(), true, 0, true)
+    local out = {}
+    if current and current ~= 0 and current ~= joaat('WEAPON_UNARMED') then
+        for key, it in pairs(PlayerItems()) do
+            if (it.type == 'weapon' or it.type == 'weapon_thrown') and joaat(it.name) == current then
+                out[#out + 1] = tonumber(it.slot) or tonumber(key)
+            end
+        end
+    end
+    return out
+end
+
+-- keys that close the inventory from inside the NUI. With a rebindable key the mapping itself closes it
+-- (so a rebound key works); the default key is only listed when the mapping cannot fire while the NUI has focus.
+local function CloseKeys()
+    local keys = { 'escape', 'tab' }
+    if not (Config.UseKeyMapping == true and Config.AllowPushToTalkWhileOpen) then
+        keys[#keys + 1] = tostring(Config.MappedKeys.Open or 'I'):lower()
+    end
+    return keys
+end
+
+local typing = false -- true while a text box or modal in the NUI is active: the open key must not close the inventory
+
 local labelKeys = {
     'ui_satchel', 'ui_belongings', 'ui_ground', 'ui_drop_here', 'ui_storage', 'ui_shop_hint', 'ui_searching',
     'ui_amount', 'ui_use', 'ui_give', 'ui_hint', 'ui_inspect', 'ui_weight', 'ui_price', 'ui_sells_for',
@@ -33,6 +59,7 @@ local labelKeys = {
     'ui_drop', 'ui_trash', 'ui_trash_title', 'ui_trash_warning', 'ui_trash_confirm', 'ui_split', 'ui_take', 'ui_move_to', 'ui_buy', 'ui_sell', 'ui_copy_serial',
     'ui_one', 'ui_half', 'ui_all_amount', 'ui_enter_amount', 'ui_max', 'ui_cancel', 'ui_confirm',
     'ui_kg', 'ui_close', 'ui_amount_tip', 'info_serie', 'info_quality',
+    'ui_take_all', 'ui_shop_pays', 'ui_equipped', 'ui_stashes', 'ui_open', 'ui_history', 'ui_nothing_found',
 }
 local labels
 local function UiLabels()
@@ -68,6 +95,7 @@ end
 local function Close()
     if not isOpen then return end
     isOpen = false
+    typing = false
     SetNuiFocusKeepInput(false)
     SetNuiFocus(false, false)
     Send('close')
@@ -114,12 +142,13 @@ RegisterNetEvent('rsg-inventory:client:open', function(player, other)
     if Config.AllowPushToTalkWhileOpen then
         SetNuiFocusKeepInput(true)
     end
-    Send('open', { player = player, other = other, imagePath = Config.ImagePath, hotbarSlots = Config.HotbarSlots, trash = Config.Trash.Enabled, labels = UiLabels(), categoryLabels = Config.CategoryLabels })
+    typing = false
+    Send('open', { player = player, other = other, imagePath = Config.ImagePath, hotbarSlots = Config.HotbarSlots, trash = Config.Trash.Enabled, labels = UiLabels(), categoryLabels = Config.CategoryLabels, equipped = EquippedSlots(), closeKeys = CloseKeys() })
 end)
 
 RegisterNetEvent('rsg-inventory:client:refresh', function(player, other)
     if isOpen then
-        Send('refresh', { player = player, other = other })
+        Send('refresh', { player = player, other = other, equipped = EquippedSlots() })
     end
 end)
 
@@ -167,6 +196,44 @@ RegisterNetEvent('rsg-inventory:client:ItemBox', function(item, kind, amount)
         icon = style.icon,
         duration = 3000,
     })
+end)
+
+-- Admin stash browser (/stashes): a modal in the NUI, every request is re-checked by the server (admin permission)
+local browserOpen = false
+
+local function CloseBrowser()
+    if not browserOpen then return end
+    browserOpen = false
+    typing = false
+    SetNuiFocus(false, false)
+    Send('stashBrowserClose')
+end
+
+RegisterNetEvent('rsg-inventory:client:stashBrowser', function()
+    if isOpen or browserOpen or not loggedIn then return end
+    browserOpen = true
+    SetNuiFocus(true, true)
+    Send('stashBrowser', { labels = UiLabels() })
+end)
+
+RegisterNUICallback('closeBrowser', function(_, cb) CloseBrowser() cb('ok') end)
+
+RegisterNUICallback('stashList', function(data, cb)
+    RSGCore.Functions.TriggerCallback('rsg-inventory:server:adminStashes', function(list) cb(list or {}) end,
+        type(data) == 'table' and data.filter or '')
+end)
+
+RegisterNUICallback('stashHistory', function(data, cb)
+    if type(data) ~= 'table' or type(data.id) ~= 'string' then return cb({}) end
+    RSGCore.Functions.TriggerCallback('rsg-inventory:server:adminStashHistory', function(rows) cb(rows or {}) end, data.id)
+end)
+
+RegisterNUICallback('stashOpen', function(data, cb)
+    cb('ok')
+    if type(data) == 'table' and type(data.id) == 'string' then
+        CloseBrowser()
+        TriggerServerEvent('rsg-inventory:server:adminOpenStash', data.id)
+    end
 end)
 
 RegisterNetEvent('rsg-inventory:client:giveAnim', function()
@@ -239,6 +306,16 @@ RegisterNUICallback('use', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('typing', function(data, cb)
+    typing = type(data) == 'table' and data.state == true
+    cb('ok')
+end)
+
+RegisterNUICallback('takeall', function(_, cb)
+    TriggerServerEvent('rsg-inventory:server:takeAll')
+    cb('ok')
+end)
+
 RegisterNUICallback('trash', function(data, cb)
     if type(data) == 'table' and data.slot and data.amount then
         TriggerServerEvent('rsg-inventory:server:trash', data.slot, data.amount, data.name)
@@ -273,7 +350,7 @@ local lastHotbar = 0
 
 local function ShowHotbar()
     if not loggedIn or isOpen then return end
-    Send('hotbar', { items = HotbarItems(), imagePath = Config.ImagePath })
+    Send('hotbar', { items = HotbarItems(), imagePath = Config.ImagePath, equipped = EquippedSlots() })
 end
 
 local function UseHotbarSlot(i)
@@ -289,7 +366,11 @@ end
 -- Config.MappedKeys only holds the defaults. Set Config.UseKeyMapping = false to poll Config.Keys instead.
 local mapped = Config.UseKeyMapping == true
 if mapped then
-    RSGCore.Functions.RegisterKey('rsginventory_open', locale('key_open'), Config.MappedKeys.Open, nil, OpenInventory)
+    -- the same key opens and closes: allowWhileNui lets it close the inventory, even after a player rebinds it
+    RSGCore.Functions.RegisterKey('rsginventory_open', locale('key_open'), Config.MappedKeys.Open, nil, function()
+        if typing then return end
+        if isOpen then Close() else OpenInventory() end
+    end, { allowWhileNui = true })
     RSGCore.Functions.RegisterKey('rsginventory_hotbar', locale('key_hotbar'), Config.MappedKeys.Hotbar, nil, ShowHotbar)
     for i = 1, Config.HotbarSlots do
         local key = Config.MappedKeys.Slots[i]
@@ -363,6 +444,7 @@ end
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', Init)
 RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
     Close()
+    CloseBrowser()
     loggedIn = false
     ClearDrops()
 end)

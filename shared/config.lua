@@ -35,6 +35,8 @@ Config.Keys = {
     Slots  = { 0xE6F612E4, 0x1CE6D9EB, 0x4F49CC4C, 0x8F9F9E58, 0xAB62E997 }, -- 1-5
 }
 Config.UseCooldown    = 500      -- ms between item uses
+Config.MoveCooldown   = 100      -- ms between inventory moves (every move between a player and a stash writes to the database)
+Config.LogItems       = true     -- send every AddItem / RemoveItem to rsg-log; false = only moves, gives, drops and trashes are logged
 
 -- While inventory is open, block game controls but allow push-to-talk.
 -- Uses SetNuiFocusKeepInput + DisableAllControlActions, then re-enables only these.
@@ -67,7 +69,8 @@ Config.Drop = {
     Lifetime     = 15,           -- minutes before an untouched drop is removed
     SyncDistance = 120.0,        -- drops are only sent to players this close (keep above RenderDistance)
     SyncInterval = 3,            -- seconds between nearby-drop updates
-    Persist      = false,        -- true = drops survive a restart (saved to inventory_drops, timer restarts on load)
+    MergeDistance = 1.5,         -- dropping next to an existing pile adds to it instead of making a new prop (0 = always a new pile)
+    Persist      = true,         -- drops (and any cash in them) survive a restart: saved to inventory_drops, timer restarts on load. false = memory only
 }
 
 -- Extra carrying capacity granted by other resources (satchels, horses, wagons...) through
@@ -92,6 +95,23 @@ Config.Decay = {
         -- food = { rate = 1 },                       -- by rsg-core item category
     },
 }
+
+-- Carry limits (applied on top of weight and slots). Each rule: Items = { name = n }, Categories = { category = n }.
+-- A `maxStack` / `maxCarry` field on the rsg-core shared item is used when no rule matches.
+Config.ItemLimits = {
+    MaxStack = {       -- most of one item in a single slot (extra goes to the next slot). Weapons / unique items never stack
+        Default    = nil,        -- e.g. 100 = every stackable item caps at 100 per slot
+        Items      = {},         -- bread = 20,
+        Categories = {},         -- ammo_pistol = 50,
+    },
+    MaxCarry = {       -- most of one item a player can hold in total (shops, give and pick-up respect it)
+        Default    = nil,
+        Items      = {},         -- dynamite = 5,
+        Categories = {},
+    },
+}
+
+Config.ShopDistance   = 10.0    -- how far from a shop's coords a player can still buy / sell
 
 Config.GiveDistance   = 3.0     -- players within this distance appear in the Give list (and the server re-checks it)
 Config.GiveMaxPlayers = 12      -- most players shown in the Give list (closest first)

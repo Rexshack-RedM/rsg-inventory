@@ -88,5 +88,15 @@
     "item_trashed": "Obiect distrus",
     "key_open": "Deschide inventarul",
     "key_hotbar": "Afișează bara rapidă",
-    "key_slot": "Folosește slotul %s al barei rapide"
+    "key_slot": "Folosește slotul %s al barei rapide",
+    "ui_take_all": "Ia tot",
+    "ui_shop_pays": "Magazinul plătește",
+    "ui_equipped": "Echipat",
+    "ui_stashes": "Depozite",
+    "ui_open": "Deschide",
+    "ui_history": "Istoric",
+    "ui_nothing_found": "Nu s-a găsit nimic",
+    "no_access": "Nu ai acces la acest depozit",
+    "carry_limit": "Nu mai poți căra din acesta",
+    "cmd_stashes": "Răsfoiește și deschide orice depozit (admin)"
 }

@@ -23,6 +23,8 @@ const state = {
     player: null,
     other: null,
     drag: null,
+    equipped: new Set(),            // player slots holding the weapon in the ped's hands
+    closeKeys: ['escape', 'tab', 'i'],
 };
 
 function post(name, data = {}) {
@@ -70,6 +72,11 @@ function slotEl(invKey, slot, item, showKey) {
     el.dataset.inv = invKey;
     el.dataset.slot = slot;
     let html = showKey ? `<div class="key">${slot}</div>` : '';
+    if (item && (invKey === 'player' || invKey === 'hotbar') && state.equipped.has(Number(slot))) {
+        el.classList.add('equipped');
+        el.title = L('ui_equipped', 'Equipped');
+        html += '<div class="eq"></div>';
+    }
     if (item) {
         html += `<img src="${esc(imgSrc(item))}" onerror="this.style.visibility='hidden'">`;
         html += `<div class="qty">${item.amount > 1 ? 'x' + item.amount : ''}</div>`;
@@ -171,6 +178,8 @@ function render() {
         $('other-sub').textContent = subs[other.type] || L('ui_drop_here', 'Drop items here');
         $('panel-other').querySelector('.weight').classList.toggle('hidden', other.type === 'shop');
         $('sort-other').classList.toggle('hidden', other.type !== 'stash'); // only stashes can be sorted
+        const lootable = (other.type === 'stash' || other.type === 'drop') && Object.keys(other.map).length > 0;
+        $('takeall-other').classList.toggle('hidden', !lootable); // stashes and ground piles, when there is something in them
         if (other.type !== 'shop') setWeight('other', other);
         renderActions(other);
         renderGrid('other');
@@ -209,18 +218,28 @@ function setInv(key, data) {
 }
 
 /* ------------------------------------------------------------------ info */
-function showInfo(item) {
+function showInfo(item, invKey) {
     if (!item) return;
     $('info-title').textContent = item.label;
     $('info-desc').textContent = item.description || '';
-    const rows = [`<div><span>${L('ui_weight', 'Weight')}</span>${kg((item.weight || 0) * (item.amount || 1))} ${esc(L('ui_kg', 'kg'))}</div>`];
-    if (item.price !== undefined) rows.push(`<div><span>${L('ui_price', 'Price')}</span>$${Number(item.price).toFixed(2)}</div>`);
-    if (item.buyPrice !== undefined) rows.push(`<div><span>${L('ui_sells_for', 'Sells for')}</span>$${Number(item.buyPrice).toFixed(2)}</div>`);
+    const rows = [`<div><span>${esc(L('ui_weight', 'Weight'))}</span>${kg((item.weight || 0) * (item.amount || 1))} ${esc(L('ui_kg', 'kg'))}</div>`];
+    if (item.price !== undefined) rows.push(`<div><span>${esc(L('ui_price', 'Price'))}</span>$${Number(item.price).toFixed(2)}</div>`);
+    if (item.buyPrice !== undefined) rows.push(`<div><span>${esc(L('ui_sells_for', 'Sells for'))}</span>$${Number(item.buyPrice).toFixed(2)}</div>`);
     const info = item.info || {};
+    // what the open shop would pay for one of your items (its buy price scaled by quality)
+    if (invKey === 'player' && state.other && state.other.type === 'shop') {
+        const entry = Object.values(state.other.map).find((it) => it && it.name === item.name && it.buyPrice !== undefined);
+        if (entry) {
+            const q = typeof info.quality === 'number' ? Math.max(0, Math.min(100, info.quality)) : 100;
+            const each = Number(entry.buyPrice) * q / 100;
+            const total = (item.amount || 1) > 1 ? ` · $${(each * item.amount).toFixed(2)}` : '';
+            rows.push(`<div><span>${esc(L('ui_shop_pays', 'Shop pays'))}</span>$${each.toFixed(2)}${total}</div>`);
+        }
+    }
     Object.keys(info).forEach((k) => {
         const v = info[k];
         if (v === null || typeof v === 'object') return;
-        rows.push(`<div><span>${esc(L('info_' + k, k))}</span>${esc(v)}</div>`);
+        rows.push(`<div><span>${esc(L('info_' + k, k))}</span>${esc(v)}${k === 'quality' && typeof v === 'number' ? '%' : ''}</div>`);
     });
     $('info-meta').innerHTML = rows.join('');
 }
@@ -348,7 +367,7 @@ document.addEventListener('dblclick', (e) => {
 
 document.addEventListener('mouseover', (e) => {
     const el = e.target.closest('#app .slot.filled');
-    if (el) showInfo(getItem(el.dataset.inv, +el.dataset.slot));
+    if (el) showInfo(getItem(el.dataset.inv, +el.dataset.slot), el.dataset.inv);
 });
 
 document.addEventListener('click', (e) => {
@@ -356,6 +375,7 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keyup', (e) => {
+    if (browserShown()) { if (e.key === 'Escape') closeBrowser(); return; }
     if (!state.open) return;
     if (!$('amount-modal').classList.contains('hidden')) {
         if (e.key === 'Escape') closeAmountModal();
@@ -371,7 +391,27 @@ document.addEventListener('keyup', (e) => {
     if (!$('ctx').classList.contains('hidden') && e.key === 'Escape') return closeMenu();
     const typing = document.activeElement;
     if (typing && typing.tagName === 'INPUT' && e.key !== 'Escape') return; // typing in the amount / search box
-    if (e.key === 'Escape' || e.key === 'Tab' || e.key.toLowerCase() === 'i') post('close');
+    if (state.closeKeys.includes(e.key.toLowerCase())) post('close');
+});
+
+// tell the client while a text box has the cursor or a modal (amount / give / trash) is open, so the
+// (rebindable) open key does not close the inventory mid-typing or mid-confirmation
+let inputBlocked = false;
+function updateInputBlock() {
+    const el = document.activeElement;
+    const blocked = ['amount-modal', 'give-modal', 'trash-modal'].some((id) => !$(id).classList.contains('hidden'))
+        || !!(el && el.matches && el.matches('input, textarea'));
+    if (blocked === inputBlocked) return;
+    inputBlocked = blocked;
+    post('typing', { state: blocked });
+}
+document.addEventListener('focusin', () => setTimeout(updateInputBlock, 0));
+document.addEventListener('focusout', () => setTimeout(updateInputBlock, 0));
+const modalWatch = new MutationObserver(updateInputBlock);
+['amount-modal', 'give-modal', 'trash-modal'].forEach((id) => modalWatch.observe($(id), { attributes: true, attributeFilter: ['class'] }));
+
+document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-takeall]')) post('takeall');
 });
 
 /* ------------------------------------------------------------------ right-click menu */
@@ -696,6 +736,81 @@ function showItemBox(d) {
     setTimeout(() => box.remove(), 3000);
 }
 
+/* ------------------------------------------------------------------ admin stash browser (/stashes) */
+const browser = { timer: null, request: 0 };
+const browserShown = () => !$('stashes-modal').classList.contains('hidden');
+const asList = (v) => (Array.isArray(v) ? v : Object.values(v || {}));
+
+function nothingFound(box) {
+    const e = document.createElement('div');
+    e.className = 'player-empty';
+    e.textContent = L('ui_nothing_found', 'Nothing found');
+    box.append(e);
+}
+
+function renderStashes(list) {
+    const box = $('stashes-list');
+    box.replaceChildren();
+    if (!list.length) return nothingFound(box);
+    list.forEach((s) => {
+        const row = document.createElement('div');
+        row.className = 'stash-row';
+        const name = document.createElement('span');
+        name.className = 'sname';
+        name.textContent = s.id; // stash ids are script-defined text: never innerHTML
+        const hist = document.createElement('button');
+        hist.type = 'button';
+        hist.className = 'wood-btn small muted';
+        hist.textContent = L('ui_history', 'History');
+        hist.addEventListener('click', () => showStashHistory(s.id));
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'wood-btn small';
+        open.textContent = L('ui_open', 'Open');
+        open.addEventListener('click', () => {
+            $('stashes-modal').classList.add('hidden');
+            post('stashOpen', { id: s.id });
+        });
+        row.append(name, hist, open);
+        box.append(row);
+    });
+}
+
+async function loadStashes() {
+    const token = ++browser.request;
+    const res = await postJson('stashList', { filter: $('stashes-search').value.trim() });
+    if (token !== browser.request || !browserShown()) return;
+    renderStashes(asList(res));
+}
+
+async function showStashHistory(id) {
+    const rows = asList(await postJson('stashHistory', { id }));
+    const box = $('stashes-history');
+    box.replaceChildren();
+    box.classList.remove('hidden');
+    if (!rows.length) return nothingFound(box);
+    rows.forEach((r) => {
+        const line = document.createElement('div');
+        line.textContent = `${new Date((Number(r.time) || 0) * 1000).toLocaleString()} · ${r.name} (${r.citizenid}) · ${r.action} ${r.amount}x ${r.item}`;
+        box.append(line);
+    });
+}
+
+function closeBrowser() {
+    if (!browserShown()) return;
+    clearTimeout(browser.timer);
+    $('stashes-modal').classList.add('hidden');
+    post('closeBrowser');
+}
+
+$('stashes-search').addEventListener('input', () => {
+    clearTimeout(browser.timer);
+    browser.timer = setTimeout(loadStashes, 300);
+});
+document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-stashes="close"]')) closeBrowser();
+});
+
 /* ------------------------------------------------------------------ messages */
 window.addEventListener('message', ({ data: msg }) => {
     const d = msg.data || {};
@@ -711,6 +826,9 @@ window.addEventListener('message', ({ data: msg }) => {
             $('other-actions').dataset.key = '';
             $('other-actions').replaceChildren();
             if (d.labels) labels = d.labels;
+            inputBlocked = false; // the client resets its own flag when the inventory opens
+            state.equipped = new Set((d.equipped || []).map(Number));
+            state.closeKeys = Array.isArray(d.closeKeys) && d.closeKeys.length ? d.closeKeys : ['escape', 'tab', 'i'];
             categoryLabels = d.categoryLabels || {};
             filters.other = 'all';
             search.player = '';
@@ -727,11 +845,13 @@ window.addEventListener('message', ({ data: msg }) => {
             render();
             break;
         case 'refresh':
+            if (d.equipped) state.equipped = new Set(d.equipped.map(Number));
             setInv('player', d.player);
             setInv('other', d.other);
             render();
             break;
         case 'close':
+            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
             closeMenu();
             closeAmountModal();
             closeGive();
@@ -742,11 +862,25 @@ window.addEventListener('message', ({ data: msg }) => {
             $('app').classList.add('hidden');
             break;
         case 'hotbar':
+            if (d.equipped) state.equipped = new Set(d.equipped.map(Number));
             state.imagePath = d.imagePath || state.imagePath;
             showHotbar(d.items);
             break;
         case 'itembox':
             showItemBox(d);
+            break;
+        case 'stashBrowser':
+            if (d.labels) labels = d.labels;
+            applyLabels();
+            $('stashes-search').value = '';
+            $('stashes-history').classList.add('hidden');
+            $('stashes-modal').classList.remove('hidden');
+            $('stashes-list').replaceChildren();
+            loadStashes();
+            setTimeout(() => $('stashes-search').focus(), 0);
+            break;
+        case 'stashBrowserClose':
+            $('stashes-modal').classList.add('hidden');
             break;
     }
 });

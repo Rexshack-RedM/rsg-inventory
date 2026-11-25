@@ -60,6 +60,7 @@
                 <div class="divider"><span>✦</span></div>
                 <div class="toolbar">
                     <input type="text" class="search-input" id="search-other" data-inv="other" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Search…" data-l-placeholder="ui_search">
+                    <button type="button" class="wood-btn small hidden" id="takeall-other" data-takeall="1" data-l="ui_take_all">Take all</button>
                     <button type="button" class="wood-btn small hidden" id="sort-other" data-sort="other" data-l="ui_sort">Sort</button>
                 </div>
                 <div class="filters" id="filter-other"></div>
@@ -124,6 +125,20 @@
             <div class="modal-actions">
                 <button class="wood-btn muted" data-modal="cancel" data-l="ui_cancel">Cancel</button>
                 <button class="wood-btn" data-modal="confirm" data-l="ui_confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- admin stash browser (/stashes) -->
+    <div id="stashes-modal" class="modal-wrap hidden">
+        <div class="modal stashes-modal">
+            <div class="modal-title" data-l="ui_stashes">Stashes</div>
+            <div class="ink-divider"></div>
+            <input type="text" id="stashes-search" class="stash-search" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Search…" data-l-placeholder="ui_search">
+            <div class="stash-list" id="stashes-list"></div>
+            <div class="stash-history hidden" id="stashes-history"></div>
+            <div class="modal-actions">
+                <button type="button" class="wood-btn muted" data-stashes="close" data-l="ui_close">Close</button>
             </div>
         </div>
     </div>

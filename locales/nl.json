@@ -88,5 +88,15 @@
     "item_trashed": "Voorwerp vernietigd",
     "key_open": "Inventaris openen",
     "key_hotbar": "Snelbalk tonen",
-    "key_slot": "Snelbalk-slot %s gebruiken"
+    "key_slot": "Snelbalk-slot %s gebruiken",
+    "ui_take_all": "Alles pakken",
+    "ui_shop_pays": "Winkel betaalt",
+    "ui_equipped": "Uitgerust",
+    "ui_stashes": "Opslagplaatsen",
+    "ui_open": "Openen",
+    "ui_history": "Geschiedenis",
+    "ui_nothing_found": "Niets gevonden",
+    "no_access": "Je hebt geen toegang tot deze opslag",
+    "carry_limit": "Je kunt hier niet meer van dragen",
+    "cmd_stashes": "Alle opslagplaatsen bekijken en openen (admin)"
 }

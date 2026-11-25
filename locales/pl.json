@@ -88,5 +88,15 @@
     "item_trashed": "Przedmiot zniszczony",
     "key_open": "Otwórz ekwipunek",
     "key_hotbar": "Pokaż pasek szybkiego dostępu",
-    "key_slot": "Użyj miejsca %s paska szybkiego dostępu"
+    "key_slot": "Użyj miejsca %s paska szybkiego dostępu",
+    "ui_take_all": "Weź wszystko",
+    "ui_shop_pays": "Sklep płaci",
+    "ui_equipped": "Wyposażone",
+    "ui_stashes": "Schowki",
+    "ui_open": "Otwórz",
+    "ui_history": "Historia",
+    "ui_nothing_found": "Nic nie znaleziono",
+    "no_access": "Nie masz dostępu do tego schowka",
+    "carry_limit": "Nie możesz unieść więcej tego przedmiotu",
+    "cmd_stashes": "Przeglądaj i otwieraj dowolny schowek (admin)"
 }

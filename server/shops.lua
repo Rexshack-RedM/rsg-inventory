@@ -49,8 +49,16 @@ end
 
 local function Register(name, data)
     local id = ShopId(name)
-    local items, count = SetupItems(name, data.items, data.persistentStock)
     local shop = InvCore.Inventories[id]
+    local persistent = data.persistentStock
+    if persistent == nil and shop then persistent = shop.persistentStock end
+    if shop and shop.persistentStock then -- CreateShop called again mid-session: keep the live stock, not the boot-time snapshot
+        StockCache[name] = StockCache[name] or {}
+        for _, it in pairs(shop.items) do
+            if it.amount then StockCache[name][it.name] = it.amount end
+        end
+    end
+    local items, count = SetupItems(name, data.items, persistent)
     if shop then
         shop.items, shop.slots = items, math.max(count, 1)
         if data.label then shop.label = data.label end
@@ -84,7 +92,7 @@ end
 function Shops.OpenShop(src, name)
     local shop = name and InvCore.Inventories[ShopId(name)]
     if not shop then return false end
-    if shop.shopCoords and #(GetEntityCoords(GetPlayerPed(src)) - shop.shopCoords) > 10.0 then return false end
+    if shop.shopCoords and #(GetEntityCoords(GetPlayerPed(src)) - shop.shopCoords) > (Config.ShopDistance or 10.0) then return false end
     return InvCore.OpenFor(src, shop.id)
 end
 
@@ -108,7 +116,7 @@ end
 
 local function InRange(src, shop)
     if InvCore.OpenInv[src] ~= shop.id then return false end
-    return not shop.shopCoords or #(GetEntityCoords(GetPlayerPed(src)) - shop.shopCoords) <= 10.0
+    return not shop.shopCoords or #(GetEntityCoords(GetPlayerPed(src)) - shop.shopCoords) <= (Config.ShopDistance or 10.0)
 end
 
 function Shops.Buy(src, shop, slot, amount, toSlot)
@@ -126,7 +134,8 @@ function Shops.Buy(src, shop, slot, amount, toSlot)
     if not it.price then return notify(src, 'not_for_sale') end
     if it.unique then amount = 1 end
     if it.amount and amount > it.amount then return notify(src, 'out_of_stock') end
-    if not InvCore.API.CanCarry(src, it.name, amount) then return notify(src, 'too_heavy') end
+    local canCarry, why = InvCore.API.CanCarry(src, it.name, amount)
+    if not canCarry then return notify(src, why == 'carry_limit' and 'carry_limit' or 'too_heavy') end
 
     local Player = RSGCore.Functions.GetPlayer(src)
     local price = math.floor(it.price * amount * 100 + 0.5) / 100
@@ -175,13 +184,23 @@ local function SaveStock()
     for _, inv in pairs(InvCore.Inventories) do
         if inv.type == 'shop' and inv.persistentStock and inv.stockDirty then
             inv.stockDirty = false
+            StockCache[inv.name] = StockCache[inv.name] or {}
             for _, it in pairs(inv.items) do
-                if it.amount then rows[#rows + 1] = { inv.name, it.name, it.amount } end
+                if it.amount then
+                    rows[#rows + 1] = { inv.name, it.name, it.amount }
+                    StockCache[inv.name][it.name] = it.amount
+                end
             end
         end
     end
-    for _, r in ipairs(rows) do
-        MySQL.prepare('REPLACE INTO shop_stock (shop_name, item_name, stock) VALUES (?, ?, ?)', r)
+    for i = 1, #rows, 100 do -- one multi-row statement per 100 items instead of one query each
+        local marks, params = {}, {}
+        for j = i, math.min(i + 99, #rows) do
+            marks[#marks + 1] = '(?, ?, ?)'
+            local r = rows[j]
+            params[#params + 1], params[#params + 2], params[#params + 3] = r[1], r[2], r[3]
+        end
+        MySQL.update('INSERT INTO shop_stock (shop_name, item_name, stock) VALUES ' .. table.concat(marks, ', ') .. ' ON DUPLICATE KEY UPDATE stock = VALUES(stock)', params)
     end
 end
 

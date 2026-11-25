@@ -1,5 +1,48 @@
 # Changelog
 
+## 3.5.1
+
+### Fixed
+- Admin stash browser search no longer reports "Nothing found" when typing quickly (list throttle 150 ms).
+- The open key no longer closes the inventory while the amount, give or trash window is open.
+
+### Docs
+- DOCS.md: client events table, key-mapping command names and a client example.
+
+## 3.5.0
+
+### Added
+- **Stack and carry limits:** `Config.ItemLimits.MaxStack` (most per slot; the rest goes to the next slot, sorting and moving respect it) and `MaxCarry` (most a player can hold; buying, giving, moving and Take all respect it). New notification `carry_limit`.
+- **Locked stashes:** `OpenStash` / `RegisterStash` accept `access = { citizenids, jobs = { name = minGrade }, gangs = { name = minGrade }, ace }` and `owner = citizenid`. `OpenStash` returns `false, 'no_access'` and the player is told.
+- **Durability:** new exports `AdjustQuality`, `DamageItem` and `RepairItem` change one item's `info.quality` (a stack is split first); optional removal at 0.
+- **Take all** button for stashes and ground piles (`rsg-inventory:server:takeAll`, checked and logged like a normal move).
+- **Equipped marker** for the weapon in the ped's hands (inventory and hotbar).
+- **Shop pays** line in the item tooltip while a shop is open (buy price scaled by quality); quality shows as a percentage.
+- **Admin stash browser** `/stashes`: search every stash, read its history, open it (admin only, logged).
+- `Config.ShopDistance` (was a hardcoded 10 m).
+
+### Changed
+- The open key now toggles the inventory through the key mapping, so a **rebound key closes it too**. The NUI no longer hardcodes `I`; it only closes on Esc / Tab, plus the default key when the mapping cannot fire (`Config.AllowPushToTalkWhileOpen = false` or `UseKeyMapping = false`). Typing in a text box never triggers it.
+- Removing a capacity bonus now also puts **overweight** items on the ground (it only handled lost slots before).
+- `Config.Drop.Persist` now defaults to `true`, so dropped items and cash survive a restart.
+- Shop stock is saved with one multi-row query per 100 items instead of one query each.
+- 10 new locale keys in all 11 languages.
+
+## 3.4.1
+
+### Fixed
+- **Numeric-string targets:** `AddItem('12', ...)` and the other exports no longer create a stash called `"12"` (items were silently saved into it). A numeric string is now the player with that id.
+- **Shops:** calling `CreateShop` again for a persistent shop no longer resets its stock to the boot-time snapshot; live stock is kept, and saved stock refreshes the cache.
+- **HasItem:** `{ item = <non-number> }` requirements no longer throw.
+- **CreateDrop:** coordinates passed as a plain table are converted (a table used to break the drop sync loop for everyone); invalid coordinates return `nil`.
+- `rsg-inventory:server:syncDrops` has a 2 s cooldown (a client could force a full resend in a loop).
+
+### Changed
+- Dropping next to an existing pile adds to it instead of creating another prop (`Config.Drop.MergeDistance`, default `1.5`). A full pile falls back to a new one.
+- Move cooldown is now `Config.MoveCooldown` (default `100` ms, was `50`) to cut database writes from spam-clicking.
+- New `Config.LogItems` (default `true`) to silence the per-call AddItem / RemoveItem log entries.
+- Weapon serials are written to `player_weapons` once per session instead of on every use; `FirstSlotByItem` no longer builds and sorts a table.
+
 ## 3.4.0
 
 ### Added

@@ -88,5 +88,15 @@
     "item_trashed": "Objeto destruido",
     "key_open": "Abrir inventario",
     "key_hotbar": "Mostrar barra rápida",
-    "key_slot": "Usar ranura %s de la barra rápida"
+    "key_slot": "Usar ranura %s de la barra rápida",
+    "ui_take_all": "Coger todo",
+    "ui_shop_pays": "La tienda paga",
+    "ui_equipped": "Equipado",
+    "ui_stashes": "Alijos",
+    "ui_open": "Abrir",
+    "ui_history": "Historial",
+    "ui_nothing_found": "No se encontró nada",
+    "no_access": "No tienes acceso a este alijo",
+    "carry_limit": "No puedes llevar más de eso",
+    "cmd_stashes": "Explorar y abrir cualquier alijo (admin)"
 }

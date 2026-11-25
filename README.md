@@ -2,7 +2,7 @@
 
 Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent stashes, ground drops, shops with persistent stock, category filters, automatic coin exchange and a legacy-compatible API so existing RSG scripts keep working.
 
-**Version:** 3.4.0 · **Requires:** `rsg-core` 3.5.0 or newer, `oxmysql` · **ox_lib:** not required
+**Version:** 3.5.1 · **Requires:** `rsg-core` 3.5.0 or newer, `oxmysql` · **ox_lib:** not required
 
 > Developers: see **[DOCS.md](DOCS.md)** for the full API, data formats and integration examples.
 
@@ -26,7 +26,14 @@ Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent
 - **Item decay** *(optional)* — chosen items or categories lose quality over time and can spoil away.
 - **Stash history** — every put / take in a stash is logged (who, what, when) and kept for `Config.Stash.HistoryDays`.
 - **Admin viewer** — `/viewinv [id]` opens any player's inventory from any distance.
-- **Nearby drop sync** — ground drops are only sent to players close to them; optional persistence across restarts.
+- **Nearby drop sync** — ground drops are only sent to players close to them; they are saved across restarts by default (`Config.Drop.Persist`).
+- **Stack and carry limits** *(optional)* — `Config.ItemLimits` caps how many of an item fit in one slot and how many a player can carry in total, per item or category.
+- **Locked stashes** — a script can lock a stash to an owner, jobs (with minimum grade), gangs or an ACE group; the inventory enforces it.
+- **Take all** — one button empties an open stash or ground pile into your inventory as far as it fits.
+- **Equipped marker** — the weapon in your hands is marked in the inventory and the hotbar.
+- **Durability API** — `DamageItem`, `RepairItem` and `AdjustQuality` wear down or repair a single item (for crafting / repair scripts).
+- **Admin stash browser** — `/stashes` lists every stash, shows its history and opens it.
+- **Weight enforcement** — when a capacity bonus is removed, items over the new weight limit go to the ground as well as items in lost slots.
 - **Coin exchange** — every 100 cents / blood cents become 1 dollar / blood dollar automatically.
 - **Metadata-aware stacking** — stacks only merge when `info` matches (quality, serial, etc.).
 - **Weapons** — serial and quality added automatically; using a weapon hands off to rsg-weapons; a weapon leaving your inventory is removed from your hands.
@@ -76,6 +83,8 @@ All options are in `shared/config.lua`.
 | `Config.BlockNativeControls` | `true` | Keep blocking the game's own satchel menu (`I`) and weapon select (`1`–`5`) |
 | `Config.Keys` | I, Z, 1–5 | RedM control hashes: fallback polling and native blocking |
 | `Config.UseCooldown` | `500` | ms between item uses |
+| `Config.MoveCooldown` | `100` | ms between inventory moves (a move between a player and a stash writes to the database) |
+| `Config.LogItems` | `true` | Send every `AddItem` / `RemoveItem` to rsg-log. `false` keeps only moves, gives, drops and trashes in the log |
 | `Config.Stash.DefaultSlots` / `DefaultMaxWeight` | `50` / `1000000` | Defaults for new stashes |
 | `Config.Stash.MaxSlots` / `MaxWeight` | `300` / `10000000` | Upper clamp for any stash |
 | `Config.Stash.SaveInterval` | `5` | Minutes idle before a changed stash is saved |
@@ -85,11 +94,14 @@ All options are in `shared/config.lua`.
 | `Config.Drop.Prop` | `p_bag01x` | Drop prop model |
 | `Config.Drop.OpenDistance` | `2.0` | Distance to see a drop when opening the inventory |
 | `Config.Drop.RenderDistance` | `50.0` | Prop spawn distance |
+| `Config.Drop.MergeDistance` | `1.5` | Dropping next to an existing pile adds to it instead of creating another prop (`0` = always a new pile) |
 | `Config.Drop.Lifetime` | `15` | Minutes before an untouched drop is removed |
 | `Config.Drop.SyncDistance` / `SyncInterval` | `120.0` / `3` | Drops are only sent to players this close (keep above `RenderDistance`), refreshed every N seconds |
-| `Config.Drop.Persist` | `false` | Keep drops across restarts (table `inventory_drops`; their timer restarts on load) |
+| `Config.Drop.Persist` | `true` | Keep drops (and any cash in them) across restarts (table `inventory_drops`; their timer restarts on load). `false` = memory only |
 | `Config.Capacity` | `50` / `100000` | Cap for a single capacity bonus (`MaxBonusSlots` / `MaxBonusWeight`) |
 | `Config.Decay` | disabled | Item decay: `Enabled`, `Interval` (minutes), `Stashes`, and `Items` / `Categories` rules `{ rate, remove }` |
+| `Config.ItemLimits` | no limits | `MaxStack` (most per slot) and `MaxCarry` (most a player can hold), each with `Default`, `Items = { name = n }`, `Categories = { category = n }`. A `maxStack` / `maxCarry` field on the shared item also works |
+| `Config.ShopDistance` | `10.0` | How far from a shop's coords a player can still buy / sell |
 | `Config.GiveDistance` | `3.0` | Max distance for giving items; players inside it appear in the Give list |
 | `Config.GiveMaxPlayers` | `12` | Most players shown in the Give list (closest first) |
 | `Config.Trash.Enabled` | `true` | Show the right-click Trash option (permanent delete with confirmation) |
@@ -104,7 +116,7 @@ All options are in `shared/config.lua`.
 ### Controls
 | Input | Action |
 |---|---|
-| `I` | Open / close inventory |
+| `I` | Open / close inventory (a rebound key closes it too) |
 | `Z` | Show hotbar |
 | `1`–`5` | Use hotbar slot |
 
@@ -120,9 +132,11 @@ The three keys above are defaults: players can rebind them in the game's key set
 | Drag onto **Use** / **Give** | Use, or open the Give player picker (the amount box pre-fills the quantity) |
 | Search box | Show only items whose name matches (works together with the category chips) |
 | **Sort** | Merge stacks and order by category / name (your own inventory, or an open stash) |
+| **Take all** | Move everything from the open stash or ground pile into your inventory, as far as weight, slots and carry limits allow |
+| Green dot | The weapon in your hands |
 
 ### Ground
-Opening the inventory near a drop shows that drop on the right. Otherwise the right panel is the ground — drop items there to create a bag.
+Opening the inventory near a drop shows that drop on the right. Otherwise the right panel is the ground — drop items there to create a bag. Dropping again within `Config.Drop.MergeDistance` of a pile adds to that pile.
 
 ### Shops
 Drag an item out of the shop to buy it (amount box, default 1). Drag an item onto the shop to sell it, if the shop buys that item. Sell price scales with item quality.
@@ -134,6 +148,7 @@ Drag an item out of the shop to buy it (amount box, default 1). Drag an item ont
 | `/clearinv [id]` | admin | Clear a player's inventory |
 | `/viewinv [id]` | admin | Open a player's inventory from any distance (logged) |
 | `/stashlog [stash] [amount]` | admin | Print the latest actions in a stash to the server console |
+| `/stashes` | admin | Browse every stash, read its history and open it (logged) |
 
 ---
 
@@ -159,6 +174,13 @@ AddEventHandler('rsg-inventory:stashAction', function(src, stashId, actionId)
     if stashId ~= 'crate_7' or actionId ~= 'empty' then return end
     -- your own checks, then do the work
 end)
+
+-- a stash only the owner, police (grade 1+) or the vagos gang (grade 2+) can open; pass it on every open
+exports['rsg-inventory']:OpenStash(src, 'sheriff_locker', { label = 'Locker', access = { jobs = { police = 1 }, gangs = { vagos = 2 }, citizenids = { ownerCid } } })
+
+-- wear an item down / repair it (one unit of a stack is split off first)
+exports['rsg-inventory']:DamageItem(src, slot, 5)        -- -5 quality
+exports['rsg-inventory']:RepairItem(src, slot, 40)       -- +40 quality (default: back to 100)
 
 -- create and open a shop
 exports['rsg-inventory']:CreateShop({ name = 'general', label = 'General Store',

@@ -93,14 +93,14 @@ html, body {
 
 /* ---------- category filter ---------- */
 .toolbar { display: flex; gap: 8px; margin: -2px 0 10px; }
-.search-input {
+.search-input, .stash-search {
     flex: 1; min-width: 0; padding: 7px 10px;
     background: rgba(0,0,0,0.35); color: var(--rdr-text);
     border: 1px solid var(--rdr-gold-dim); border-radius: 2px;
     font-family: inherit; font-size: 12.5px; outline: none; transition: all 0.15s ease;
 }
-.search-input::placeholder { color: var(--rdr-muted); font-style: italic; }
-.search-input:focus { border-color: var(--rdr-gold); box-shadow: 0 0 0 2px rgba(201,162,75,0.15); }
+.search-input::placeholder, .stash-search::placeholder { color: var(--rdr-muted); font-style: italic; }
+.search-input:focus, .stash-search:focus { border-color: var(--rdr-gold); box-shadow: 0 0 0 2px rgba(201,162,75,0.15); }
 .wood-btn.small { flex: 0 0 auto; padding: 6px 14px; font-size: 11px; }
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 12px; }
 .chip {
@@ -315,3 +315,25 @@ html, body {
 .trash-warning { text-align: center; font-style: italic; color: var(--rdr-cost-over); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
 .wood-btn.danger { border-color: var(--rdr-cost-over); color: var(--rdr-cost-over); }
 .wood-btn.danger:hover { background: rgba(224, 85, 79, 0.15); }
+
+/* ---------- equipped weapon marker ---------- */
+.slot.equipped { border-color: var(--rdr-cost-ok); }
+.slot .eq {
+    position: absolute; top: 4px; right: 5px; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--rdr-cost-ok); box-shadow: 0 0 5px rgba(111, 191, 115, 0.85); pointer-events: none;
+}
+
+/* ---------- admin stash browser ---------- */
+.stashes-modal { width: 480px; }
+.stashes-modal .stash-search { width: 100%; margin-top: 4px; }
+.stash-list { margin-top: 12px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.stash-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 2px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.15));
+    transition: border-color 0.15s ease;
+}
+.stash-row:hover { border-color: var(--rdr-gold-dim); }
+.stash-row .sname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.stash-history { margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; font-style: italic; color: var(--rdr-muted); text-align: left; }
+.stash-history div { padding: 3px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }

@@ -88,5 +88,15 @@
     "item_trashed": "アイテムを破棄しました",
     "key_open": "インベントリを開く",
     "key_hotbar": "ホットバーを表示",
-    "key_slot": "ホットバー スロット%sを使用"
+    "key_slot": "ホットバー スロット%sを使用",
+    "ui_take_all": "すべて取る",
+    "ui_shop_pays": "店の買取額",
+    "ui_equipped": "装備中",
+    "ui_stashes": "保管庫",
+    "ui_open": "開く",
+    "ui_history": "履歴",
+    "ui_nothing_found": "見つかりませんでした",
+    "no_access": "この保管庫にはアクセスできません",
+    "carry_limit": "これ以上は持てません",
+    "cmd_stashes": "すべての保管庫を閲覧して開く (管理者)"
 }

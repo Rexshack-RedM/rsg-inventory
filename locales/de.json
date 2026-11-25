@@ -88,5 +88,15 @@
     "item_trashed": "Gegenstand zerstört",
     "key_open": "Inventar öffnen",
     "key_hotbar": "Schnellleiste anzeigen",
-    "key_slot": "Schnellleisten-Platz %s benutzen"
+    "key_slot": "Schnellleisten-Platz %s benutzen",
+    "ui_take_all": "Alles nehmen",
+    "ui_shop_pays": "Händler zahlt",
+    "ui_equipped": "Ausgerüstet",
+    "ui_stashes": "Lager",
+    "ui_open": "Öffnen",
+    "ui_history": "Verlauf",
+    "ui_nothing_found": "Nichts gefunden",
+    "no_access": "Du hast keinen Zugriff auf dieses Lager",
+    "carry_limit": "Du kannst nicht mehr davon tragen",
+    "cmd_stashes": "Alle Lager durchsuchen und öffnen (Admin)"
 }

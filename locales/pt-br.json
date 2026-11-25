@@ -88,5 +88,15 @@
     "item_trashed": "Item destruído",
     "key_open": "Abrir inventário",
     "key_hotbar": "Mostrar barra de atalhos",
-    "key_slot": "Usar espaço %s da barra de atalhos"
+    "key_slot": "Usar espaço %s da barra de atalhos",
+    "ui_take_all": "Pegar tudo",
+    "ui_shop_pays": "A loja paga",
+    "ui_equipped": "Equipado",
+    "ui_stashes": "Baús",
+    "ui_open": "Abrir",
+    "ui_history": "Histórico",
+    "ui_nothing_found": "Nada encontrado",
+    "no_access": "Você não tem acesso a este baú",
+    "carry_limit": "Você não pode carregar mais disso",
+    "cmd_stashes": "Navegar e abrir qualquer baú (admin)"
 }

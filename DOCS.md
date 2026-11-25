@@ -47,7 +47,7 @@ The `target` argument of the exports decides which inventory is used:
 |---|---|---|
 | number (server id) | `player` | `players.inventory` (via rsg-core) |
 | string (any id) | `stash` | `inventories` table, created on first use |
-| `drop-<time>-<n>` | `drop` | memory (optionally `inventory_drops`, see `Config.Drop.Persist`), expires after `Config.Drop.Lifetime` |
+| `drop-<time>-<n>` | `drop` | `inventory_drops` while `Config.Drop.Persist` is on (default), otherwise memory only; expires after `Config.Drop.Lifetime` |
 | `shop-<name>` | `shop` | memory, stock optionally in `shop_stock` |
 
 > Any unknown string id (that doesn't start with `drop-` or `shop-`) is treated as a stash and created automatically. Use clear, unique ids such as `house_<id>`, `gang_<name>`, `trunk_<plate>` (max 100 chars).
@@ -79,14 +79,17 @@ Called as `exports['rsg-inventory']:Name(...)`.
 ### Items
 | Export | Returns | Notes |
 |---|---|---|
-| `AddItem(target, name, amount?, info?, slot?, reason?)` | `ok, err` | `err`: `too_heavy`, `no_space`, `invalid_item`. Legacy order `(target, name, amount, slot, info, reason)` also accepted |
+| `AddItem(target, name, amount?, info?, slot?, reason?)` | `ok, err` | `err`: `too_heavy`, `no_space`, `carry_limit`, `invalid_item`. Legacy order `(target, name, amount, slot, info, reason)` also accepted |
 | `RemoveItem(target, name, amount?, slot?, reason?)` | `ok` | |
 | `HasItem(target, items, amount?)` | `bool` | `items`: `'name'`, `{'a','b'}` or `{ a = 2, b = 1 }` |
 | `GetItemCount(target, name \| {names})` | `number` | |
-| `CanCarry(target, name, amount?)` | `ok, err` | Weight + slot check |
+| `CanCarry(target, name, amount?)` | `ok, err` | Weight, slot, stack-cap and carry-limit check (`err`: `too_heavy`, `no_space`, `carry_limit`, `invalid_item`) |
 | `GetItemBySlot(target, slot)` | item / nil | |
 | `GetItemByName(target, name)` | item / nil | Lowest slot first |
 | `SetItemInfo(target, slot, info)` | `ok` | Replace metadata |
+| `AdjustQuality(target, slot, delta, removeAtZero?)` | `ok, quality, slot` | Add `delta` to `info.quality` (clamped 0-100) of **one** item. A stack is split first (needs a free slot, else `false, 'no_space'`). `removeAtZero` deletes the item at 0 |
+| `DamageItem(target, slot, amount?, removeAtZero?)` | `ok, quality, slot` | Lower quality by `amount` (default 1) |
+| `RepairItem(target, slot, amount?)` | `ok, quality, slot` | Raise quality by `amount` (default 100 = fully repaired) |
 | `GetInventory(target)` | table | Player items or stash table |
 | `ClearInventory(target, keep?)` | `ok` | `keep`: item name or list to keep |
 
@@ -95,7 +98,7 @@ Called as `exports['rsg-inventory']:Name(...)`.
 |---|---|
 | `OpenInventory(src)` | Own inventory |
 | `OpenInventory(src, id, { label, maxweight, slots, actions })` | Legacy stash open |
-| `OpenStash(src, id, { label, slots, maxWeight, actions })` | Preferred stash open. `actions` adds header buttons, see [Stashes](#5-stashes) |
+| `OpenStash(src, id, { label, slots, maxWeight, actions, access, owner })` | Preferred stash open. `actions` adds header buttons and `access` / `owner` lock the stash, see [Stashes](#5-stashes). Returns `false, 'no_access'` when the player is not allowed |
 | `OpenPlayerInventory(src, targetId)` | Search another player. The viewer must stay within `GiveDistance + 2` m of them (admin `/viewinv` has no distance limit) |
 | `CloseInventory(src)` | |
 
@@ -169,6 +172,28 @@ end)
 - **History:** with `Config.Stash.History`, every put / take between a player and a stash is stored in `inventory_stash_log` (stash id, citizenid, character name, action, item, amount, time). Read it with `GetStashHistory` or `/stashlog [stash] [amount]` (prints to the server console). Entries older than `Config.Stash.HistoryDays` are pruned on start and daily.
 - **Sort:** players can sort an open stash from its panel; scripts can't disable it per stash.
 - **There is no client event to open a stash.** Always open from the server after your own checks.
+
+### Access rules
+
+Pass `access` (or `owner`) to `OpenStash` / `RegisterStash` and the inventory itself refuses everyone who doesn't match. **Any** matching rule grants access:
+
+```lua
+exports['rsg-inventory']:OpenStash(src, 'sheriff_locker', {
+    label = 'Locker', slots = 40,
+    access = {
+        citizenids = { 'ABC12345' },         -- owners
+        jobs  = { police = 1, sheriff = 0 }, -- job name = minimum grade level
+        gangs = { vagos = 2 },               -- gang name = minimum grade level
+        ace   = 'group.admin',               -- ACE permission
+    },
+})
+exports['rsg-inventory']:OpenStash(src, 'house_12', { owner = Player.PlayerData.citizenid }) -- shorthand for one citizenid
+```
+
+- Rules live in memory with the stash: pass them on **every** open (an idle stash is unloaded after `Config.Stash.UnloadAfter` minutes). `access = false` removes the lock.
+- A rules table that matches nobody (for example `access = {}`) locks the stash for everyone: it fails closed.
+- The check runs when the stash is opened. Keep your own distance / ownership checks before calling `OpenStash`.
+- Admins can still open any stash with `/stashes`.
 
 ### Stash action buttons
 
@@ -265,6 +290,39 @@ Weapon serials are registered in `player_weapons` on use.
 TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items['bread'], 'add', 2)
 ```
 
+Other client events are sent by the server and are internal. Do not trigger them from other resources:
+
+| Event | Purpose |
+|---|---|
+| `rsg-inventory:client:open` / `refresh` / `close` | Open, update or close the NUI |
+| `rsg-inventory:client:checkWeapon` | Unequip a weapon item that left the inventory |
+| `rsg-inventory:client:giveAnim` | Hand-over animation for `give` |
+| `rsg-inventory:client:addDrop` / `removeDrop` | Keep the local ground-pile list in sync |
+| `rsg-inventory:client:stashBrowser` | Open the admin `/stashes` browser |
+
+Client example: react to the inventory opening state and check items.
+
+```lua
+CreateThread(function()
+    while true do
+        Wait(1000)
+        if exports['rsg-inventory']:IsOpen() then goto continue end
+        if exports['rsg-inventory']:HasItem('lockpick', 1) then
+            -- cosmetic only; verify on the server before acting
+        end
+        ::continue::
+    end
+end)
+
+RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
+    exports['rsg-inventory']:CloseInventory()
+end)
+```
+
+### Key mapping
+
+With `Config.UseKeyMapping = true` the keys are rebindable in the game's key settings under these command names: `rsginventory_open`, `rsginventory_hotbar`, `rsginventory_slot1` to `rsginventory_slot5`. The open key is allowed while the NUI has focus (so it also closes the inventory) but not while a text box or an amount/give/trash window is active. With `false`, `Config.Keys` is polled instead. `Config.BlockNativeControls` lists game controls disabled while the inventory is open.
+
 ## 9. Legacy compatibility
 
 Older RSG scripts work without changes.
@@ -295,7 +353,7 @@ Player.Functions.SetInventory(items)
 | Player items | By rsg-core (logout / `UpdateInterval`) **and** immediately on any player ↔ stash or player ↔ player move |
 | Stashes | On close, after `SaveInterval` minutes idle, on resource stop, on txAdmin shutdown |
 | Shop stock (persistent) | Every `ShopRestockMinutes`, on resource stop, on txAdmin shutdown (only shops whose stock changed) |
-| Drops | Memory only by default. With `Config.Drop.Persist` changed drops are saved every minute, on resource stop and on txAdmin shutdown, and reloaded on start with a fresh `Drop.Lifetime` |
+| Drops | Saved by default (`Config.Drop.Persist = true`): changed drops are written every minute, on resource stop and on txAdmin shutdown, and reloaded on start with a fresh `Drop.Lifetime`. Set `false` for memory-only drops |
 
 Housekeeping runs every minute: saves idle dirty stashes, unloads stashes idle for `UnloadAfter` minutes, removes drops older than `Drop.Lifetime`.
 
@@ -309,14 +367,18 @@ Housekeeping runs every minute: saves idle dirty stashes, unloads stashes idle f
 - Dead, last stand and handcuffed players can't open, move, use, give or drop.
 - **Trash:** the NUI asks for confirmation (warning modal; Enter never confirms), then sends `rsg-inventory:server:trash(slot, amount, itemName)`. The server only touches the sender's own inventory, requires a matching item name, a whole quantity between 1 and the stack size, a 500 ms cooldown, and a non-incapacitated player; the deletion is saved immediately and logged. Disable with `Config.Trash.Enabled = false`.
 - **Give:** the client asks the server for the nearby list (`rsg-inventory:server:getNearbyPlayers`, rsg-core callback: `{ id, name, distance }`, closest first, within `GiveDistance`, max `GiveMaxPlayers`). The chosen id, slot, quantity and item name go to `rsg-inventory:server:give`, which re-checks that the recipient is still online and in range, that the slot still holds that item, and that the quantity is a whole number between 1 and what the player has. Anything else is rejected with a notification instead of being corrected (a bad quantity never turns into "give everything").
-- Cooldowns on open (0.25 s), move (50 ms, every move can write to the database), use (`UseCooldown`), give (1 s), drop (0.5 s), trash (0.5 s), the nearby-player list (0.4 s) and shop actions.
+- Cooldowns on open (0.25 s), move (`Config.MoveCooldown`, 100 ms by default; every move can write to the database), drop sync (2 s), use (`UseCooldown`), give (1 s), drop (0.5 s), trash (0.5 s), the nearby-player list (0.4 s) and shop actions.
 - Amounts are integer-checked. A quantity that is not a whole number between 1 and the stack size is **refused**, never widened to the whole stack (give, trash, drop, move and sell all behave this way); leaving the amount out means "the whole stack" for move / drop. Shop buys are limited to 1000 per action.
 - Stashes can only be opened by server exports.
 - Sort (1 s cooldown): your own inventory or the stash you have open — never shops, ground piles or other players' inventories.
 - `/viewinv` is admin-only; the admin can reach only the player they opened (any distance) and every move is logged.
 - Drops are sent only to players within `Drop.SyncDistance`; opening a drop is still checked on the server (`Drop.OpenDistance`).
 - Stash action buttons: the server only accepts an action id registered on the stash the player has open (1 s cooldown) and passes it on as a local server event; the click carries no other client data.
-- Actions are logged to `rsg-log` (`playerinventory`).
+- **Limits:** `Config.ItemLimits` is enforced on every path that adds items to a player (exports, shops, give, move, take all, sort). A stack above `MaxStack` is never created by a move.
+- **Take all:** only works on the stash or ground pile the player has open and can still reach; 1 s cooldown; only what fits is taken; logged to stash history and `rsg-log`.
+- **Admin stash browser:** the list, history and open requests are checked for the `admin` permission on the server on every call (300 ms throttle); ids are length-checked and ground / shop ids are refused.
+- Actions are logged to `rsg-log` (`playerinventory`). `Config.LogItems = false` stops the per-call `AddItem` / `RemoveItem` entries (useful for scripts that add items in tight loops).
+- Numeric strings passed as a target (`'12'`) are treated as player ids, never as a stash called `"12"`.
 
 **Your responsibility:** check job / ownership / distance in your own script *before* calling `OpenStash`, `OpenShop` or `OpenPlayerInventory`.
 
@@ -378,7 +440,7 @@ Player items use the existing `players.inventory` column.
 - **Wiping a stash:** `DELETE FROM inventories WHERE identifier = 'house_12';` while it isn't loaded, or use `ClearStash('house_12')` in-game.
 - **Debugging rejected moves:** set `Config.Debug = true` and watch the server console.
 - **Enable decay:** set `Config.Decay.Enabled = true` and list items (`Items = { bread = { rate = 2 } }`) or categories (`Categories = { food = { rate = 1, remove = true } }`).
-- **Keep drops across restarts:** `Config.Drop.Persist = true` (table `inventory_drops`).
+- **Drops across restarts:** on by default (`Config.Drop.Persist`, table `inventory_drops`); set `false` for memory-only drops.
 - **Check who emptied a stash:** `/stashlog house_12 30` prints the last 30 actions to the server console.
 - **Look at a player's inventory:** `/viewinv [id]`.
 - **Extra storage from a script:** `AddCapacityBonus` / `RemoveCapacityBonus` (see [Server exports](#4-server-exports)).
@@ -420,11 +482,15 @@ Everything lives in `shared/config.lua`.
 | `Config.BlockNativeControls` | `true` | Keep disabling the native satchel menu (`I`) and weapon select (`1`-`5`) with a small per-frame loop. A key mapping does not block the game's own action |
 | `Config.Keys` | I, Z, 1-5 | `Open`, `Hotbar`, `Slots` (RedM control hashes): fallback polling and native blocking |
 | `Config.UseCooldown` | `500` | ms between item uses |
+| `Config.MoveCooldown` | `100` | ms between inventory moves |
+| `Config.LogItems` | `true` | Log every `AddItem` / `RemoveItem` to rsg-log |
 | `Config.AllowPushToTalkWhileOpen`, `PushToTalkControls` | `true`, `{ 0x4BC9DABB }` | Keep push-to-talk working while the NUI has focus |
 | `Config.Stash` | see file | `DefaultSlots`, `DefaultMaxWeight`, `MaxSlots`, `MaxWeight`, `SaveInterval`, `UnloadAfter`, `History`, `HistoryDays` |
-| `Config.Drop` | see file | `Slots`, `MaxWeight`, `Prop`, `OpenDistance`, `RenderDistance`, `Lifetime`, `SyncDistance`, `SyncInterval`, `Persist` |
+| `Config.Drop` | see file | `Slots`, `MaxWeight`, `Prop`, `OpenDistance`, `RenderDistance`, `MergeDistance`, `Lifetime`, `SyncDistance`, `SyncInterval`, `Persist` |
 | `Config.Capacity` | `50`, `100000` | `MaxBonusSlots`, `MaxBonusWeight` per single capacity bonus |
 | `Config.Decay` | disabled | `Enabled`, `Interval`, `Stashes`, `Items`, `Categories` |
+| `Config.ItemLimits` | no limits | `MaxStack` and `MaxCarry`, each `{ Default, Items = { name = n }, Categories = { category = n } }`. Lookup order: item, category, default, then a `maxStack` / `maxCarry` field on the shared item. Weapons and unique items never stack |
+| `Config.ShopDistance` | `10.0` | Max distance from a shop's coords to buy / sell |
 | `Config.GiveDistance` | `3.0` | Players inside it appear in the Give list; checked again on the server |
 | `Config.GiveMaxPlayers` | `12` | Most players listed (closest first) |
 | `Config.Trash.Enabled` | `true` | Right-click Trash (permanent delete with confirmation) |
@@ -452,8 +518,9 @@ Config.Decay = {
 | `/clearinv [id]` | `admin` | Empty a player's inventory and save it (logged) |
 | `/stashlog [stash] [amount]` | `admin` | Print the last put / take actions of a stash to the server console |
 | `/viewinv [id]` | `admin` | Open another player's inventory from any distance (logged, in-game only) |
+| `/stashes` | `admin` | Open the stash browser: search all stashes, read the history of one, open it (logged, in-game only) |
 
-Key `I` opens the inventory, `Z` shows the hotbar and `1`-`5` use the hotbar slots (defaults from `Config.MappedKeys`; players can rebind them in the game's key settings).
+Key `I` opens **and closes** the inventory (also after a player rebinds it), `Z` shows the hotbar and `1`-`5` use the hotbar slots (defaults from `Config.MappedKeys`; players can rebind them in the game's key settings).
 
 ## 17. Events & callbacks
 
@@ -477,9 +544,13 @@ Events used by the NUI. They are **net events reachable by any client**, so each
 | `rsg-inventory:server:trash` | `slot, amount, itemName` | Own inventory, slot still holds `itemName`, quantity 1..held, `Config.Trash.Enabled` |
 | `rsg-inventory:server:drop` | `slot, amount?` | Slot, quantity, drop capacity |
 | `rsg-inventory:server:stashAction` | `actionId` | Action registered on the stash the player has open |
-| `rsg-inventory:server:syncDrops` | none | Resets what the client knows about drops |
+| `rsg-inventory:server:syncDrops` | none | Resets what the client knows about drops (2 s cooldown) |
+| `rsg-inventory:server:takeAll` | none | Open stash / ground pile only, still in reach, 1 s cooldown, weight / slots / carry limits per item |
+| `rsg-inventory:server:adminOpenStash` | `id` | `admin` permission, id length and prefix, 300 ms throttle |
 
 Client events sent by the server: `rsg-inventory:client:open`, `refresh`, `close`, `checkWeapon`, `ItemBox`, `giveAnim`, `addDrop`, `removeDrop`.
+
+Admin stash browser callbacks (all require the `admin` permission): `rsg-inventory:server:adminStashes(filter)` returns `{ { id, loaded } }` (max 200), `rsg-inventory:server:adminStashHistory(id)` returns the last 30 actions.
 
 Callback (rsg-core) used by the Give list:
 
@@ -503,6 +574,9 @@ end)
 | Right-click | Menu: Use, Give, Drop, **Trash**, Move to / Take, Buy / Sell, Copy serial |
 | Search box / Sort button | Filter a panel by name; merge stacks and order a panel by category (hotbar slots stay put) |
 
+- **Take all:** the button in the stash / ground panel moves everything that fits into your inventory.
+- **Equipped:** a green dot marks the weapon in your hands.
+- **Shop tooltip:** with a shop open, hovering your own item shows what the shop would pay for it (scaled by quality).
 - **Give:** pick the recipient from the list (name, server id, distance), enter the quantity, confirm. If they walk away or leave, the choice is cancelled.
 - **Trash:** choose a quantity, then confirm the warning ("This will permanently delete the item"). Enter never confirms; the item is gone for good and is logged.
 
