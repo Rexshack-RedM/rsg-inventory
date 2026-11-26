@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.6.0
+
+### Added
+- **`TradeItems(a, b, offerA, offerB)`** server export: an all-or-nothing two-way swap of item stacks and cash between two online players (used by `rsg-playertrade`).
+
+### Fixed
+- **Holstered weapons stayed on the character** after the item was given, traded, dropped, moved or removed; only a weapon in the hands was unequipped. The exact serial is now unequipped, including when the player owns another weapon of the same model. `rsg-inventory:client:checkWeapon` now also receives the serial.
+
 ## 3.5.1
 
 ### Fixed

@@ -2,7 +2,7 @@
 
 Slot/weight inventory for the RSG Framework (rsg-core) with a hotbar, persistent stashes, ground drops, shops with persistent stock, category filters, automatic coin exchange and a legacy-compatible API so existing RSG scripts keep working.
 
-**Version:** 3.5.1 · **Requires:** `rsg-core` 3.5.0 or newer, `oxmysql` · **ox_lib:** not required
+**Version:** 3.6.0 · **Requires:** `rsg-core` 3.5.0 or newer, `oxmysql` · **ox_lib:** not required
 
 > Developers: see **[DOCS.md](DOCS.md)** for the full API, data formats and integration examples.
 

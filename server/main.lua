@@ -314,7 +314,7 @@ end
 -- a weapon leaving the player's inventory must also leave their hands
 local function CheckWeapon(src, item)
     if item and item.type == 'weapon' then
-        TriggerClientEvent('rsg-inventory:client:checkWeapon', src, item.name)
+        TriggerClientEvent('rsg-inventory:client:checkWeapon', src, item.name, item.info and item.info.serie)
     end
 end
 
@@ -506,7 +506,7 @@ function API.RemoveItem(target, name, amount, slot, reason)
     Commit(c)
     Refresh(target)
     if c.type == 'player' then
-        if CountIn(c, tostring(name):lower()) == 0 then CheckWeapon(target, item) end
+        if item and (item.amount <= 0 or CountIn(c, item.name) == 0) then CheckWeapon(target, item) end
         TriggerClientEvent('rsg-inventory:client:ItemBox', target, SharedItem(name), 'remove', amount)
         if Config.LogItems ~= false then Log('RemoveItem', ('%s lost %sx %s (%s) [%s]'):format(GetPlayerName(target), amount, name, reason or 'unknown', GetInvokingResource() or 'rsg-inventory')) end
     end
@@ -1434,6 +1434,144 @@ RSGCore.Functions.CreateCallback('rsg-inventory:server:getNearbyPlayers', functi
     for i = #list, (tonumber(Config.GiveMaxPlayers) or 12) + 1, -1 do list[i] = nil end
     cb(list)
 end)
+
+--------------------------------------------------------------------------------
+-- Two-way trade
+--------------------------------------------------------------------------------
+local CashItems = { dollar = true, cent = true, blood_dollar = true, blood_cent = true }
+
+local function CashCents(c)
+    return CountIn(c, 'dollar') * 100 + CountIn(c, 'cent')
+end
+
+-- replaces the cash item stacks with `cents` worth of dollars and cents
+local function SetCashItems(c, cents)
+    local dollarSlot, centSlot = FirstSlotByItem(c.items, 'dollar'), FirstSlotByItem(c.items, 'cent')
+    for slot, it in pairs(c.items) do
+        if it.name == 'dollar' or it.name == 'cent' then c.items[slot] = nil end
+    end
+    if cents // 100 > 0 and not AddTo(c, 'dollar', cents // 100, nil, dollarSlot) then return false end
+    if cents % 100 > 0 and not AddTo(c, 'cent', cents % 100, nil, centSlot) then return false end
+    return true
+end
+
+-- every offered stack must still be exactly what the other player was shown
+local function CheckOffer(c, offer)
+    if type(offer) ~= 'table' or type(offer.items) ~= 'table' then return false end
+    local cents = math.tointeger(offer.cents or 0)
+    if not cents or cents < 0 then return false end
+    local seen = {}
+    for _, o in ipairs(offer.items) do
+        if type(o) ~= 'table' then return false end
+        local slot, amount = math.tointeger(o.slot), math.tointeger(o.amount)
+        local it = slot and c.items[slot]
+        if not it or seen[slot] or CashItems[it.name] or it.name ~= o.name or not amount or amount < 1
+            or amount > it.amount or not DeepEqual(it.info or {}, o.info or {}) then
+            return false
+        end
+        seen[slot] = true
+    end
+    return true
+end
+
+--- TradeItems(a, b, offerA, offerB) -> true | false, reason, failedPlayerId
+--- offer = { items = { { slot, name, amount, info }, ... }, cents = 0 }
+--- Swaps both offers, or changes nothing. Both new inventories are built on copies and only saved
+--- once everything has been removed and fits. Nothing here may yield.
+--- The caller is responsible for consent, distance and cooldowns.
+--- reasons: no_player, incapacitated, offer_changed, no_cash, cash_unavailable, no_room
+function API.TradeItems(a, b, offerA, offerB)
+    a, b = math.tointeger(tonumber(a)), math.tointeger(tonumber(b))
+    if not a or not b or a == b then return false, 'no_player' end
+    local ids, offers, real, work = { a, b }, { offerA, offerB }, {}, {}
+    local moneyItems = RSGCore.Config.Money.EnableMoneyItems
+
+    for i = 1, 2 do
+        local c = GetContainer(ids[i])
+        if not c then return false, 'no_player', ids[i] end
+        if IsIncapacitated(c.player) then return false, 'incapacitated', ids[i] end
+        if not CheckOffer(c, offers[i]) then return false, 'offer_changed', ids[i] end
+        real[i] = c
+        work[i] = { id = c.id, type = c.type, player = c.player, slots = c.slots, maxWeight = c.maxWeight, items = DeepClone(c.items) }
+    end
+
+    local cents = { math.tointeger(offers[1].cents or 0), math.tointeger(offers[2].cents or 0) }
+    for i = 1, 2 do
+        if cents[i] > 0 then
+            local balance = math.floor((tonumber(real[i].player.PlayerData.money.cash) or 0) * 100 + 0.5)
+            if moneyItems then
+                -- if the items and the balance disagree, moving cash items could create or destroy money
+                if CashCents(real[i]) ~= balance then return false, 'cash_unavailable', ids[i] end
+            end
+            if balance < cents[i] then return false, 'no_cash', ids[i] end
+        end
+    end
+
+    -- take both offers out first so the space they free up can be used
+    for i = 1, 2 do
+        for _, o in ipairs(offers[i].items) do
+            if not RemoveFrom(work[i], o.name, o.amount, o.slot) then return false, 'offer_changed', ids[i] end
+        end
+    end
+
+    local net = cents[1] - cents[2] -- positive: player a pays player b
+    if moneyItems and net ~= 0 then
+        local payer = net > 0 and 1 or 2
+        local payee = 3 - payer
+        for _, i in ipairs({ payer, payee }) do
+            local total = CashCents(work[i]) + (i == payer and -math.abs(net) or math.abs(net))
+            if total < 0 then return false, 'no_cash', ids[i] end
+            if not SetCashItems(work[i], total) then return false, 'no_room', ids[i] end
+        end
+    end
+
+    for i = 1, 2 do
+        local to = work[3 - i]
+        for _, o in ipairs(offers[i].items) do
+            if not AddTo(to, o.name, o.amount, DeepClone(o.info or {})) then return false, 'no_room', to.id end
+        end
+    end
+
+    -- balances held outside the inventory: take the money before any item changes hands
+    if not moneyItems and net ~= 0 then
+        local payer = net > 0 and 1 or 2
+        local value = math.abs(net) / 100
+        if not real[payer].player.Functions.RemoveMoney('cash', value, 'player-trade') then return false, 'no_cash', ids[payer] end
+        real[3 - payer].player.Functions.AddMoney('cash', value, 'player-trade')
+    end
+
+    Commit(work[1]) Commit(work[2])
+    for i = 1, 2 do
+        local Player = RSGCore.Functions.GetPlayer(ids[i])
+        if Player then
+            -- rsg-core normally derives the balance from the cash items; if it did not, set it, or a relog would undo the payment
+            local delta = (i == 1 and -net) or net
+            if moneyItems and delta ~= 0 then
+                local expected = math.floor((tonumber(real[i].player.PlayerData.money.cash) or 0) * 100 + 0.5) + delta
+                if math.floor((tonumber(Player.PlayerData.money.cash) or 0) * 100 + 0.5) ~= expected then
+                    Player.Functions.SetMoney('cash', expected / 100, 'player-trade-sync')
+                    Player = RSGCore.Functions.GetPlayer(ids[i])
+                end
+            end
+            Player.Functions.Save() -- money and inventory are persisted together
+        end
+    end
+
+    for i = 1, 2 do
+        local from, to = ids[i], ids[3 - i]
+        for _, o in ipairs(offers[i].items) do
+            if o.amount >= real[i].items[o.slot].amount then CheckWeapon(from, real[i].items[o.slot]) end
+            TriggerClientEvent('rsg-inventory:client:ItemBox', from, SharedItem(o.name), 'remove', o.amount)
+            TriggerClientEvent('rsg-inventory:client:ItemBox', to, SharedItem(o.name), 'add', o.amount)
+            Log('Trade', ('%s traded %sx %s to %s [%s]'):format(GetPlayerName(from), o.amount, o.name, GetPlayerName(to), GetInvokingResource() or 'rsg-inventory'))
+        end
+        if cents[i] > 0 then
+            Log('Trade', ('%s paid $%.2f to %s in a trade'):format(GetPlayerName(from), cents[i] / 100, GetPlayerName(to)))
+        end
+        Refresh(from)
+    end
+    return true
+end
 
 -- right-click "Drop": put items on the ground at the player's feet
 -- Trash: permanently destroys items from the player's own inventory (the client shows a confirmation first)

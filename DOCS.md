@@ -110,6 +110,23 @@ Called as `exports['rsg-inventory']:Name(...)`.
 | `UseItem(itemName, src, item)` | Run a usable item's callback (also accepts rsg-core's `UseItem(src, nameOrItem)`) |
 | `GetStashHistory(stashId, limit?)` | Newest first: `{ citizenid, name, action = 'put'\|'take', item, amount, time }` (limit 1–200, default 20) |
 
+### Two-way trade
+`TradeItems(a, b, offerA, offerB)` swaps two offers between online players. Returns `true`, or `false, reason, failedPlayerId` with nothing changed.
+
+```lua
+local ok, reason, who = exports['rsg-inventory']:TradeItems(a, b,
+    { items = { { slot = 3, name = 'bread', amount = 2, info = itemInfo } }, cents = 500 }, -- from a
+    { items = {}, cents = 0 })                                                             -- from b
+```
+
+- `slot`, `name`, `amount` and `info` must still match the real stack; `info` is the metadata the other player agreed to.
+- `cents` is cash in whole cents. Cash and bloodmoney items are refused in `items`.
+- Both offers are removed before anything is added, so a full inventory can still swap one for one. Weight, slot, stack and carry limits apply.
+- With money items on, a player whose cash items differ from their balance cannot pay cash (`cash_unavailable`).
+- Reasons: `no_player`, `incapacitated`, `offer_changed`, `no_cash`, `cash_unavailable`, `no_room`.
+- Both players are saved straight away (two separate database writes, as with Give).
+- **The caller must handle consent, distance and cooldowns.** The export checks none of these. Use `rsg-playertrade` unless you need your own flow.
+
 ### Capacity bonuses
 | Export | Notes |
 |---|---|
@@ -295,7 +312,7 @@ Other client events are sent by the server and are internal. Do not trigger them
 | Event | Purpose |
 |---|---|
 | `rsg-inventory:client:open` / `refresh` / `close` | Open, update or close the NUI |
-| `rsg-inventory:client:checkWeapon` | Unequip a weapon item that left the inventory |
+| `rsg-inventory:client:checkWeapon` | `weaponName, serial`: unequip a weapon item that left the inventory, in hand or holstered |
 | `rsg-inventory:client:giveAnim` | Hand-over animation for `give` |
 | `rsg-inventory:client:addDrop` / `removeDrop` | Keep the local ground-pile list in sync |
 | `rsg-inventory:client:stashBrowser` | Open the admin `/stashes` browser |
@@ -727,7 +744,7 @@ Server events can be fired by any client, so every handler re-validates the play
 | `rsg-inventory:client:open` | client | `player, other` | `client/main.lua` |
 | `rsg-inventory:client:refresh` | client | `player, other` | `client/main.lua` |
 | `rsg-inventory:client:close` | client | `` | `client/main.lua` |
-| `rsg-inventory:client:checkWeapon` | client | `weaponName` | `client/main.lua` |
+| `rsg-inventory:client:checkWeapon` | client | `weaponName, serial` | `client/main.lua` |
 | `rsg-inventory:client:ItemBox` | client | `item, kind, amount` | `client/main.lua` |
 | `rsg-inventory:client:giveAnim` | client | `` | `client/main.lua` |
 | `rsg-inventory:client:addDrop` | client | `id, coords` | `client/main.lua` |

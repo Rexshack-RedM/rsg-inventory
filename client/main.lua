@@ -154,8 +154,17 @@ end)
 
 RegisterNetEvent('rsg-inventory:client:close', Close)
 
--- a weapon left the inventory: holster it if it is in the player's hands
-RegisterNetEvent('rsg-inventory:client:checkWeapon', function(weaponName)
+-- a weapon left the inventory: unequip it, whether it is in the player's hands or holstered
+RegisterNetEvent('rsg-inventory:client:checkWeapon', function(weaponName, serial)
+    if serial and GetResourceState('rsg-weapons') == 'started' then
+        serial = tostring(serial)
+        local used = exports['rsg-weapons']:GetUsedWeapons()
+        -- UseWeapon toggles: for an equipped serial it unequips just that weapon. Not equipped = nothing to remove.
+        if used and used[serial] then
+            TriggerEvent('rsg-weapons:client:UseWeapon', { name = weaponName, info = { serie = serial } })
+        end
+        return
+    end
     local ped, hash = PlayerPedId(), joaat(weaponName)
     local _, current = GetCurrentPedWeapon(ped, true, 0, true)
     if current == hash then
